@@ -100,6 +100,6 @@ To run this project, you need to connect it to your own Firebase project.
 
 -   **Create a Customer Account**: Use the login screen to sign up with your phone or email.
 -   **Access Admin Panel**:
-    -   The Super Admin accounts are hardcoded. To become a super-admin, sign up with one of the following emails: `ashraf0968491090@gmail.com`, `salahashrf58@gmail.com`.
+    -   The Super Admin accounts are hardcoded. To become a super-admin, sign up with one of the following emails: .
     -   Navigate to `/admin.html`. The app will now recognize you as a super-admin.
     -   As the super-admin, you can now promote other user accounts to `admin` or `sub-admin` roles from the "Manage Users" page.
