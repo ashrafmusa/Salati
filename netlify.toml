@@ -1,0 +1,15 @@
+# Netlify Build & Deploy Settings
+[build]
+  # This command matches the "build" script in your package.json
+  command = "npm run build"
+  
+  # Vite places the final website files in the "dist" directory
+  publish = "dist"
+
+# This is the standard rule for a Single Page Application (SPA).
+# It ensures that if a user tries to access a deep link directly,
+# they are still served the main app, allowing React Router to work correctly.
+[[redirects]]
+  from = "/*"
+  to = "/index.html"
+  status = 200
