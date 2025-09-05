@@ -37,32 +37,11 @@ Before you begin, ensure you have the following:
 
 ## Step 2: Configure Firebase in the App
 
-1.  Open the existing file in the project directory: `firebase/config.ts`.
-2.  Replace its content with the configuration object you copied and set up the Firebase services. The file should look like this:
+The project is now set up to use environment variables for security. You will need to create a `.env.local` file for development and configure these variables in your hosting provider (e.g., Netlify) for production.
 
-    ```typescript
-    // firebase/config.ts
-    import firebase from 'firebase/compat/app';
-    import 'firebase/compat/auth';
-    import 'firebase/compat/firestore';
-
-    // Your web app's Firebase configuration - PASTE YOUR CONFIG HERE
-    const firebaseConfig = {
-      apiKey: "YOUR_API_KEY",
-      authDomain: "YOUR_AUTH_DOMAIN",
-      projectId: "YOUR_PROJECT_ID",
-      storageBucket: "YOUR_STORAGE_BUCKET",
-      messagingSenderId: "YOUR_MESSAGING_SENDER_ID",
-      appId: "YOUR_APP_ID"
-    };
-
-    // Initialize Firebase
-    const app = firebase.initializeApp(firebaseConfig);
-
-    // Initialize and export Firebase services
-    export const auth = firebase.auth();
-    export const db = firebase.firestore();
-    ```
+1.  Create a file named `.env.local` in the root of your project.
+2.  Copy the contents of `.env.example` into this new file.
+3.  Replace the placeholder values in `.env.local` with your actual Firebase config values.
 
 ---
 
@@ -113,9 +92,10 @@ Secure your database by defining who can read and write data. These rules are cr
     
         // --- PUBLIC & ADMIN COLLECTIONS ---
         
-        // Products, extras, banners, and categories are public to read for everyone.
+        // Items, Bundles, extras, offers, and categories are public to read for everyone.
         // Write permissions are restricted based on roles.
-        match /products/{docId} { allow read: if true; allow write: if isFullAdmin(); }
+        match /items/{docId} { allow read: if true; allow write: if isSuperAdmin(); }
+        match /bundles/{docId} { allow read: if true; allow write: if isFullAdmin(); }
         match /extras/{docId} { allow read: if true; allow write: if isSuperAdmin(); }
         match /offers/{docId} { allow read: if true; allow write: if isFullAdmin(); }
         match /drivers/{docId} { allow read, write: if isFullAdmin(); }
@@ -171,12 +151,4 @@ Secure your database by defining who can read and write data. These rules are cr
 
 ## Step 6: Add Initial Data Manually
 
-To get started quickly, you can manually add some data to your Firestore database.
-
-1.  Go to the Firestore console.
-2.  Click **"+ Start collection"** to create the `products` collection.
-3.  Click **"Auto-ID"** to create a new document.
-4.  Add fields that match the `Basket` type from `types.ts` (e.g., `name`, `arabicName`, `price`, `imageUrl`, etc.).
-5.  Repeat for a few products and for the `extras`, `drivers`, and `promotionalBanners` collections.
-
-This will allow you to see products in the app once you start your local server.
+To get started quickly, you can manually add some data to your Firestore database for the new collections: `items`, `bundles`, `categories`, `extras`.

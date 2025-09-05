@@ -1,20 +1,21 @@
-// FIX: Switched to Firebase v9 modular imports to resolve module export errors across the app.
 import { initializeApp } from "firebase/app";
 import { getAuth } from "firebase/auth";
-import { getFirestore } from "firebase/firestore";
+import { getFirestore, enableIndexedDbPersistence } from "firebase/firestore";
 
-// --- PASTE YOUR WEB APP'S FIREBASE CONFIGURATION HERE ---
-// You can get this from the Firebase console for your project.
+// Firebase configuration is loaded from environment variables for security.
 const firebaseConfig = {
-  apiKey: "AIzaSyDB3vIteP2K6ZEb2uRa_eO1S9OKUJpQwEQ",
-  authDomain: "gen-lang-client-0735710592.firebaseapp.com",
-  projectId: "gen-lang-client-0735710592",
-  storageBucket: "gen-lang-client-0735710592.appspot.com",
-  messagingSenderId: "611084672076",
-  appId: "1:611084672076:web:8f206662371326677fe8e9",
+  apiKey: import.meta.env.VITE_FIREBASE_API_KEY,
+  authDomain: import.meta.env.VITE_FIREBASE_AUTH_DOMAIN,
+  projectId: import.meta.env.VITE_FIREBASE_PROJECT_ID,
+  storageBucket: import.meta.env.VITE_FIREBASE_STORAGE_BUCKET,
+  messagingSenderId: import.meta.env.VITE_FIREBASE_MESSAGING_SENDER_ID,
+  appId: import.meta.env.VITE_FIREBASE_APP_ID,
 };
-// ---------------------------------------------------------
 
+// A check to ensure all required environment variables are present during development.
+if (import.meta.env.DEV && Object.values(firebaseConfig).some(value => !value)) {
+    console.error("Firebase configuration is missing. Make sure you have a .env file with all the required VITE_FIREBASE_ variables.");
+}
 
 // Initialize Firebase
 const app = initializeApp(firebaseConfig);
@@ -22,3 +23,14 @@ const app = initializeApp(firebaseConfig);
 // Initialize and export Firebase services
 export const auth = getAuth(app);
 export const db = getFirestore(app);
+
+// Enable Firestore offline persistence for a better offline experience and faster startup.
+enableIndexedDbPersistence(db).catch((err) => {
+    if (err.code == 'failed-precondition') {
+        // This can happen if multiple tabs are open.
+        console.warn('Firestore persistence failed: Multiple tabs open.');
+    } else if (err.code == 'unimplemented') {
+        // The current browser does not support all of the features required to enable persistence.
+        console.warn('Firestore persistence is not supported in this browser.');
+    }
+});

@@ -99,6 +99,10 @@ export default {
         'nudge-reveal': {
             '0%, 100%': { transform: 'scaleX(0)' },
             '20%, 80%': { transform: 'scaleX(1)' },
+        },
+        'progress-bar-fill': {
+          'from': { transform: 'scaleX(0)' },
+          'to': { transform: 'scaleX(1)' },
         }
       },
       animation: {
@@ -119,6 +123,7 @@ export default {
         'fade-in-chart': 'fade-in-chart 0.5s ease-out forwards',
         'slide-in-letter': 'slide-in-letter 0.5s forwards',
         'nudge-reveal': 'nudge-reveal 4s ease-in-out',
+        'progress-bar-fill': 'progress-bar-fill 1.5s ease-out forwards',
       },
     },
   },

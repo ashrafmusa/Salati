@@ -1,15 +1,19 @@
+
 import React, { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import { useAuth } from '../hooks/useAuth';
 import SubPageHeader from '../components/SubPageHeader';
-import { LogoutIcon, HistoryIcon, HeartIcon, ChevronLeftIcon, WarningIcon } from '../assets/icons';
+import { LogoutIcon, HistoryIcon, HeartIcon, ChevronLeftIcon, WarningIcon, KeyIcon, QuestionMarkCircleIcon } from '../assets/icons';
 import ThemeToggle from '../components/ThemeToggle';
+import { useOnboarding } from '../contexts/OnboardingContext';
+import { getAuth } from 'firebase/auth';
 
 const ProfileScreen: React.FC = () => {
     const { user, firebaseUser, updateUserDetails, logout } = useAuth();
+    const { startGuide } = useOnboarding();
     
-    const isProfileIncomplete = !user?.address || !user?.name || user.name === 'عميل جديد' || !user?.phone;
     const signedUpWithPhone = firebaseUser?.providerData?.some(p => p.providerId === 'phone');
+    const isProfileIncomplete = !user?.address || !user?.name || user.name === 'عميل جديد' || !user?.phone;
 
     const [isEditing, setIsEditing] = useState(isProfileIncomplete);
     const [formData, setFormData] = useState({
@@ -68,10 +72,9 @@ const ProfileScreen: React.FC = () => {
     const handleCancel = () => {
         setIsEditing(false);
         setError('');
-        // The useEffect hook will reset the form data to its original state.
     };
 
-    const inputClasses = "mt-1 block w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md shadow-sm focus:outline-none focus:ring-primary focus:border-primary bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100";
+    const inputClasses = "mt-1 block w-full px-3 py-2 border border-slate-300 dark:border-slate-600 rounded-md shadow-sm focus:outline-none focus:ring-primary focus:border-primary bg-white dark:bg-slate-700 text-slate-900 dark:text-slate-100";
     
     return (
         <div>
@@ -87,10 +90,9 @@ const ProfileScreen: React.FC = () => {
                     </div>
                 )}
 
-                {/* Account Details Section */}
-                <div className="bg-white dark:bg-gray-800 p-6 rounded-lg shadow-sm">
+                <div className="bg-white dark:bg-slate-800 p-6 rounded-lg shadow-sm">
                     <div className="flex justify-between items-center mb-4">
-                        <h2 className="text-xl font-bold text-gray-800 dark:text-gray-100">المعلومات الشخصية</h2>
+                        <h2 className="text-xl font-bold text-slate-800 dark:text-slate-100">المعلومات الشخصية</h2>
                         {!isEditing && !isProfileIncomplete && (
                             <button onClick={() => setIsEditing(true)} className="text-sm font-semibold text-primary hover:underline">
                                 تعديل
@@ -101,11 +103,11 @@ const ProfileScreen: React.FC = () => {
                         <div className="space-y-4">
                             {error && <p className="text-red-500 text-sm">{error}</p>}
                             <div>
-                                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300">الاسم الكامل</label>
+                                <label className="block text-sm font-medium text-slate-700 dark:text-slate-300">الاسم الكامل</label>
                                 <input type="text" name="name" value={formData.name} onChange={handleInputChange} className={inputClasses} />
                             </div>
                              <div>
-                                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300">رقم الهاتف</label>
+                                <label className="block text-sm font-medium text-slate-700 dark:text-slate-300">رقم الهاتف</label>
                                 <input 
                                     type="tel" 
                                     name="phone" 
@@ -114,55 +116,69 @@ const ProfileScreen: React.FC = () => {
                                     disabled={!!signedUpWithPhone}
                                     placeholder="+249XXXXXXXXX"
                                     dir="ltr"
-                                    className={`${inputClasses} ${!!signedUpWithPhone ? 'bg-gray-100 dark:bg-gray-700 text-gray-500 dark:text-gray-400 cursor-not-allowed' : ''}`} 
+                                    className={`${inputClasses} ${!!signedUpWithPhone ? 'bg-slate-100 dark:bg-slate-700 text-slate-500 dark:text-slate-400 cursor-not-allowed' : ''}`} 
                                 />
                             </div>
                              <div>
-                                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300">العنوان</label>
+                                <label className="block text-sm font-medium text-slate-700 dark:text-slate-300">العنوان</label>
                                 <textarea name="address" rows={3} value={formData.address} onChange={handleInputChange} className={inputClasses} />
                             </div>
                             <div className="flex justify-end space-x-3 space-x-reverse pt-2">
-                                {!isProfileIncomplete && <button onClick={handleCancel} className="px-4 py-2 bg-gray-200 dark:bg-gray-600 dark:text-gray-100 rounded-md hover:bg-gray-300 dark:hover:bg-gray-500 transition">إلغاء</button>}
-                                <button onClick={handleSave} disabled={isSaving} className="px-4 py-2 bg-primary text-white rounded-md hover:bg-secondary transition disabled:bg-gray-400">
+                                {!isProfileIncomplete && <button onClick={handleCancel} className="px-4 py-2 bg-slate-200 dark:bg-slate-600 dark:text-slate-100 rounded-md hover:bg-slate-300 dark:hover:bg-slate-500 transition">إلغاء</button>}
+                                <button onClick={handleSave} disabled={isSaving} className="px-4 py-2 bg-primary text-white rounded-md hover:bg-secondary transition disabled:bg-slate-400">
                                     {isSaving ? 'جارِ الحفظ...' : 'حفظ'}
                                 </button>
                             </div>
                         </div>
                     ) : (
-                        <div className="space-y-3 text-gray-700 dark:text-gray-300">
-                           <p><span className="font-semibold text-gray-800 dark:text-gray-100">الاسم:</span> {user?.name}</p>
-                           <p><span className="font-semibold text-gray-800 dark:text-gray-100">رقم الهاتف:</span> <span dir="ltr">{user?.phone}</span></p>
-                           <p><span className="font-semibold text-gray-800 dark:text-gray-100">العنوان:</span> {user?.address}</p>
+                        <div className="space-y-3 text-slate-700 dark:text-slate-300">
+                           <p><span className="font-semibold text-slate-800 dark:text-slate-100">الاسم:</span> {user?.name}</p>
+                           <p><span className="font-semibold text-slate-800 dark:text-slate-100">رقم الهاتف:</span> <span dir="ltr">{user?.phone}</span></p>
+                           <p><span className="font-semibold text-slate-800 dark:text-slate-100">العنوان:</span> {user?.address}</p>
                         </div>
                     )}
                 </div>
 
-                {/* Shopping & Settings Section */}
-                <div className="bg-white dark:bg-gray-800 rounded-lg shadow-sm divide-y divide-gray-200 dark:divide-gray-700">
-                     <Link to="/orders" className="flex justify-between items-center p-4 rounded-t-lg hover:bg-gray-50 dark:hover:bg-gray-700/50 transition-colors">
+                <div className="bg-white dark:bg-slate-800 rounded-lg shadow-sm divide-y divide-slate-200 dark:divide-slate-700">
+                    {user && user.role !== 'customer' && (
+                        <a href="./admin.html" className="flex justify-between items-center p-4 hover:bg-slate-50 dark:hover:bg-slate-700/50 transition-colors">
+                            <div className="flex items-center">
+                                <KeyIcon className="w-6 h-6 text-slate-500 dark:text-slate-400 ml-4" />
+                                <span className="font-semibold text-slate-800 dark:text-slate-100">لوحة التحكم</span>
+                            </div>
+                            <ChevronLeftIcon className="w-5 h-5 text-slate-400" />
+                        </a>
+                    )}
+                     <Link to="/orders" className="flex justify-between items-center p-4 rounded-t-lg hover:bg-slate-50 dark:hover:bg-slate-700/50 transition-colors">
                         <div className="flex items-center">
-                            <HistoryIcon className="w-6 h-6 text-gray-500 dark:text-gray-400 ml-4" />
-                            <span className="font-semibold text-gray-800 dark:text-gray-100">سجل الطلبات</span>
+                            <HistoryIcon className="w-6 h-6 text-slate-500 dark:text-slate-400 ml-4" />
+                            <span className="font-semibold text-slate-800 dark:text-slate-100">سجل الطلبات</span>
                         </div>
-                        <ChevronLeftIcon className="w-5 h-5 text-gray-400" />
+                        <ChevronLeftIcon className="w-5 h-5 text-slate-400" />
                     </Link>
-                    <Link to="/wishlist" className="flex justify-between items-center p-4 hover:bg-gray-50 dark:hover:bg-gray-700/50 transition-colors">
+                    <Link to="/wishlist" className="flex justify-between items-center p-4 hover:bg-slate-50 dark:hover:bg-slate-700/50 transition-colors">
                         <div className="flex items-center">
-                            <HeartIcon className="w-6 h-6 text-gray-500 dark:text-gray-400 ml-4" />
-                            <span className="font-semibold text-gray-800 dark:text-gray-100">المفضلة</span>
+                            <HeartIcon className="w-6 h-6 text-slate-500 dark:text-slate-400 ml-4" />
+                            <span className="font-semibold text-slate-800 dark:text-slate-100">المفضلة</span>
                         </div>
-                        <ChevronLeftIcon className="w-5 h-5 text-gray-400" />
+                        <ChevronLeftIcon className="w-5 h-5 text-slate-400" />
                     </Link>
+                    <button onClick={startGuide} className="w-full flex justify-between items-center p-4 hover:bg-slate-50 dark:hover:bg-slate-700/50 transition-colors">
+                        <div className="flex items-center">
+                            <QuestionMarkCircleIcon className="w-6 h-6 text-slate-500 dark:text-slate-400 ml-4" />
+                            <span className="font-semibold text-slate-800 dark:text-slate-100">إعادة عرض الدليل التعليمي</span>
+                        </div>
+                        <ChevronLeftIcon className="w-5 h-5 text-slate-400" />
+                    </button>
                     <div className="flex justify-between items-center p-4 rounded-b-lg">
                         <div className="flex items-center">
                              <span className="text-xl ml-4">🎨</span>
-                            <span className="font-semibold text-gray-800 dark:text-gray-100">المظهر</span>
+                            <span className="font-semibold text-slate-800 dark:text-slate-100">المظهر</span>
                         </div>
                         <ThemeToggle />
                     </div>
                 </div>
 
-                {/* Logout Section */}
                 <div className="text-center pt-4">
                     <button
                         onClick={logout}

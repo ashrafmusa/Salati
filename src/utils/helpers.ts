@@ -35,11 +35,11 @@ export const uploadToCloudinary = async (file: File): Promise<string> => {
         const errorData = await response.json();
         console.error("Cloudinary upload error:", errorData);
         const errorMessage = errorData?.error?.message || 'Failed to upload image.';
-
+        
         if (errorMessage.includes("preset not found")) {
             throw new Error(`Upload failed: The Cloudinary upload preset '${CLOUDINARY_UPLOAD_PRESET}' was not found. Please ensure it is configured correctly.`);
         }
-
+        
         throw new Error(`Cloudinary Error: ${errorMessage}`);
     }
 
@@ -110,7 +110,7 @@ export const applyDiscounts = (
     calculateTotal: (item: CartItem) => number
 ): DiscountCalculation => {
     const subtotal = cartItems.reduce((sum, item) => sum + calculateTotal(item), 0);
-
+    
     const activeOffers = offers.filter(o => new Date(o.expiryDate) > new Date() && o.discount);
 
     if (activeOffers.length === 0 || cartItems.length === 0) {
