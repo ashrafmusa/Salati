@@ -146,7 +146,7 @@ const Sidebar: React.FC<{
       ></div>
 
       <aside
-        className={`w-64 bg-admin-sidebar text-admin-sidebar-text flex flex-col fixed h-full z-40 transition-transform duration-300 ease-in-out md:translate-x-0 ${
+        className={`w-60 sm:w-64 bg-admin-sidebar text-admin-sidebar-text flex flex-col fixed h-full z-40 transition-transform duration-300 ease-in-out md:translate-x-0 ${
           isOpen ? "translate-x-0" : "translate-x-full"
         }`}
       >
