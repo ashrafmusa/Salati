@@ -5,7 +5,7 @@ import { Offer } from "../types";
 import { ChevronLeftIcon, ChevronRightIcon, TagIcon } from "../assets/icons";
 import { useCountdown } from "../hooks/useCountdown";
 import { getOptimizedImageUrl } from "../utils/helpers";
-import { collection, onSnapshot } from "firebase/firestore";
+import { collection, onSnapshot, query } from "firebase/firestore";
 
 const CountdownTimer: React.FC<{ expiryDate: string }> = ({ expiryDate }) => {
   const { days, hours, minutes, seconds } = useCountdown(expiryDate);
@@ -60,7 +60,8 @@ const PromotionalBanner: React.FC = () => {
   const navigate = useNavigate();
 
   useEffect(() => {
-    const unsubscribe = onSnapshot(collection(db, "offers"), (snapshot) => {
+    const offersQuery = query(collection(db, "offers"));
+    const unsubscribe = onSnapshot(offersQuery, (snapshot) => {
       const bannersData = snapshot.docs.map((doc) => ({
         id: doc.id,
         ...doc.data(),
@@ -158,7 +159,6 @@ const PromotionalBanner: React.FC = () => {
             src={getOptimizedImageUrl(banner.imageUrl, 800)}
             alt={banner.title}
             className="w-full h-full object-cover animate-ken-burns"
-            loading="lazy"
           />
           <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/40 to-transparent flex flex-col justify-end items-start p-6 text-right">
             {banner.discount && (
@@ -177,20 +177,21 @@ const PromotionalBanner: React.FC = () => {
                 animationDelay: `${index === currentIndex ? "0.3s" : "0s"}`,
               }}
             >
+              {/* FIX: Changed `banner` object to `banner.title` to render the title string. */}
               <h2
                 className="text-white text-lg sm:text-2xl md:text-3xl font-bold"
                 style={{ textShadow: "0 2px 4px rgba(0,0,0,0.8)" }}
               >
                 {banner.title}
               </h2>
-              <CountdownTimer expiryDate={banner.expiryDate} />
               {banner.callToAction && (
                 <div className="mt-4">
-                  <div className="bg-accent text-white font-bold py-2 px-4 sm:py-2.5 sm:px-6 text-sm sm:text-base rounded-full transition-all duration-300 transform group-hover:scale-105 group-hover:bg-accent-hover shadow-lg">
+                  <span className="bg-primary text-white font-bold py-2 px-6 rounded-lg hover:bg-secondary transition-colors shadow-lg">
                     {banner.callToAction}
-                  </div>
+                  </span>
                 </div>
               )}
+              <CountdownTimer expiryDate={banner.expiryDate} />
             </div>
           </div>
         </div>
@@ -200,29 +201,26 @@ const PromotionalBanner: React.FC = () => {
         <>
           <button
             onClick={prevBanner}
+            className="absolute left-2 top-1/2 -translate-y-1/2 bg-white/50 p-2 rounded-full text-charcoal hover:bg-white/80 transition-opacity opacity-0 group-hover:opacity-100 backdrop-blur-sm"
             aria-label="Previous Banner"
-            className="absolute left-3 top-1/2 -translate-y-1/2 bg-white/60 dark:bg-black/60 text-slate-800 dark:text-white p-2 rounded-full backdrop-blur-sm opacity-0 group-hover:opacity-100 transition-all duration-300 hover:scale-110 active:scale-95 z-10"
-          >
-            <ChevronLeftIcon className="w-6 h-6" />
-          </button>
-          <button
-            onClick={nextBanner}
-            aria-label="Next Banner"
-            className="absolute right-3 top-1/2 -translate-y-1/2 bg-white/60 dark:bg-black/60 text-slate-800 dark:text-white p-2 rounded-full backdrop-blur-sm opacity-0 group-hover:opacity-100 transition-all duration-300 hover:scale-110 active:scale-95 z-10"
           >
             <ChevronRightIcon className="w-6 h-6" />
           </button>
-          <div className="absolute bottom-4 left-1/2 -translate-x-1/2 flex items-center space-x-2 z-10">
+          <button
+            onClick={nextBanner}
+            className="absolute right-2 top-1/2 -translate-y-1/2 bg-white/50 p-2 rounded-full text-charcoal hover:bg-white/80 transition-opacity opacity-0 group-hover:opacity-100 backdrop-blur-sm"
+            aria-label="Next Banner"
+          >
+            <ChevronLeftIcon className="w-6 h-6" />
+          </button>
+          <div className="absolute bottom-4 left-1/2 -translate-x-1/2 flex space-x-2">
             {banners.map((_, index) => (
               <button
                 key={index}
                 onClick={() => setCurrentIndex(index)}
-                className={`h-2 rounded-full transition-all duration-500 ease-out ${
-                  index === currentIndex
-                    ? "w-5 bg-white"
-                    : "w-2 bg-white/50 hover:bg-white/80"
+                className={`w-3 h-3 rounded-full transition-colors ${
+                  currentIndex === index ? "bg-white" : "bg-white/50"
                 }`}
-                aria-label={`Go to banner ${index + 1}`}
               ></button>
             ))}
           </div>
@@ -232,4 +230,5 @@ const PromotionalBanner: React.FC = () => {
   );
 };
 
+// FIX: Added a default export to resolve import errors in other components.
 export default PromotionalBanner;

@@ -1,10 +1,13 @@
-import React from 'react';
-import { CartItem } from '../types';
-import { useCart } from '../hooks/useCart';
-import QuantitySelector from './QuantitySelector';
-import { TrashIcon } from '../assets/icons';
+import React from "react";
+import { CartItem } from "../types";
+import { useCart } from "../hooks/useCart";
+import QuantitySelector from "./QuantitySelector";
+import { TrashIcon } from "../assets/icons";
 // FIX: The `calculateItemAndExtrasTotal` function was missing. It has been added to the helpers file.
-import { getOptimizedImageUrl, calculateItemAndExtrasTotal } from '../utils/helpers';
+import {
+  getOptimizedImageUrl,
+  calculateItemAndExtrasTotal,
+} from "../utils/helpers";
 
 interface CartItemCardProps {
   item: CartItem;
@@ -27,18 +30,24 @@ const CartItemCard: React.FC<CartItemCardProps> = ({ item }) => {
       <div className="flex-grow space-y-2">
         <div className="flex justify-between items-start">
           <div>
-            <h3 className="font-bold text-lg text-slate-800 dark:text-slate-100">{item.arabicName}</h3>
+            <h3 className="font-bold text-lg text-slate-800 dark:text-slate-100">
+              {item.arabicName}
+            </h3>
             {item.selectedExtras.length > 0 && (
               <div className="text-xs text-slate-500 dark:text-slate-400 mt-1">
                 <ul className="list-disc list-inside mr-4">
-                  {item.selectedExtras.map(extra => (
+                  {item.selectedExtras.map((extra) => (
                     <li key={extra.id}>{extra.name}</li>
                   ))}
                 </ul>
               </div>
             )}
           </div>
-          <button onClick={() => removeFromCart(item.cartId)} className="text-slate-400 hover:text-red-500 dark:hover:text-red-400 p-1 transition-transform transform active:scale-90 flex-shrink-0">
+          <button
+            onClick={() => removeFromCart(item.cartId)}
+            className="text-slate-400 hover:text-red-500 dark:hover:text-red-400 p-1 transition-transform transform active:scale-90 flex-shrink-0"
+            aria-label="Remove item"
+          >
             <TrashIcon className="w-5 h-5" />
           </button>
         </div>
