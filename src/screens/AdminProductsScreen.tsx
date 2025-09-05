@@ -122,13 +122,14 @@ const BundleFormModal: React.FC<{
     if (
       formData.arabicName &&
       formData.category &&
+      formData.imageUrl &&
       formData.contents &&
       formData.contents.length > 0
     ) {
       onSave(formData as Bundle);
     } else {
       showToast(
-        "Please fill all required fields and add at least one item.",
+        "Please fill all required fields, upload an image, and add at least one item.",
         "error"
       );
     }
@@ -191,6 +192,67 @@ const BundleFormModal: React.FC<{
               required
             />
           </div>
+
+          <textarea
+            name="description"
+            placeholder="الوصف"
+            value={formData.description || ""}
+            onChange={handleChange}
+            rows={3}
+            className={inputClasses}
+          ></textarea>
+
+          {/* Image Upload */}
+          <div>
+            <label className="block text-sm font-medium text-slate-700 dark:text-slate-300">
+              صورة الحزمة
+            </label>
+            <div className="mt-2 flex items-center gap-4">
+              {imagePreview ? (
+                <img
+                  src={getOptimizedImageUrl(imagePreview, 200)}
+                  alt="Preview"
+                  className="w-24 h-24 rounded-md object-cover shadow-sm"
+                />
+              ) : (
+                <div className="w-24 h-24 rounded-md bg-slate-100 dark:bg-slate-700 flex items-center justify-center text-slate-400">
+                  <svg
+                    xmlns="http://www.w3.org/2000/svg"
+                    className="h-10 w-10"
+                    fill="none"
+                    viewBox="0 0 24 24"
+                    stroke="currentColor"
+                  >
+                    <path
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      strokeWidth={2}
+                      d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z"
+                    />
+                  </svg>
+                </div>
+              )}
+              <label
+                htmlFor="image-upload"
+                className="cursor-pointer bg-white dark:bg-slate-700 text-slate-700 dark:text-slate-200 font-semibold py-2 px-4 border border-slate-300 dark:border-slate-600 rounded-md hover:bg-slate-50 dark:hover:bg-slate-600 transition-colors flex items-center justify-center w-32 h-10"
+              >
+                {isUploading ? (
+                  <SpinnerIcon className="w-5 h-5 animate-spin" />
+                ) : (
+                  <span>{imagePreview ? "تغيير الصورة" : "تحميل صورة"}</span>
+                )}
+              </label>
+              <input
+                id="image-upload"
+                type="file"
+                className="hidden"
+                onChange={handleImageChange}
+                accept="image/*"
+                disabled={isUploading}
+              />
+            </div>
+          </div>
+
           {/* Contents Management */}
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
             {/* Item Selector */}
@@ -211,7 +273,7 @@ const BundleFormModal: React.FC<{
                     type="button"
                     key={item.id}
                     onClick={() => addContentItem(item)}
-                    className="w-full text-right p-2 rounded hover:bg-slate-100 dark:hover:bg-slate-800 flex items-center gap-4"
+                    className="w-full text-right p-2 rounded hover:bg-slate-100 dark:hover:bg-slate-800 flex items-center justify-between gap-4"
                   >
                     <span>{item.arabicName}</span>
                     <span className="text-sm text-slate-500">
@@ -234,7 +296,7 @@ const BundleFormModal: React.FC<{
                       key={index}
                       className="flex items-center justify-between p-1 bg-slate-50 dark:bg-slate-800 rounded"
                     >
-                      <span className="text-sm font-medium">
+                      <span className="text-sm font-medium flex-1">
                         {item?.arabicName}
                       </span>
                       <div className="flex items-center gap-2">
@@ -271,7 +333,7 @@ const BundleFormModal: React.FC<{
             </div>
           </div>
 
-          <div className="flex justify-end pt-4 border-t dark:border-slate-700 mt-4">
+          <div className="flex justify-end pt-4 border-t dark:border-slate-700 mt-4 gap-4">
             <button
               type="button"
               onClick={onClose}
@@ -282,7 +344,7 @@ const BundleFormModal: React.FC<{
             <button
               type="submit"
               className="px-6 py-2 bg-admin-primary text-white rounded-md hover:bg-admin-primary-hover flex items-center justify-center w-24"
-              disabled={isSaving}
+              disabled={isSaving || isUploading}
             >
               {isSaving ? (
                 <SpinnerIcon className="w-5 h-5 animate-spin" />
