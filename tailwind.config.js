@@ -49,6 +49,10 @@ export default {
       keyframes: {
         fadeIn: { '0%': { opacity: '0', transform: 'translateY(5px)' }, '100%': { opacity: '1', transform: 'translateY(0)' } },
         slideInUp: { '0%': { opacity: '0', transform: 'translateY(20px)' }, '100%': { opacity: '1', transform: 'translateY(0)' } },
+        staggerIn: {
+          '0%': { opacity: '0', transform: 'translateY(10px) scale(0.98)' },
+          '100%': { opacity: '1', transform: 'translateY(0) scale(1)' },
+        },
         gradientBg: { '0%, 100%': { 'background-position': '0% 50%' }, '50%': { 'background-position': '100% 50%' } },
         formEntry: { 'from': { opacity: '0', transform: 'scale(0.95) translateY(20px)' }, 'to': { opacity: '1', transform: 'scale(1) translateY(0)' } },
         twinkle: { '0%, 100%': { opacity: '0.5', transform: 'scale(0.8)' }, '50%': { opacity: '1', transform: 'scale(1)' } },
@@ -84,6 +88,10 @@ export default {
         'draw-chart': {
           'to': { 'stroke-dashoffset': '0' },
         },
+        'fade-in-chart': {
+          'from': { opacity: '0' },
+          'to': { opacity: '1' },
+        },
         'slide-in-letter': {
             '0%': { opacity: '0', transform: 'translateY(10px)' },
             '100%': { opacity: '1', transform: 'translateY(0)' },
@@ -96,6 +104,7 @@ export default {
       animation: {
         'fade-in': 'fadeIn 0.5s ease forwards',
         'slide-in-up': 'slideInUp 0.5s cubic-bezier(0.25, 1, 0.5, 1) forwards',
+        'stagger-in': 'staggerIn 0.4s ease-out backwards',
         'gradient-bg': 'gradientBg 20s ease infinite',
         'form-entry': 'formEntry 0.7s cubic-bezier(0.25, 1, 0.5, 1) forwards',
         'twinkle': 'twinkle 2s infinite ease-in-out',
@@ -107,6 +116,7 @@ export default {
         'progress': 'progress 5s linear forwards',
         'whatsapp-pulse': 'whatsapp-pulse 2s infinite',
         'draw-chart': 'draw-chart 2s 0.5s ease-out forwards',
+        'fade-in-chart': 'fade-in-chart 0.5s ease-out forwards',
         'slide-in-letter': 'slide-in-letter 0.5s forwards',
         'nudge-reveal': 'nudge-reveal 4s ease-in-out',
       },

@@ -40,6 +40,7 @@ const SiteHeader: React.FC<SiteHeaderProps> = ({
         />
         <form onSubmit={handleSearchSubmit} className="relative flex-grow">
           <input
+            id="onboarding-search"
             type="text"
             placeholder="ابحث عن منتج..."
             value={searchTerm}
@@ -55,6 +56,7 @@ const SiteHeader: React.FC<SiteHeaderProps> = ({
           </button>
         </form>
         <button
+          id="onboarding-filter"
           onClick={onFilterClick}
           className="relative flex-shrink-0 p-2 rounded-full text-slate-600 dark:text-slate-300 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 hover:bg-slate-100 dark:hover:bg-slate-800"
         >

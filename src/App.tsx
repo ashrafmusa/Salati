@@ -5,6 +5,7 @@ import { AuthProvider } from "./contexts/AuthContext";
 import { ThemeProvider } from "./contexts/ThemeContext";
 import { WishlistProvider } from "./contexts/WishlistContext";
 import { SettingsProvider } from "./contexts/SettingsContext";
+import { OnboardingProvider } from "./contexts/OnboardingContext";
 import FullScreenLoader from "./components/FullScreenLoader";
 
 // --- Lazy-loaded Screen Components ---
@@ -42,62 +43,67 @@ const App: React.FC = () => {
         <SettingsProvider>
           <CartProvider>
             <WishlistProvider>
-              <HashRouter>
-                <Suspense fallback={<FullScreenLoader />}>
-                  <div className="animate-slide-in-up">
-                    <Routes>
-                      {/* The login page is standalone and does not use the main layout. */}
-                      <Route path="/login" element={<LoginScreen />} />
+              <OnboardingProvider>
+                <HashRouter>
+                  <Suspense fallback={<FullScreenLoader />}>
+                    <div className="animate-slide-in-up">
+                      <Routes>
+                        {/* The login page is standalone and does not use the main layout. */}
+                        <Route path="/login" element={<LoginScreen />} />
 
-                      {/* --- ROUTES WITH MAIN LAYOUT --- */}
-                      <Route element={<MainLayout />}>
-                        {/* Public routes */}
-                        <Route path="/" element={<HomeScreen />} />
-                        <Route
-                          path="/search"
-                          element={<SearchResultsScreen />}
-                        />
-                        <Route
-                          path="/product/:id"
-                          element={<ProductDetailScreen />}
-                        />
-                        <Route path="/terms" element={<TermsScreen />} />
-                        <Route
-                          path="/privacy"
-                          element={<PrivacyPolicyScreen />}
-                        />
+                        {/* --- ROUTES WITH MAIN LAYOUT --- */}
+                        <Route element={<MainLayout />}>
+                          {/* Public routes */}
+                          <Route path="/" element={<HomeScreen />} />
+                          <Route
+                            path="/search"
+                            element={<SearchResultsScreen />}
+                          />
+                          <Route
+                            path="/product/:id"
+                            element={<ProductDetailScreen />}
+                          />
+                          <Route path="/terms" element={<TermsScreen />} />
+                          <Route
+                            path="/privacy"
+                            element={<PrivacyPolicyScreen />}
+                          />
 
-                        {/* Protected routes */}
-                        <Route element={<ProtectedRoute />}>
-                          <Route path="/cart" element={<CartScreen />} />
-                          <Route
-                            path="/wishlist"
-                            element={<WishlistScreen />}
-                          />
-                          <Route
-                            path="/orders"
-                            element={<OrderHistoryScreen />}
-                          />
-                          <Route path="/profile" element={<ProfileScreen />} />
-                          <Route
-                            path="/checkout"
-                            element={<CheckoutScreen />}
-                          />
+                          {/* Protected routes */}
+                          <Route element={<ProtectedRoute />}>
+                            <Route path="/cart" element={<CartScreen />} />
+                            <Route
+                              path="/wishlist"
+                              element={<WishlistScreen />}
+                            />
+                            <Route
+                              path="/orders"
+                              element={<OrderHistoryScreen />}
+                            />
+                            <Route
+                              path="/profile"
+                              element={<ProfileScreen />}
+                            />
+                            <Route
+                              path="/checkout"
+                              element={<CheckoutScreen />}
+                            />
+                          </Route>
                         </Route>
-                      </Route>
 
-                      {/* The order success page is also standalone. */}
-                      <Route
-                        path="/order-success/:orderId"
-                        element={<OrderSuccessScreen />}
-                      />
+                        {/* The order success page is also standalone. */}
+                        <Route
+                          path="/order-success/:orderId"
+                          element={<OrderSuccessScreen />}
+                        />
 
-                      {/* A fallback route to redirect any unknown paths to the home page. */}
-                      <Route path="*" element={<Navigate to="/" replace />} />
-                    </Routes>
-                  </div>
-                </Suspense>
-              </HashRouter>
+                        {/* A fallback route to redirect any unknown paths to the home page. */}
+                        <Route path="*" element={<Navigate to="/" replace />} />
+                      </Routes>
+                    </div>
+                  </Suspense>
+                </HashRouter>
+              </OnboardingProvider>
             </WishlistProvider>
           </CartProvider>
         </SettingsProvider>

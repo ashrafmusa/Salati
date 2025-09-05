@@ -213,8 +213,12 @@ const HomeScreen: React.FC = () => {
           <section>
             <SectionHeader title="الأكثر تقييماً" />
             <div className="flex gap-6 overflow-x-auto pb-4 -mx-4 px-4 no-scrollbar">
-              {topRatedProducts.map((product) => (
-                <div key={product.id} className="w-64 sm:w-72 flex-shrink-0">
+              {topRatedProducts.map((product, index) => (
+                <div
+                  key={product.id}
+                  className="w-64 sm:w-72 flex-shrink-0 animate-stagger-in"
+                  style={{ animationDelay: `${index * 50}ms` }}
+                >
                   <ProductCard product={product} />
                 </div>
               ))}
@@ -233,8 +237,21 @@ const HomeScreen: React.FC = () => {
             />
           ) : (
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
-              {filteredProducts.map((product: Product) => (
-                <ProductCard key={product.id} product={product} />
+              {filteredProducts.map((product: Product, index) => (
+                <div
+                  key={product.id}
+                  className="animate-stagger-in"
+                  style={{ animationDelay: `${index * 50}ms` }}
+                >
+                  <ProductCard
+                    product={product}
+                    onboardingId={
+                      index === 0
+                        ? `onboarding-add-to-cart-${product.id}`
+                        : undefined
+                    }
+                  />
+                </div>
               ))}
             </div>
           )}
