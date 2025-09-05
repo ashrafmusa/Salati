@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef } from "react";
+import React, { useState, useEffect, useRef, useCallback } from "react";
 import { useOnboarding } from "../contexts/OnboardingContext";
 import { ChevronLeftIcon, ChevronRightIcon } from "../assets/icons";
 
@@ -60,75 +60,13 @@ const OnboardingGuide: React.FC = () => {
 
   const step = TUTORIAL_STEPS[currentStep];
 
-  useEffect(() => {
-    const updateHighlight = () => {
-      const element = document.querySelector(step.selector);
-      if (element) {
-        element.scrollIntoView({
-          behavior: "smooth",
-          block: "center",
-          inline: "center",
-        });
-        const rect = element.getBoundingClientRect();
-        setHighlightRect({
-          top: rect.top,
-          left: rect.left,
-          width: rect.width,
-          height: rect.height,
-        });
-      }
-    };
-
-    // Allow time for scrolling and rendering before highlighting
-    const timer = setTimeout(updateHighlight, 300);
-    window.addEventListener("resize", updateHighlight);
-
-    return () => {
-      clearTimeout(timer);
-      window.removeEventListener("resize", updateHighlight);
-    };
-  }, [currentStep, step.selector]);
-
-  const getTooltipPosition = () => {
-    if (!highlightRect || !tooltipRef.current) return {};
-
-    const tooltipHeight = tooltipRef.current.offsetHeight;
-    const tooltipWidth = tooltipRef.current.offsetWidth;
-    const margin = 16;
-
-    switch (step.position) {
-      case "top":
-        return {
-          top: highlightRect.top - tooltipHeight - margin,
-          left: highlightRect.left + highlightRect.width / 2 - tooltipWidth / 2,
-        };
-      case "bottom":
-        return {
-          top: highlightRect.top + highlightRect.height + margin,
-          left: highlightRect.left + highlightRect.width / 2 - tooltipWidth / 2,
-        };
-      case "left":
-        return {
-          top: highlightRect.top + highlightRect.height / 2 - tooltipHeight / 2,
-          left: highlightRect.left - tooltipWidth - margin,
-        };
-      case "right":
-        return {
-          top: highlightRect.top + highlightRect.height / 2 - tooltipHeight / 2,
-          left: highlightRect.left + highlightRect.width + margin,
-        };
-      default:
-        return {};
-    }
-  };
-
-  const nextStep = () => {
+  const nextStep = useCallback(() => {
     if (currentStep < TUTORIAL_STEPS.length - 1) {
       setCurrentStep(currentStep + 1);
     } else {
       finishGuide();
     }
-  };
+  }, [currentStep, finishGuide]);
 
   const prevStep = () => {
     if (currentStep > 0) {
@@ -136,9 +74,112 @@ const OnboardingGuide: React.FC = () => {
     }
   };
 
+  useEffect(() => {
+    setHighlightRect(null); // Clear previous highlight while searching for the new one
+    let elementPoll: number | undefined;
+
+    const findAndHighlight = () => {
+      const element = document.querySelector(step.selector);
+      if (element) {
+        clearInterval(elementPoll);
+
+        element.scrollIntoView({
+          behavior: "smooth",
+          block: "center",
+          inline: "center",
+        });
+
+        // Wait for the smooth scroll to finish before calculating position.
+        setTimeout(() => {
+          const rect = element.getBoundingClientRect();
+          setHighlightRect({
+            top: rect.top,
+            left: rect.left,
+            width: rect.width,
+            height: rect.height,
+          });
+        }, 400); // Increased timeout for better reliability
+      }
+    };
+
+    // Poll for the element in case it's lazy-loaded or appears after data fetching.
+    elementPoll = window.setInterval(findAndHighlight, 100);
+
+    // Stop polling after a reasonable time to prevent infinite loops.
+    const pollTimeout = setTimeout(() => {
+      clearInterval(elementPoll);
+      // If the element still isn't found, skip to the next step.
+      if (!document.querySelector(step.selector)) {
+        console.warn(
+          `Onboarding element not found: ${step.selector}, skipping.`
+        );
+        nextStep();
+      }
+    }, 3000); // 3 seconds timeout
+
+    window.addEventListener("resize", findAndHighlight);
+
+    return () => {
+      clearInterval(elementPoll);
+      clearTimeout(pollTimeout);
+      window.removeEventListener("resize", findAndHighlight);
+    };
+  }, [currentStep, step.selector, nextStep]);
+
+  const getTooltipPosition = () => {
+    if (!highlightRect || !tooltipRef.current) return {};
+
+    const tooltipHeight = tooltipRef.current.offsetHeight;
+    const tooltipWidth = tooltipRef.current.offsetWidth;
+    const margin = 16; // Viewport margin
+    let pos = { top: 0, left: 0 };
+
+    switch (step.position) {
+      case "top":
+        pos = {
+          top: highlightRect.top - tooltipHeight - margin,
+          left: highlightRect.left + highlightRect.width / 2 - tooltipWidth / 2,
+        };
+        break;
+      case "bottom":
+        pos = {
+          top: highlightRect.top + highlightRect.height + margin,
+          left: highlightRect.left + highlightRect.width / 2 - tooltipWidth / 2,
+        };
+        break;
+      case "left":
+        pos = {
+          top: highlightRect.top + highlightRect.height / 2 - tooltipHeight / 2,
+          left: highlightRect.left - tooltipWidth - margin,
+        };
+        break;
+      case "right":
+        pos = {
+          top: highlightRect.top + highlightRect.height / 2 - tooltipHeight / 2,
+          left: highlightRect.left + highlightRect.width + margin,
+        };
+        break;
+    }
+
+    // Constrain to viewport to prevent the tooltip from going off-screen.
+    if (pos.left < margin) {
+      pos.left = margin;
+    }
+    if (pos.left + tooltipWidth > window.innerWidth - margin) {
+      pos.left = window.innerWidth - tooltipWidth - margin;
+    }
+    if (pos.top < margin) {
+      pos.top = margin;
+    }
+    if (pos.top + tooltipHeight > window.innerHeight - margin) {
+      pos.top = window.innerHeight - tooltipHeight - margin;
+    }
+
+    return pos;
+  };
+
   const tooltipStyle = {
     ...getTooltipPosition(),
-    "--arrow-position": step.position === "top" ? "bottom" : "top",
   };
 
   return (
