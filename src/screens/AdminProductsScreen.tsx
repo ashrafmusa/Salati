@@ -304,30 +304,42 @@ const AdminBundlesScreen: React.FC = () => {
   const { showToast } = useToast();
 
   useEffect(() => {
-    const unsubscribers = [
-      onSnapshot(collection(db, "bundles"), (snapshot) => {
+    const unsubs: (() => void)[] = [];
+
+    const bundlesQuery = query(collection(db, "bundles"));
+    unsubs.push(
+      onSnapshot(bundlesQuery, (snapshot) => {
         setBundles(
           snapshot.docs.map((doc) => ({ id: doc.id, ...doc.data() } as Bundle))
         );
         setLoading(false);
-      }),
-      onSnapshot(
-        query(collection(db, "categories"), orderBy("sortOrder")),
-        (snapshot) => {
-          setCategories(
-            snapshot.docs.map(
-              (doc) => ({ id: doc.id, ...doc.data() } as Category)
-            )
-          );
-        }
-      ),
-      onSnapshot(collection(db, "items"), (snapshot) => {
+      })
+    );
+
+    const categoriesQuery = query(
+      collection(db, "categories"),
+      orderBy("sortOrder")
+    );
+    unsubs.push(
+      onSnapshot(categoriesQuery, (snapshot) => {
+        setCategories(
+          snapshot.docs.map(
+            (doc) => ({ id: doc.id, ...doc.data() } as Category)
+          )
+        );
+      })
+    );
+
+    const itemsQuery = query(collection(db, "items"));
+    unsubs.push(
+      onSnapshot(itemsQuery, (snapshot) => {
         setItems(
           snapshot.docs.map((doc) => ({ id: doc.id, ...doc.data() } as Item))
         );
-      }),
-    ];
-    return () => unsubscribers.forEach((unsub) => unsub());
+      })
+    );
+
+    return () => unsubs.forEach((unsub) => unsub());
   }, []);
 
   const filteredBundles = useMemo(() => {
@@ -341,12 +353,13 @@ const AdminBundlesScreen: React.FC = () => {
   const handleSaveBundle = async (bundleToSave: Bundle) => {
     setIsSaving(true);
     const { id, ...bundleData } = bundleToSave;
+    const bundleDocRef = doc(db, "bundles", id);
     try {
       if (editingBundle) {
-        await updateDoc(doc(db, "bundles", id), bundleData);
+        await updateDoc(bundleDocRef, bundleData);
         showToast("Bundle updated successfully!", "success");
       } else {
-        await setDoc(doc(db, "bundles", id), bundleData);
+        await setDoc(bundleDocRef, bundleData);
         showToast("Bundle added successfully!", "success");
       }
     } catch (error) {
@@ -358,8 +371,9 @@ const AdminBundlesScreen: React.FC = () => {
 
   const confirmDelete = async () => {
     if (!bundleToDelete) return;
+    const bundleDocRef = doc(db, "bundles", bundleToDelete.id);
     try {
-      await deleteDoc(doc(db, "bundles", bundleToDelete.id));
+      await deleteDoc(bundleDocRef);
       showToast("Bundle deleted successfully.", "success");
     } catch (error) {
       showToast("Failed to delete bundle.", "error");
@@ -448,6 +462,66 @@ const AdminBundlesScreen: React.FC = () => {
                   ))}
                 </tbody>
               </table>
+            </div>
+            {/* Mobile Card View */}
+            <div className="space-y-4 md:hidden">
+              {filteredBundles.map((bundle) => (
+                <div
+                  key={bundle.id}
+                  className="bg-slate-50 dark:bg-slate-800/50 p-4 rounded-lg shadow-sm border dark:border-slate-700 space-y-3"
+                >
+                  <div className="flex items-start gap-4">
+                    <img
+                      src={getOptimizedImageUrl(bundle.imageUrl, 150)}
+                      alt={bundle.arabicName}
+                      className="w-20 h-20 rounded-md object-cover flex-shrink-0"
+                    />
+                    <div className="flex-grow">
+                      <p className="font-bold text-lg text-slate-800 dark:text-slate-100">
+                        {bundle.arabicName}
+                      </p>
+                      <p className="text-sm text-slate-500 dark:text-slate-400">
+                        {bundle.category}
+                      </p>
+                    </div>
+                  </div>
+                  <div className="grid grid-cols-2 gap-4 text-center pt-3 border-t dark:border-slate-700">
+                    <div>
+                      <p className="text-xs text-slate-500 dark:text-slate-400">
+                        السعر
+                      </p>
+                      <p className="font-semibold text-slate-700 dark:text-slate-200">
+                        {calculateBundlePrice(bundle, items)} ج.س
+                      </p>
+                    </div>
+                    <div>
+                      <p className="text-xs text-slate-500 dark:text-slate-400">
+                        المخزون
+                      </p>
+                      <p className="font-semibold text-slate-700 dark:text-slate-200">
+                        {bundle.stock}
+                      </p>
+                    </div>
+                  </div>
+                  <div className="flex justify-end gap-4 mt-2 pt-2 border-t dark:border-slate-600">
+                    <button
+                      onClick={() => {
+                        setEditingBundle(bundle);
+                        setIsModalOpen(true);
+                      }}
+                      className="text-admin-primary font-semibold"
+                    >
+                      تعديل
+                    </button>
+                    <button
+                      onClick={() => setBundleToDelete(bundle)}
+                      className="text-red-500 font-semibold"
+                    >
+                      حذف
+                    </button>
+                  </div>
+                </div>
+              ))}
             </div>
           </>
         )}
