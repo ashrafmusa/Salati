@@ -6,7 +6,6 @@ import {
   PackageIcon,
   CustomersIcon,
   CurrencyDollarIcon,
-  BeakerIcon,
 } from "../assets/adminIcons";
 // FIX: The `Product` type is obsolete. Switched to `Item` for fetching low stock items.
 import { AdminOrder, OrderStatus, Item } from "../types";
@@ -14,7 +13,6 @@ import { db } from "../firebase/config";
 import { collection, query, where, onSnapshot } from "firebase/firestore";
 import DonutChart from "../components/DonutChart";
 import LineChart from "../components/LineChart";
-import IdeaGeneratorModal from "../components/IdeaGeneratorModal";
 
 const getStatusConfig = (status: OrderStatus) => {
   switch (status) {
@@ -164,8 +162,6 @@ const AdminDashboardScreen: React.FC = () => {
     { label: string; value: number }[]
   >([]);
   const [recentOrders, setRecentOrders] = useState<AdminOrder[]>([]);
-  const [allItems, setAllItems] = useState<Item[]>([]);
-  const [isIdeaModalOpen, setIsIdeaModalOpen] = useState(false);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
@@ -210,14 +206,13 @@ const AdminDashboardScreen: React.FC = () => {
       })
     );
 
-    // Items listener
+    // Items listener for low stock count
     const itemsQuery = query(collection(db, "items"));
     unsubs.push(
       onSnapshot(itemsQuery, (snapshot) => {
         const products = snapshot.docs.map(
           (doc) => ({ id: doc.id, ...doc.data() } as Item)
         );
-        setAllItems(products);
         const lowStockItems = products.filter(
           (p) => (p.stock || 0) < 20
         ).length;
@@ -288,22 +283,13 @@ const AdminDashboardScreen: React.FC = () => {
 
   return (
     <div className="space-y-8">
-      <div className="flex flex-col md:flex-row justify-between items-center gap-4">
-        <div>
-          <h1 className="text-2xl font-bold text-slate-800 dark:text-slate-100">
-            نظرة عامة على لوحة التحكم
-          </h1>
-          <p className="text-slate-500 dark:text-slate-400">
-            أهلاً بعودتك! إليك آخر المستجدات.
-          </p>
-        </div>
-        <button
-          onClick={() => setIsIdeaModalOpen(true)}
-          className="flex items-center gap-2 px-4 py-2 bg-primary/10 text-primary font-semibold rounded-lg hover:bg-primary/20 transition-colors w-full md:w-auto justify-center"
-        >
-          <BeakerIcon className="w-5 h-5" />
-          اقتراح حزم جديدة بالذكاء الاصطناعي
-        </button>
+      <div>
+        <h1 className="text-2xl font-bold text-slate-800 dark:text-slate-100">
+          نظرة عامة على لوحة التحكم
+        </h1>
+        <p className="text-slate-500 dark:text-slate-400">
+          أهلاً بعودتك! إليك آخر المستجدات.
+        </p>
       </div>
 
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
@@ -374,11 +360,6 @@ const AdminDashboardScreen: React.FC = () => {
           </div>
         </div>
       </div>
-      <IdeaGeneratorModal
-        isOpen={isIdeaModalOpen}
-        onClose={() => setIsIdeaModalOpen(false)}
-        allItems={allItems}
-      />
     </div>
   );
 };

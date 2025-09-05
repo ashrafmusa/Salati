@@ -2,13 +2,14 @@ import React, { useState, useEffect, useCallback } from "react";
 import { Item } from "../types";
 import { generateBundleIdeas, BundleIdea } from "../utils/gemini";
 import { SpinnerIcon, CloseIcon } from "../assets/icons";
-import { BeakerIcon } from "../assets/adminIcons";
+import { BeakerIcon, PlusIcon } from "../assets/adminIcons";
 
 const IdeaGeneratorModal: React.FC<{
   isOpen: boolean;
   onClose: () => void;
   allItems: Item[];
-}> = ({ isOpen, onClose, allItems }) => {
+  onCreateBundle: (idea: BundleIdea) => void;
+}> = ({ isOpen, onClose, allItems, onCreateBundle }) => {
   const [ideas, setIdeas] = useState<BundleIdea[]>([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -78,25 +79,34 @@ const IdeaGeneratorModal: React.FC<{
               {ideas.map((idea, index) => (
                 <div
                   key={index}
-                  className="bg-slate-50 dark:bg-slate-900 p-4 rounded-lg border dark:border-slate-700 space-y-2 animate-stagger-in"
+                  className="bg-slate-50 dark:bg-slate-900 p-4 rounded-lg border dark:border-slate-700 flex flex-col justify-between animate-stagger-in"
                   style={{ animationDelay: `${index * 100}ms` }}
                 >
-                  <h3 className="font-bold text-lg text-primary">
-                    {idea.bundleName}
-                  </h3>
-                  <p className="text-sm text-slate-600 dark:text-slate-300">
-                    {idea.description}
-                  </p>
                   <div>
-                    <h4 className="text-sm font-semibold text-slate-700 dark:text-slate-200 mt-2">
-                      Suggested Items:
-                    </h4>
-                    <ul className="list-disc list-inside text-sm text-slate-600 dark:text-slate-400 mt-1 space-y-1">
-                      {idea.itemNames.map((itemName, i) => (
-                        <li key={i}>{itemName}</li>
-                      ))}
-                    </ul>
+                    <h3 className="font-bold text-lg text-primary">
+                      {idea.bundleName}
+                    </h3>
+                    <p className="text-sm text-slate-600 dark:text-slate-300 mt-1">
+                      {idea.description}
+                    </p>
+                    <div className="mt-2">
+                      <h4 className="text-sm font-semibold text-slate-700 dark:text-slate-200 mt-2">
+                        Suggested Items:
+                      </h4>
+                      <ul className="list-disc list-inside text-sm text-slate-600 dark:text-slate-400 mt-1 space-y-1">
+                        {idea.itemNames.map((itemName, i) => (
+                          <li key={i}>{itemName}</li>
+                        ))}
+                      </ul>
+                    </div>
                   </div>
+                  <button
+                    onClick={() => onCreateBundle(idea)}
+                    className="mt-4 w-full bg-primary/10 text-primary font-semibold py-2 rounded-md hover:bg-primary/20 transition-colors text-sm flex items-center justify-center gap-2"
+                  >
+                    <PlusIcon className="w-4 h-4" />
+                    إنشاء حزمة من هذه الفكرة
+                  </button>
                 </div>
               ))}
             </div>
@@ -109,7 +119,7 @@ const IdeaGeneratorModal: React.FC<{
             disabled={loading}
             className="px-6 py-2 bg-primary text-white font-semibold rounded-lg hover:bg-secondary transition-colors disabled:bg-slate-400"
           >
-            {loading ? "Generating..." : "Generate New Ideas"}
+            {loading ? "...جاري التوليد" : "توليد أفكار جديدة"}
           </button>
         </footer>
       </div>

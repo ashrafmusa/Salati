@@ -11,7 +11,7 @@ import {
   updateDoc,
   deleteDoc,
 } from "firebase/firestore";
-import { TrashIcon, SpinnerIcon, PlusIcon } from "../assets/icons";
+import { TrashIcon, SpinnerIcon, PlusIcon, SearchIcon } from "../assets/icons";
 import {
   calculateBundlePrice,
   uploadToCloudinary,
@@ -19,7 +19,9 @@ import {
 } from "../utils/helpers";
 import { useToast } from "../contexts/ToastContext";
 import ConfirmationModal from "../components/ConfirmationModal";
-import AdminScreenHeader from "../components/AdminScreenHeader";
+import { BeakerIcon } from "../assets/adminIcons";
+import IdeaGeneratorModal from "../components/IdeaGeneratorModal";
+import { BundleIdea } from "../utils/gemini";
 
 const BundleFormModal: React.FC<{
   bundle?: Bundle | null;
@@ -275,8 +277,8 @@ const BundleFormModal: React.FC<{
                     onClick={() => addContentItem(item)}
                     className="w-full text-right p-2 rounded hover:bg-slate-100 dark:hover:bg-slate-800 flex items-center justify-between gap-4"
                   >
-                    <span>{item.arabicName}</span>
-                    <span className="text-sm text-slate-500">
+                    <span className="flex-grow">{item.arabicName}</span>
+                    <span className="text-sm text-slate-500 flex-shrink-0">
                       {item.price} ج.س
                     </span>
                   </button>
@@ -365,6 +367,7 @@ const AdminBundlesScreen: React.FC = () => {
   const [categories, setCategories] = useState<Category[]>([]);
   const [loading, setLoading] = useState(true);
   const [isModalOpen, setIsModalOpen] = useState(false);
+  const [isIdeaModalOpen, setIsIdeaModalOpen] = useState(false);
   const [editingBundle, setEditingBundle] = useState<Bundle | null>(null);
   const [isSaving, setIsSaving] = useState(false);
   const [bundleToDelete, setBundleToDelete] = useState<Bundle | null>(null);
@@ -418,6 +421,11 @@ const AdminBundlesScreen: React.FC = () => {
     );
   }, [bundles, searchTerm]);
 
+  const itemsInStock = useMemo(
+    () => items.filter((item) => item.stock > 0),
+    [items]
+  );
+
   const handleSaveBundle = async (bundleToSave: Bundle) => {
     setIsSaving(true);
     const { id, ...bundleData } = bundleToSave;
@@ -437,6 +445,34 @@ const AdminBundlesScreen: React.FC = () => {
     setIsModalOpen(false);
   };
 
+  const handleCreateBundleFromIdea = (idea: BundleIdea) => {
+    const itemsInBundle = items.filter((item) =>
+      idea.itemNames.includes(item.arabicName)
+    );
+
+    const newBundleContents: BundleContent[] = itemsInBundle.map((item) => ({
+      itemId: item.id,
+      quantity: 1, // Default quantity
+    }));
+
+    const newBundle: Partial<Bundle> = {
+      id: `bun_${Date.now()}`,
+      type: "bundle",
+      arabicName: idea.bundleName,
+      name: "", // Admin can fill this
+      description: idea.description,
+      contents: newBundleContents,
+      category: "",
+      stock: 0,
+      imageUrl: "",
+      availableExtras: [],
+    };
+
+    setEditingBundle(newBundle as Bundle);
+    setIsIdeaModalOpen(false);
+    setIsModalOpen(true);
+  };
+
   const confirmDelete = async () => {
     if (!bundleToDelete) return;
     const bundleDocRef = doc(db, "bundles", bundleToDelete.id);
@@ -453,17 +489,40 @@ const AdminBundlesScreen: React.FC = () => {
   return (
     <>
       <div className="bg-white dark:bg-slate-800 p-4 md:p-6 rounded-lg shadow-md">
-        <AdminScreenHeader
-          title="إدارة الحزم"
-          buttonText="إضافة حزمة"
-          onButtonClick={() => {
-            setEditingBundle(null);
-            setIsModalOpen(true);
-          }}
-          searchTerm={searchTerm}
-          onSearchChange={setSearchTerm}
-          searchPlaceholder="ابحث عن حزمة..."
-        />
+        <div className="flex flex-col sm:flex-row justify-between items-center mb-6 gap-4">
+          <h2 className="text-xl font-bold text-slate-800 dark:text-slate-100 self-start sm:self-center">
+            إدارة الحزم
+          </h2>
+          <div className="w-full sm:w-auto flex flex-col-reverse sm:flex-row items-center gap-2">
+            <div className="relative w-full sm:w-64">
+              <input
+                type="text"
+                placeholder="ابحث عن حزمة..."
+                value={searchTerm}
+                onChange={(e) => setSearchTerm(e.target.value)}
+                className="w-full p-2 pl-10 border border-slate-300 dark:border-slate-600 rounded-lg focus:ring-2 focus:ring-admin-primary focus:outline-none bg-white dark:bg-slate-700 text-slate-900 dark:text-slate-100 shadow-sm"
+              />
+              <SearchIcon className="w-5 h-5 text-slate-400 absolute left-3 top-1/2 -translate-y-1/2" />
+            </div>
+            <button
+              onClick={() => setIsIdeaModalOpen(true)}
+              className="w-full sm:w-auto flex items-center justify-center bg-primary/10 text-primary font-semibold px-4 py-2 rounded-lg hover:bg-primary/20 transition-all duration-200 whitespace-nowrap"
+            >
+              <BeakerIcon className="w-5 h-5 ml-2" />
+              اقتراح بالـ AI
+            </button>
+            <button
+              onClick={() => {
+                setEditingBundle(null);
+                setIsModalOpen(true);
+              }}
+              className="w-full sm:w-auto flex items-center justify-center bg-admin-primary text-white px-4 py-2 rounded-lg hover:bg-admin-primary-hover transition-all duration-200"
+            >
+              <PlusIcon className="w-5 h-5 ml-2" />
+              إضافة حزمة
+            </button>
+          </div>
+        </div>
 
         {loading ? (
           <p>Loading...</p>
@@ -622,6 +681,13 @@ const AdminBundlesScreen: React.FC = () => {
         title="تأكيد الحذف"
         message={`هل أنت متأكد من رغبتك في حذف الحزمة "${bundleToDelete?.arabicName}"؟`}
         isDestructive={true}
+      />
+
+      <IdeaGeneratorModal
+        isOpen={isIdeaModalOpen}
+        onClose={() => setIsIdeaModalOpen(false)}
+        allItems={itemsInStock}
+        onCreateBundle={handleCreateBundleFromIdea}
       />
     </>
   );
