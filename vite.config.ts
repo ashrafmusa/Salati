@@ -10,23 +10,32 @@ export default defineConfig({
       strategies: 'generateSW',
       registerType: 'autoUpdate',
       injectRegister: 'auto',
+
+      // FIX FOR THE ASSETS ERROR:
+      // This tells the plugin to generate the necessary icons and images
+      // from a single source file (e.g., your logo).
       pwaAssets: {
         disabled: false,
-        config: true,
+        // The `preset` option automatically handles all required icon sizes
+        // from a single source image.
+        preset: 'minimal',
+        images: ['/logo.svg'] // Path to your source image file
       },
+
       manifest: {
         name: 'Salati App',
         short_name: 'Salati',
         description: 'An integrated e-commerce platform for Salati',
-        theme_color: '#ffffff',
+        // It's a good practice to keep the theme color consistent with the HTML file
+        theme_color: '#a9ae8b',
         icons: [
           {
-            src: 'web-app-manifest-192x192.png',
+            src: 'pwa-192x192.png',
             sizes: '192x192',
             type: 'image/png',
           },
           {
-            src: 'web-app-manifest-512x512.png',
+            src: 'pwa-512x512.png',
             sizes: '512x512',
             type: 'image/png',
           },
@@ -37,7 +46,7 @@ export default defineConfig({
             purpose: 'any',
           },
           {
-            src: 'web-app-manifest-512x512.png',
+            src: 'pwa-512x512.png',
             sizes: '512x512',
             type: 'image/png',
             purpose: 'maskable',
@@ -58,8 +67,8 @@ export default defineConfig({
         'favicon.ico',
         'favicon-96x96.png',
         'favicon.svg',
-        'web-app-manifest-192x192.png',
-        'web-app-manifest-512x512.png',
+        'pwa-192x192.png',
+        'pwa-512x512.png',
       ],
     }),
   ],

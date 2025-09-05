@@ -6,6 +6,7 @@ import {
   PackageIcon,
   CustomersIcon,
   CurrencyDollarIcon,
+  BeakerIcon,
 } from "../assets/adminIcons";
 // FIX: The `Product` type is obsolete. Switched to `Item` for fetching low stock items.
 import { AdminOrder, OrderStatus, Item } from "../types";
@@ -13,6 +14,7 @@ import { db } from "../firebase/config";
 import { collection, query, where, onSnapshot } from "firebase/firestore";
 import DonutChart from "../components/DonutChart";
 import LineChart from "../components/LineChart";
+import IdeaGeneratorModal from "../components/IdeaGeneratorModal";
 
 const getStatusConfig = (status: OrderStatus) => {
   switch (status) {
@@ -162,15 +164,17 @@ const AdminDashboardScreen: React.FC = () => {
     { label: string; value: number }[]
   >([]);
   const [recentOrders, setRecentOrders] = useState<AdminOrder[]>([]);
+  const [allItems, setAllItems] = useState<Item[]>([]);
+  const [isIdeaModalOpen, setIsIdeaModalOpen] = useState(false);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    const sevenDaysAgo = new Date();
-    sevenDaysAgo.setDate(sevenDaysAgo.getDate() - 7);
-    sevenDaysAgo.setHours(0, 0, 0, 0);
+    const unsubs: (() => void)[] = [];
 
-    const unsubscribers = [
-      onSnapshot(collection(db, "orders"), (snapshot) => {
+    // Orders listener
+    const ordersQuery = query(collection(db, "orders"));
+    unsubs.push(
+      onSnapshot(ordersQuery, (snapshot) => {
         const orders = snapshot.docs.map(
           (doc) => ({ id: doc.id, ...doc.data() } as AdminOrder)
         );
@@ -191,68 +195,82 @@ const AdminDashboardScreen: React.FC = () => {
 
         setStats((prev) => ({ ...prev, totalRevenue, newOrders }));
         setRecentOrders(sortedRecent);
-        setLoading(false);
-      }),
-      onSnapshot(
-        query(collection(db, "users"), where("role", "==", "customer")),
-        (snapshot) => {
-          setStats((prev) => ({ ...prev, customerCount: snapshot.size }));
-        }
-      ),
-      // FIX: The `products` collection is deprecated. Fetching from `items` instead.
-      onSnapshot(collection(db, "items"), (snapshot) => {
-        const products = snapshot.docs.map((doc) => doc.data() as Item);
+        setLoading(false); // Set loading to false after the main data is fetched
+      })
+    );
+
+    // Users listener
+    const usersQuery = query(
+      collection(db, "users"),
+      where("role", "==", "customer")
+    );
+    unsubs.push(
+      onSnapshot(usersQuery, (snapshot) => {
+        setStats((prev) => ({ ...prev, customerCount: snapshot.size }));
+      })
+    );
+
+    // Items listener
+    const itemsQuery = query(collection(db, "items"));
+    unsubs.push(
+      onSnapshot(itemsQuery, (snapshot) => {
+        const products = snapshot.docs.map(
+          (doc) => ({ id: doc.id, ...doc.data() } as Item)
+        );
+        setAllItems(products);
         const lowStockItems = products.filter(
           (p) => (p.stock || 0) < 20
         ).length;
         setStats((prev) => ({ ...prev, lowStockItems }));
-      }),
-      // New listener for revenue trend chart
-      onSnapshot(
-        query(
-          collection(db, "orders"),
-          where("date", ">=", sevenDaysAgo.toISOString()),
-          where("paymentStatus", "==", "paid")
-        ),
-        (snapshot) => {
-          const paidOrders = snapshot.docs.map(
-            (doc) => doc.data() as AdminOrder
-          );
+      })
+    );
 
-          const dailyRevenue = new Map<string, number>();
-          for (let i = 0; i < 7; i++) {
-            const d = new Date();
-            d.setDate(d.getDate() - i);
-            const key = d.toLocaleDateString("en-CA"); // YYYY-MM-DD format
-            dailyRevenue.set(key, 0);
-          }
+    // Revenue listener (last 7 days)
+    const sevenDaysAgo = new Date();
+    sevenDaysAgo.setDate(sevenDaysAgo.getDate() - 7);
+    sevenDaysAgo.setHours(0, 0, 0, 0);
+    const revenueQuery = query(
+      collection(db, "orders"),
+      where("date", ">=", sevenDaysAgo.toISOString()),
+      where("paymentStatus", "==", "paid")
+    );
+    unsubs.push(
+      onSnapshot(revenueQuery, (snapshot) => {
+        const paidOrders = snapshot.docs.map((doc) => doc.data() as AdminOrder);
 
-          paidOrders.forEach((order) => {
-            const orderDate = new Date(order.date);
-            const key = orderDate.toLocaleDateString("en-CA");
-            if (dailyRevenue.has(key)) {
-              dailyRevenue.set(key, (dailyRevenue.get(key) || 0) + order.total);
-            }
-          });
-
-          const chartData = Array.from(dailyRevenue.entries())
-            .map(([date, revenue]) => {
-              const d = new Date(date);
-              const label = d.toLocaleDateString("ar-EG", {
-                month: "short",
-                day: "numeric",
-              });
-              return { label, value: revenue, date: d };
-            })
-            .sort((a, b) => a.date.getTime() - b.date.getTime())
-            .map(({ label, value }) => ({ label, value }));
-
-          setRevenueData(chartData);
+        const dailyRevenue = new Map<string, number>();
+        for (let i = 0; i < 7; i++) {
+          const d = new Date();
+          d.setDate(d.getDate() - i);
+          const key = d.toLocaleDateString("en-CA");
+          dailyRevenue.set(key, 0);
         }
-      ),
-    ];
 
-    return () => unsubscribers.forEach((unsub) => unsub());
+        paidOrders.forEach((order) => {
+          const orderDate = new Date(order.date);
+          const key = orderDate.toLocaleDateString("en-CA");
+          if (dailyRevenue.has(key)) {
+            dailyRevenue.set(key, (dailyRevenue.get(key) || 0) + order.total);
+          }
+        });
+
+        const chartData = Array.from(dailyRevenue.entries())
+          .map(([date, revenue]) => {
+            const d = new Date(date);
+            const label = d.toLocaleDateString("ar-EG", {
+              month: "short",
+              day: "numeric",
+            });
+            return { label, value: revenue, date: d };
+          })
+          .sort((a, b) => a.date.getTime() - b.date.getTime())
+          .map(({ label, value }) => ({ label, value }));
+
+        setRevenueData(chartData);
+      })
+    );
+
+    return () => unsubs.forEach((unsub) => unsub());
   }, []);
 
   const chartData = useMemo(() => {
@@ -270,6 +288,24 @@ const AdminDashboardScreen: React.FC = () => {
 
   return (
     <div className="space-y-8">
+      <div className="flex flex-col md:flex-row justify-between items-center gap-4">
+        <div>
+          <h1 className="text-2xl font-bold text-slate-800 dark:text-slate-100">
+            نظرة عامة على لوحة التحكم
+          </h1>
+          <p className="text-slate-500 dark:text-slate-400">
+            أهلاً بعودتك! إليك آخر المستجدات.
+          </p>
+        </div>
+        <button
+          onClick={() => setIsIdeaModalOpen(true)}
+          className="flex items-center gap-2 px-4 py-2 bg-primary/10 text-primary font-semibold rounded-lg hover:bg-primary/20 transition-colors w-full md:w-auto justify-center"
+        >
+          <BeakerIcon className="w-5 h-5" />
+          اقتراح حزم جديدة بالذكاء الاصطناعي
+        </button>
+      </div>
+
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
         <StatCard
           to="/orders"
@@ -293,7 +329,6 @@ const AdminDashboardScreen: React.FC = () => {
           colorClass="bg-status-delivering"
         />
         <StatCard
-          // FIX: The link pointed to a non-existent `/products` route. Corrected to `/items`.
           to="/items"
           title="منتجات تحتاج إعادة تخزين"
           value={loading ? "..." : stats.lowStockItems}
@@ -339,9 +374,13 @@ const AdminDashboardScreen: React.FC = () => {
           </div>
         </div>
       </div>
+      <IdeaGeneratorModal
+        isOpen={isIdeaModalOpen}
+        onClose={() => setIsIdeaModalOpen(false)}
+        allItems={allItems}
+      />
     </div>
   );
 };
 
-// FIX: Added default export to fix lazy loading issue.
 export default AdminDashboardScreen;
