@@ -13,7 +13,8 @@ const MainLayout = lazy(() => import("./components/MainLayout"));
 const ProtectedRoute = lazy(() => import("./components/ProtectedRoute"));
 const HomeScreen = lazy(() => import("./screens/HomeScreen"));
 const SearchResultsScreen = lazy(() => import("./screens/SearchResultsScreen"));
-const ProductDetailScreen = lazy(() => import("./screens/ProductDetailScreen"));
+const BundleDetailScreen = lazy(() => import("./screens/BundleDetailScreen"));
+const ItemDetailScreen = lazy(() => import("./screens/ItemDetailScreen"));
 const CartScreen = lazy(() => import("./screens/CartScreen"));
 const OrderHistoryScreen = lazy(() => import("./screens/OrderHistoryScreen"));
 const CheckoutScreen = lazy(() => import("./screens/CheckoutScreen"));
@@ -60,8 +61,12 @@ const App: React.FC = () => {
                             element={<SearchResultsScreen />}
                           />
                           <Route
-                            path="/product/:id"
-                            element={<ProductDetailScreen />}
+                            path="/bundle/:id"
+                            element={<BundleDetailScreen />}
+                          />
+                          <Route
+                            path="/item/:id"
+                            element={<ItemDetailScreen />}
                           />
                           <Route path="/terms" element={<TermsScreen />} />
                           <Route

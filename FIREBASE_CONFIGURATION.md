@@ -1,99 +1,145 @@
-# Firebase Configuration Guide for Salati App
 
-This document provides a step-by-step guide to connect the Salati application to a live Firebase backend, replacing the current mock data and `localStorage` implementation with a scalable, real-time solution.
+
+# Firebase Integration Guide for Salati App
+
+This document provides a step-by-step guide to connect the Salati application to a live Firebase backend, replacing the current mock data and `localStorage` implementation.
+
+## Prerequisites
+
+Before you begin, ensure you have the following:
+
+1.  A Google Account.
+2.  A [Firebase](https://firebase.google.com/) account (you can sign up with your Google account).
+
+---
 
 ## Step 1: Create a Firebase Project
-
-First, you need a Firebase project to host your backend services.
 
 1.  Go to the [Firebase Console](https://console.firebase.google.com/).
 2.  Click on **"Add project"** and give your project a name (e.g., "Salati-App").
 3.  Follow the on-screen instructions. You can disable Google Analytics for this project if you wish.
-4.  Once your project is ready, click the **Web icon (`</>`)** on the project overview page to add a new web app.
+4.  Once your project is ready, click the Web icon (`</>`) to add a new web app.
 5.  Register your app with a nickname (e.g., "Salati Web App").
-6.  Firebase will provide you with a configuration object. **Copy this `firebaseConfig` object.** You will need it in Step 5.
+6.  Firebase will provide you with a configuration object. **Copy this object.** It will look like this:
+
+    ```javascript
+    const firebaseConfig = {
+      apiKey: "AIza...",
+      authDomain: "your-project-id.firebaseapp.com",
+      projectId: "your-project-id",
+      storageBucket: "your-project-id.appspot.com",
+      messagingSenderId: "...",
+      appId: "1:..."
+    };
+    ```
 
 ---
 
-## Step 2: Set Up Firebase Authentication with Phone Sign-In
+## Step 2: Configure Firebase in the App
 
-The app is designed for users to sign in with their mobile number via a One-Time Password (OTP).
+The project is now set up to use environment variables for security. You will need to create a `.env.local` file for development and configure these variables in your hosting provider (e.g., Netlify) for production.
+
+1.  Create a file named `.env.local` in the root of your project.
+2.  Copy the contents of `.env.example` into this new file.
+3.  Replace the placeholder values in `.env.local` with your actual Firebase config values.
+
+---
+
+## Step 3: Set Up Firebase Authentication
+
+The app uses both phone and email authentication.
 
 1.  In the Firebase Console, go to **Authentication** from the left-hand menu.
 2.  Click the **"Sign-in method"** tab.
-3.  Select **"Phone"** from the list of providers and **enable it**.
-4.  **Important**: For the reCAPTCHA verification to work on your local machine, you must authorize your development domain.
-    *   Go to Authentication -> Settings -> **Authorized domains**.
+3.  Select **"Phone"** from the list of providers and enable it.
+4.  Select **"Email/Password"** from the list and enable it.
+5.  **Important**: For the reCAPTCHA verification to work during development, you must add your local development domain to the authorized domains.
+    *   Go to Authentication -> Settings -> Authorized domains.
     *   Click **"Add domain"** and add `localhost`.
 
 ---
 
-## Step 3: Set Up Cloud Firestore Database
-
-Firestore will store all your application data, from products to user orders.
+## Step 4: Set Up Cloud Firestore Database
 
 1.  In the Firebase Console, go to **Firestore Database**.
 2.  Click **"Create database"**.
-3.  Start in **Production mode**. This ensures your data is secure by default.
-4.  Choose a location for your database (e.g., `us-central`). Click **"Enable"**.
-
-Your database will use the following collections based on the app's structure:
--   `products`: For all products like groceries, electronics, etc.
--   `extras`: For all optional extra items.
--   `promotionalBanners`: For promotional banners on the home screen.
--   `reviews`: For user-submitted reviews.
--   `users`: Stores public information for each user.
-    -   `users/{userId}/orders`: A subcollection for each user's order history.
-    -   `users/{userId}/wishlist`: A subcollection for each user's favorited items.
+3.  Start in **Production mode**. This ensures your data is secure from the start.
+4.  Choose a location for your database (e.g., `us-central`).
 
 ---
 
-## Step 4: Configure Firestore Security Rules
+## Step 5: Configure Firestore Security Rules
 
-These rules protect your data by defining who can access what.
+Secure your database by defining who can read and write data. These rules are critical for protecting your application and implementing the new admin roles.
 
 1.  In the Firestore console, go to the **"Rules"** tab.
-2.  Replace the default rules with the following code. These rules make product data public while ensuring user data remains private.
+2.  Replace the default rules with the following rules. These rules grant administrators granular access based on their specific role.
 
     ```
     rules_version = '2';
     service cloud.firestore {
       match /databases/{database}/documents {
     
-        // PUBLIC DATA: Anyone can read this information.
-        // Writing should be restricted to admins (handled via backend logic or admin roles).
-        match /products/{productId} {
-          allow read: if true;
-          allow write: if false; // Protects data from being changed by users
+        // --- HELPER FUNCTIONS for Role-Based Access Control ---
+        function getRole() {
+          return get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role;
         }
-        match /extras/{extraId} {
+        function isSuperAdmin() { return getRole() == 'super-admin'; }
+        function isAdmin() { return getRole() == 'admin'; }
+        function isSubAdmin() { return getRole() == 'sub-admin'; }
+        function isAnyAdmin() { return isSuperAdmin() || isAdmin() || isSubAdmin(); }
+        function isFullAdmin() { return isSuperAdmin() || isAdmin(); }
+    
+        // --- PUBLIC & ADMIN COLLECTIONS ---
+        
+        // Items, Bundles, extras, offers, and categories are public to read for everyone.
+        // Write permissions are restricted based on roles.
+        match /items/{docId} { allow read: if true; allow write: if isSuperAdmin(); }
+        match /bundles/{docId} { allow read: if true; allow write: if isFullAdmin(); }
+        match /extras/{docId} { allow read: if true; allow write: if isSuperAdmin(); }
+        match /offers/{docId} { allow read: if true; allow write: if isFullAdmin(); }
+        match /drivers/{docId} { allow read, write: if isFullAdmin(); }
+        match /notifications/{docId} { allow read, write: if isAnyAdmin(); }
+        match /categories/{docId} { allow read: if true; allow write: if isSuperAdmin(); }
+        
+        // Store settings are public to read, but only super admins can change them.
+        match /settings/{docId} { allow read: if true; allow write: if isSuperAdmin(); }
+    
+        // Reviews can be read by anyone, created by any logged-in user, and deleted by full admins.
+        match /reviews/{docId} {
           allow read: if true;
-          allow write: if false;
-        }
-        match /promotionalBanners/{bannerId} {
-          allow read: if true;
-          allow write: if false;
-        }
-        match /reviews/{reviewId} {
-          allow read: if true;
-          // Allow users to create reviews if they are logged in.
           allow create: if request.auth != null;
+          allow delete: if isFullAdmin();
         }
     
-        // USER DATA: Only the authenticated user can access their own private data.
+        // Orders can be created by a user, but only read by that user or any admin level.
+        // Any admin level can update orders (e.g., change status, assign driver).
+        // Only full admins (admin, super-admin) can delete orders.
+        match /orders/{orderId} {
+          allow create: if request.auth != null && request.auth.uid == request.resource.data.userId;
+          allow read: if request.auth.uid == resource.data.userId || isAnyAdmin();
+          allow update: if isAnyAdmin();
+          allow delete: if isFullAdmin();
+        }
+        
+        // --- USER-SPECIFIC DATA ---
+
         match /users/{userId} {
-          // A user can create, read, and update their own profile document.
-          allow create, read, update: if request.auth != null && request.auth.uid == userId;
-    
-          // A user can manage their own orders (create and read only).
-          match /orders/{orderId} {
-            allow create, read: if request.auth != null && request.auth.uid == userId;
-            allow update, delete: if false; // Prevent users from changing their order history
-          }
-    
-          // A user can manage their own wishlist.
-          match /wishlist/{productId} {
-            allow read, write, delete: if request.auth != null && request.auth.uid == userId;
+          // A user is created when they sign up.
+          allow create: if request.auth.uid == userId;
+          
+          // A user can be read by themselves or any admin.
+          allow read: if request.auth.uid == userId || isAnyAdmin();
+          
+          // A user can update their own profile. A super-admin can update any user's profile.
+          allow update: if request.auth.uid == userId || isSuperAdmin();
+          
+          // Only a super-admin can delete a user document.
+          allow delete: if isSuperAdmin();
+          
+          // User subcollections (cart, wishlist) can only be accessed by the owner.
+          match /{subcollection}/{docId} {
+            allow read, write: if request.auth.uid == userId;
           }
         }
       }
@@ -103,56 +149,6 @@ These rules protect your data by defining who can access what.
 
 ---
 
-## Step 5: Connect Your App to Firebase
+## Step 6: Add Initial Data Manually
 
-1.  In your project code, open the file `firebase/config.ts`.
-2.  **Paste your unique `firebaseConfig` object** from Step 1 into the designated place. The file should now look like this:
-
-    ```typescript
-    // firebase/config.ts
-    import firebase from "firebase/compat/app";
-    import "firebase/compat/auth";
-    import "firebase/compat/firestore";
-
-    // Your web app's Firebase configuration - PASTE YOUR CONFIG HERE
-    const firebaseConfig = {
-      apiKey: "AIza...",
-      authDomain: "your-project-id.firebaseapp.com",
-      projectId: "your-project-id",
-      storageBucket: "your-project-id.appspot.com",
-      messagingSenderId: "...",
-      appId: "1:..."
-    };
-
-    // Initialize Firebase
-    const app = firebase.initializeApp(firebaseConfig);
-
-    // Initialize and export Firebase services
-    export const auth = firebase.auth();
-    export const db = firebase.firestore();
-    ```
----
-
-## Step 6: (Optional) Add Initial Data Manually
-
-To see products in your app immediately, you can add some of the mock data to Firestore.
-
-1.  Go to the Firestore console.
-2.  Click **"+ Start collection"** and enter `products` as the Collection ID.
-3.  Click **"Auto-ID"** to create a new document for your first product.
-4.  Add fields that match the `Product` type in `types.ts`. For example:
-    *   `arabicName` (Type: string, Value: 'سلة الفطور السوداني')
-    *   `category` (Type: string, Value: 'منتجات غذائية')
-    *   `price` (Type: number, Value: 8000)
-    *   `contents` (Type: array) -> Add map objects with `name`, `quantity`, and `price` fields.
-5.  Repeat this process for a few products, and create new collections like `extras` and `promotionalBanners`.
-
----
-
-## Step 7: Next Steps: Refactor Application Code
-
-This guide sets up the Firebase backend. The final and most important step is to update the application's code to communicate with Firebase.
-
--   **Authentication (`contexts/AuthContext.tsx`)**: Replace mock user logic with calls to the Firebase Authentication SDK (`signInWithPhoneNumber`, `RecaptchaVerifier`, `onAuthStateChanged`).
--   **Data Fetching (`screens/HomeScreen.tsx`, etc.)**: Replace mock data imports with Firestore queries (`getDocs`, `getDoc`, `collection`) to fetch live data.
--   **User Data (`screens/OrderHistoryScreen.tsx`, `contexts/WishlistContext.tsx`)**: Refactor to read from and write to the logged-in user's private subcollections in Firestore (e.g., `/users/{userId}/wishlist`).
+To get started quickly, you can manually add some data to your Firestore database for the new collections: `items`, `bundles`, `categories`, `extras`.

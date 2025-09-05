@@ -1,11 +1,11 @@
 import React, { useState, useMemo, useEffect } from "react";
 import { useSearchParams } from "react-router-dom";
-import { Product, Review } from "../types";
+import { StoreProduct, Review, Item, Bundle } from "../types";
 import { db } from "../firebase/config";
-import ProductCard from "../components/ProductCard";
+import StoreProductCard from "../components/ProductCard";
 import FilterSidebar, { Filters } from "../components/FilterSidebar";
 import EmptyState from "../components/EmptyState";
-import { calculateProductTotal } from "../utils/helpers";
+import { calculateBundlePrice } from "../utils/helpers";
 import SiteHeader from "../components/SiteHeader";
 import HomeScreenSkeleton from "../components/HomeScreenSkeleton";
 
@@ -13,16 +13,34 @@ const SearchResultsScreen: React.FC = () => {
   const [searchParams] = useSearchParams();
   const query = searchParams.get("q") || "";
 
-  const [products, setProducts] = useState<Product[]>([]);
+  const [items, setItems] = useState<Item[]>([]);
+  const [bundles, setBundles] = useState<Bundle[]>([]);
   const [reviews, setReviews] = useState<Review[]>([]);
   const [loading, setLoading] = useState(true);
   const [isFilterOpen, setIsFilterOpen] = useState(false);
 
+  const allProducts: StoreProduct[] = useMemo(
+    () => [...items, ...bundles],
+    [items, bundles]
+  );
+
+  const productPrices = useMemo(() => {
+    const priceMap = new Map<string, number>();
+    allProducts.forEach((p) => {
+      if (p.type === "item") {
+        priceMap.set(p.id, p.price);
+      } else {
+        priceMap.set(p.id, calculateBundlePrice(p, items));
+      }
+    });
+    return priceMap;
+  }, [allProducts, items]);
+
   const maxPrice = useMemo(() => {
-    if (products.length === 0) return 10000;
-    const prices = products.map((p) => calculateProductTotal(p));
+    if (allProducts.length === 0) return 10000;
+    const prices = Array.from(productPrices.values());
     return Math.ceil(Math.max(...prices) / 1000) * 1000;
-  }, [products]);
+  }, [allProducts, productPrices]);
 
   const [activeFilters, setActiveFilters] = useState<Filters>({
     priceRange: { min: 0, max: maxPrice },
@@ -38,28 +56,33 @@ const SearchResultsScreen: React.FC = () => {
 
   useEffect(() => {
     setLoading(true);
-    const unsubscribeProducts = db
-      .collection("products")
-      .onSnapshot((snapshot) => {
-        setProducts(
-          snapshot.docs.map((doc) => ({ id: doc.id, ...doc.data() } as Product))
+    const unsubscribers = [
+      db.collection("items").onSnapshot((snapshot) => {
+        setItems(
+          snapshot.docs.map((doc) => ({ id: doc.id, ...doc.data() } as Item))
         );
-        setLoading(false);
-      });
-    const unsubscribeReviews = db
-      .collection("reviews")
-      .onSnapshot((snapshot) => {
+      }),
+      db.collection("bundles").onSnapshot((snapshot) => {
+        setBundles(
+          snapshot.docs.map((doc) => ({ id: doc.id, ...doc.data() } as Bundle))
+        );
+      }),
+      db.collection("reviews").onSnapshot((snapshot) => {
         setReviews(snapshot.docs.map((doc) => doc.data() as Review));
-      });
+      }),
+    ];
 
-    return () => {
-      unsubscribeProducts();
-      unsubscribeReviews();
-    };
+    Promise.all([
+      db.collection("items").get(),
+      db.collection("bundles").get(),
+    ]).then(() => {
+      setLoading(false);
+    });
+
+    return () => unsubscribers.forEach((unsub) => unsub());
   }, []);
 
   const productsWithRatings = useMemo(() => {
-    if (reviews.length === 0) return products;
     const ratingsMap = new Map<string, { total: number; count: number }>();
     reviews.forEach((review) => {
       const existing = ratingsMap.get(review.productId) || {
@@ -71,7 +94,7 @@ const SearchResultsScreen: React.FC = () => {
         count: existing.count + 1,
       });
     });
-    return products.map((p) => {
+    return allProducts.map((p) => {
       const ratingData = ratingsMap.get(p.id);
       return ratingData
         ? {
@@ -81,7 +104,7 @@ const SearchResultsScreen: React.FC = () => {
           }
         : p;
     });
-  }, [products, reviews]);
+  }, [allProducts, reviews]);
 
   const filteredProducts = useMemo(() => {
     return productsWithRatings.filter((product) => {
@@ -89,7 +112,7 @@ const SearchResultsScreen: React.FC = () => {
       const matchesSearch =
         product.arabicName.toLowerCase().includes(lowerCaseQuery) ||
         product.name.toLowerCase().includes(lowerCaseQuery);
-      const productPrice = calculateProductTotal(product);
+      const productPrice = productPrices.get(product.id) || 0;
       const matchesPrice =
         productPrice >= activeFilters.priceRange.min &&
         productPrice <= activeFilters.priceRange.max;
@@ -98,7 +121,7 @@ const SearchResultsScreen: React.FC = () => {
         (product.averageRating || 0) >= activeFilters.rating;
       return matchesSearch && matchesPrice && matchesRating;
     });
-  }, [query, productsWithRatings, activeFilters]);
+  }, [query, productsWithRatings, activeFilters, productPrices]);
 
   const areFiltersActive = useMemo(() => {
     return (
@@ -142,13 +165,16 @@ const SearchResultsScreen: React.FC = () => {
           />
         ) : (
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
-            {filteredProducts.map((product: Product, index) => (
+            {filteredProducts.map((product, index) => (
               <div
                 key={product.id}
                 className="animate-stagger-in"
                 style={{ animationDelay: `${index * 50}ms` }}
               >
-                <ProductCard product={product} />
+                <StoreProductCard
+                  product={product}
+                  price={productPrices.get(product.id) || 0}
+                />
               </div>
             ))}
           </div>

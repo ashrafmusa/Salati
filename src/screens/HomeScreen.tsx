@@ -1,34 +1,49 @@
 import React, { useState, useMemo, useEffect } from "react";
-import { Product, Review, Category } from "../types";
+import { StoreProduct, Review, Category, Item, Bundle } from "../types";
 import { db } from "../firebase/config";
-import ProductCard from "../components/ProductCard";
+import StoreProductCard from "../components/ProductCard";
 import PromotionalBanner from "../components/PromotionalBanner";
 import FilterSidebar, { Filters } from "../components/FilterSidebar";
 import SectionHeader from "../components/SectionHeader";
 import ScrollToTopButton from "../components/ScrollToTopButton";
 import EmptyState from "../components/EmptyState";
-import { getOptimizedImageUrl, calculateProductTotal } from "../utils/helpers";
+import { getOptimizedImageUrl, calculateBundlePrice } from "../utils/helpers";
 import HomeScreenSkeleton from "../components/HomeScreenSkeleton";
 import SiteHeader from "../components/SiteHeader";
 
 const HomeScreen: React.FC = () => {
-  const [products, setProducts] = useState<Product[]>([]);
+  const [items, setItems] = useState<Item[]>([]);
+  const [bundles, setBundles] = useState<Bundle[]>([]);
   const [reviews, setReviews] = useState<Review[]>([]);
   const [categories, setCategories] = useState<Category[]>([]);
 
-  const [productsLoading, setProductsLoading] = useState(true);
-  const [categoriesLoading, setCategoriesLoading] = useState(true);
+  const [loading, setLoading] = useState(true);
 
   const [selectedCategory, setSelectedCategory] = useState("الكل");
   const [isFilterOpen, setIsFilterOpen] = useState(false);
 
+  const allProducts: StoreProduct[] = useMemo(
+    () => [...items, ...bundles],
+    [items, bundles]
+  );
+
+  const productPrices = useMemo(() => {
+    const priceMap = new Map<string, number>();
+    allProducts.forEach((p) => {
+      if (p.type === "item") {
+        priceMap.set(p.id, p.price);
+      } else {
+        priceMap.set(p.id, calculateBundlePrice(p, items));
+      }
+    });
+    return priceMap;
+  }, [allProducts, items]);
+
   const maxPrice = useMemo(() => {
-    if (products.length === 0) return 10000;
-    const prices = products.map((product: Product) =>
-      calculateProductTotal(product)
-    );
+    if (allProducts.length === 0) return 10000;
+    const prices = Array.from(productPrices.values());
     return Math.ceil(Math.max(...prices) / 1000) * 1000;
-  }, [products]);
+  }, [allProducts, productPrices]);
 
   const [activeFilters, setActiveFilters] = useState<Filters>({
     priceRange: { min: 0, max: maxPrice },
@@ -43,55 +58,44 @@ const HomeScreen: React.FC = () => {
   }, [maxPrice]);
 
   useEffect(() => {
-    const unsubscribeProducts = db.collection("products").onSnapshot(
-      (snapshot) => {
-        const productsData = snapshot.docs.map((doc) => ({
-          id: doc.id,
-          ...doc.data(),
-        })) as Product[];
-        setProducts(productsData);
-        setProductsLoading(false);
-      },
-      (err) => {
-        console.error("Error fetching products:", err);
-        setProductsLoading(false);
-      }
-    );
-
-    const unsubscribeReviews = db
-      .collection("reviews")
-      .onSnapshot((snapshot) => {
-        const reviewsData = snapshot.docs.map((doc) => doc.data() as Review);
-        setReviews(reviewsData);
-      });
-
-    const unsubscribeCategories = db
-      .collection("categories")
-      .orderBy("sortOrder")
-      .onSnapshot(
-        (snapshot) => {
-          const categoriesData = snapshot.docs.map(
-            (doc) => ({ id: doc.id, ...doc.data() } as Category)
+    const unsubscribers = [
+      db.collection("items").onSnapshot((snapshot) => {
+        setItems(
+          snapshot.docs.map((doc) => ({ id: doc.id, ...doc.data() } as Item))
+        );
+      }),
+      db.collection("bundles").onSnapshot((snapshot) => {
+        setBundles(
+          snapshot.docs.map((doc) => ({ id: doc.id, ...doc.data() } as Bundle))
+        );
+      }),
+      db.collection("reviews").onSnapshot((snapshot) => {
+        setReviews(snapshot.docs.map((doc) => doc.data() as Review));
+      }),
+      db
+        .collection("categories")
+        .orderBy("sortOrder")
+        .onSnapshot((snapshot) => {
+          setCategories(
+            snapshot.docs.map(
+              (doc) => ({ id: doc.id, ...doc.data() } as Category)
+            )
           );
-          setCategories(categoriesData);
-          setCategoriesLoading(false);
-        },
-        (err) => {
-          console.error("Error fetching categories:", err);
-          setCategoriesLoading(false);
-        }
-      );
+        }),
+    ];
 
-    return () => {
-      unsubscribeProducts();
-      unsubscribeReviews();
-      unsubscribeCategories();
-    };
+    Promise.all([
+      db.collection("items").get(),
+      db.collection("bundles").get(),
+      db.collection("categories").get(),
+    ])
+      .then(() => setLoading(false))
+      .catch(() => setLoading(false));
+
+    return () => unsubscribers.forEach((unsub) => unsub());
   }, []);
 
   const productsWithRatings = useMemo(() => {
-    if (reviews.length === 0) return products;
-
     const ratingsMap = new Map<string, { total: number; count: number }>();
     reviews.forEach((review) => {
       const existing = ratingsMap.get(review.productId) || {
@@ -104,18 +108,17 @@ const HomeScreen: React.FC = () => {
       });
     });
 
-    return products.map((product: Product) => {
+    return allProducts.map((product) => {
       const ratingData = ratingsMap.get(product.id);
-      if (ratingData) {
-        return {
-          ...product,
-          averageRating: ratingData.total / ratingData.count,
-          reviewCount: ratingData.count,
-        };
-      }
-      return product;
+      return ratingData
+        ? {
+            ...product,
+            averageRating: ratingData.total / ratingData.count,
+            reviewCount: ratingData.count,
+          }
+        : product;
     });
-  }, [products, reviews]);
+  }, [allProducts, reviews]);
 
   const topRatedProducts = useMemo(() => {
     return [...productsWithRatings]
@@ -125,22 +128,19 @@ const HomeScreen: React.FC = () => {
   }, [productsWithRatings]);
 
   const filteredProducts = useMemo(() => {
-    return productsWithRatings.filter((product: Product) => {
+    return productsWithRatings.filter((product) => {
       const matchesCategory =
         selectedCategory === "الكل" || product.category === selectedCategory;
-
-      const productPrice = calculateProductTotal(product);
+      const productPrice = productPrices.get(product.id) || 0;
       const matchesPrice =
         productPrice >= activeFilters.priceRange.min &&
         productPrice <= activeFilters.priceRange.max;
-
       const matchesRating =
         activeFilters.rating === 0 ||
-        ((product as any).averageRating || 0) >= activeFilters.rating;
-
+        (product.averageRating || 0) >= activeFilters.rating;
       return matchesCategory && matchesPrice && matchesRating;
     });
-  }, [selectedCategory, productsWithRatings, activeFilters]);
+  }, [selectedCategory, productsWithRatings, activeFilters, productPrices]);
 
   const areFiltersActive = useMemo(() => {
     return (
@@ -151,22 +151,16 @@ const HomeScreen: React.FC = () => {
   }, [activeFilters, maxPrice]);
 
   const handleResetFilters = () => {
-    const resetFiltersState = {
-      priceRange: { min: 0, max: maxPrice },
-      rating: 0,
-    };
-    setActiveFilters(resetFiltersState);
+    setActiveFilters({ priceRange: { min: 0, max: maxPrice }, rating: 0 });
   };
-
-  const loading = productsLoading || categoriesLoading;
-
-  const noProductsAvailable = !loading && products.length === 0;
-  const noResults =
-    !loading && !noProductsAvailable && filteredProducts.length === 0;
 
   if (loading) {
     return <HomeScreenSkeleton />;
   }
+
+  const noProductsAvailable = !loading && allProducts.length === 0;
+  const noResults =
+    !loading && !noProductsAvailable && filteredProducts.length === 0;
 
   return (
     <>
@@ -219,7 +213,10 @@ const HomeScreen: React.FC = () => {
                   className="w-64 sm:w-72 flex-shrink-0 animate-stagger-in"
                   style={{ animationDelay: `${index * 50}ms` }}
                 >
-                  <ProductCard product={product} />
+                  <StoreProductCard
+                    product={product}
+                    price={productPrices.get(product.id) || 0}
+                  />
                 </div>
               ))}
             </div>
@@ -237,14 +234,15 @@ const HomeScreen: React.FC = () => {
             />
           ) : (
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
-              {filteredProducts.map((product: Product, index) => (
+              {filteredProducts.map((product, index) => (
                 <div
                   key={product.id}
                   className="animate-stagger-in"
                   style={{ animationDelay: `${index * 50}ms` }}
                 >
-                  <ProductCard
+                  <StoreProductCard
                     product={product}
+                    price={productPrices.get(product.id) || 0}
                     onboardingId={
                       index === 0
                         ? `onboarding-add-to-cart-${product.id}`
