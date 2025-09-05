@@ -5,34 +5,42 @@
     <link rel="icon" type="image/svg+xml" href="/logo.svg" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     
-    <title>Salati - سلتي</title>
-
+    <!-- SEO & PWA Tags -->
+    <title>Salati - Integrated Platform</title>
     <meta name="description" content="Salati is a leading e-commerce platform offering fresh groceries, baked goods, and more for convenient home delivery." />
-
     <meta name="theme-color" content="#a9ae8b" />
-    
     <link rel="apple-touch-icon" href="/apple-touch-icon.png" />
     <link rel="manifest" href="/site.webmanifest" />
     
+    <!-- Performance: Preconnect to essential origins -->
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Almarai:wght@400;700&family=Lato:wght@400;700&family=Montserrat:wght@700;800&display=swap" rel="stylesheet">
+    <link rel="preconnect" href="https://res.cloudinary.com">
+
+    <!-- Performance: Asynchronously load fonts -->
+    <link rel="preload" href="https://fonts.googleapis.com/css2?family=Almarai:wght@400;700&family=Lato:wght@400;700&family=Montserrat:wght@700;800&display=swap" as="style" onload="this.onload=null;this.rel='stylesheet'">
+    <noscript><link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Almarai:wght@400;700&family=Lato:wght@400;700&family=Montserrat:wght@700;800&display=swap"></noscript>
+    
+    <!-- Performance: Preload the LCP image -->
+    <link rel="preload" as="image" href="https://res.cloudinary.com/dolmzcken/image/upload/w_800,q_auto:good,f_auto/v1757023041/cuoebfbklinshszz6vfz.png" fetchpriority="high">
+
     <link rel="stylesheet" href="/index.css">
-
-  </head>
+<script type="importmap">
+{
+  "imports": {
+    "react": "https://aistudiocdn.com/react@^19.1.1",
+    "react-dom/": "https://aistudiocdn.com/react-dom@^19.1.1/",
+    "react/": "https://aistudiocdn.com/react@^19.1.1/",
+    "react-router-dom": "https://aistudiocdn.com/react-router-dom@^7.8.2",
+    "firebase/": "https://aistudiocdn.com/firebase@^12.2.1/",
+    "vite": "https://aistudiocdn.com/vite@^7.1.4",
+    "@vitejs/plugin-react": "https://aistudiocdn.com/@vitejs/plugin-react@^5.0.2"
+  }
+}
+</script>
+</head>
   <body class="antialiased">
-    <div id="root">
-        <main>
-            <h1>Salati -  سلتي التسوق أسهل</h1>
-
-            <h2>About Salati</h2>
-            <p>Welcome to Salati, your trusted online destination for the freshest groceries and daily essentials. We partner with local farms and bakeries to bring you high-quality products right to your doorstep, ensuring convenience and freshness with every order.</p>
-
-            <h2>Our Products</h2>
-            <p>Explore our wide selection of fresh fruits, vegetables, baked goods, dairy products, and more. Our mission is to make healthy eating easy and accessible for everyone.</p>
-        </main>
-        
-    </div>
+    <div id="root"></div>
     <script type="module" src="/src/index.tsx"></script>
   </body>
 </html>
