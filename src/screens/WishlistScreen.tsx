@@ -7,12 +7,19 @@ import StoreProductCard from "../components/ProductCard";
 import { HeartIcon, SpinnerIcon, CheckCircleIcon } from "../assets/icons";
 import { StoreProduct, Item, Bundle } from "../types";
 import { db } from "../firebase/config";
-// FIX: The v9 modular imports are incompatible with the v8 compat `db` instance. They have been removed.
-import firebase from "firebase/compat/app";
+// FIX: Imported `onSnapshot` from `firebase/firestore` to resolve the "Cannot find name 'onSnapshot'" error.
+import {
+  collection,
+  query,
+  where,
+  documentId,
+  getDocs,
+  onSnapshot,
+} from "firebase/firestore";
 import WishlistScreenSkeleton from "../components/WishlistScreenSkeleton";
 import { calculateBundlePrice } from "../utils/helpers";
 
-export const WishlistScreen: React.FC = () => {
+const WishlistScreen: React.FC = () => {
   const { itemIds, loading: wishlistLoading } = useWishlist();
   const { addToCart } = useCart();
   const [favoritedProducts, setFavoritedProducts] = useState<StoreProduct[]>(
@@ -24,9 +31,8 @@ export const WishlistScreen: React.FC = () => {
   const [addAllSuccess, setAddAllSuccess] = useState(false);
 
   useEffect(() => {
-    // Fetch all items once for bundle price calculation
-    // FIX: Converted from v9 `onSnapshot(collection(db, 'items'), ...)` to v8 syntax.
-    const unsub = db.collection("items").onSnapshot((snapshot) => {
+    const itemsQuery = query(collection(db, "items"));
+    const unsub = onSnapshot(itemsQuery, (snapshot) => {
       setAllItems(
         snapshot.docs.map((doc) => ({ id: doc.id, ...doc.data() } as Item))
       );
@@ -46,17 +52,18 @@ export const WishlistScreen: React.FC = () => {
       }
 
       try {
-        // FIX: Converted v9 `query`, `collection`, `where`, `documentId`, and `getDocs` to v8 syntax.
-        const itemsQuery = db
-          .collection("items")
-          .where(firebase.firestore.FieldPath.documentId(), "in", itemIds);
-        const bundlesQuery = db
-          .collection("bundles")
-          .where(firebase.firestore.FieldPath.documentId(), "in", itemIds);
+        const itemsQuery = query(
+          collection(db, "items"),
+          where(documentId(), "in", itemIds)
+        );
+        const bundlesQuery = query(
+          collection(db, "bundles"),
+          where(documentId(), "in", itemIds)
+        );
 
         const [itemsSnapshot, bundlesSnapshot] = await Promise.all([
-          itemsQuery.get(),
-          bundlesQuery.get(),
+          getDocs(itemsQuery),
+          getDocs(bundlesQuery),
         ]);
 
         const itemsList = itemsSnapshot.docs.map(
@@ -177,3 +184,5 @@ export const WishlistScreen: React.FC = () => {
     </div>
   );
 };
+
+export default WishlistScreen;
