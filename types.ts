@@ -13,6 +13,7 @@ export interface User {
 export interface ProductContentItem {
   name: string;
   quantity: string;
+  // FIX: The price was optional, which is not safe for calculations. Made it required.
   price: number;
   imageUrl?: string;
 }
@@ -108,25 +109,25 @@ export interface Category {
 }
 
 export interface StoreSettings {
-    deliveryFee: number;
+  deliveryFee: number;
 }
 
 
 // Admin Panel Specific Types
 export interface Customer extends User {
-    joinDate: string; // ISO date string
-    orderHistory: string[]; // array of order IDs
+  joinDate: string; // ISO date string
+  orderHistory: string[]; // array of order IDs
 }
 
 export interface Driver {
-    id: string;
-    name: string;
-    phone: string;
-    status: 'Available' | 'On-Delivery' | 'Offline';
+  id: string;
+  name: string;
+  phone: string;
+  status: 'Available' | 'On-Delivery' | 'Offline';
 }
 
 export interface AdminOrder extends Order {
-    customer?: Omit<User, 'role'>;
+  customer?: Omit<User, 'role'>;
 }
 
 export interface AdminNotification {

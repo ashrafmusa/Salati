@@ -1,4 +1,6 @@
-import { Product, ExtraItem, CartItem, Offer } from '../types';
+
+
+import { StoreProduct, ExtraItem, CartItem, Offer, Bundle, Item } from '../types';
 
 // --- CLOUDINARY CONFIGURATION ---
 // Credentials are loaded from environment variables for security.
@@ -33,11 +35,11 @@ export const uploadToCloudinary = async (file: File): Promise<string> => {
         const errorData = await response.json();
         console.error("Cloudinary upload error:", errorData);
         const errorMessage = errorData?.error?.message || 'Failed to upload image.';
-        
+
         if (errorMessage.includes("preset not found")) {
             throw new Error(`Upload failed: The Cloudinary upload preset '${CLOUDINARY_UPLOAD_PRESET}' was not found. Please ensure it is configured correctly.`);
         }
-        
+
         throw new Error(`Cloudinary Error: ${errorMessage}`);
     }
 
@@ -59,19 +61,36 @@ export const getOptimizedImageUrl = (url: string, width: number): string => {
     return url.replace('/upload/', `/upload/${transformation}/`);
 };
 
-
-export const calculateProductTotal = (product: Partial<Product>): number => {
-  if (!product || !product.contents) {
-    return 0;
-  }
-  return product.contents.reduce((total, item) => total + (item.price || 0), 0);
+/**
+ * Calculates the base price of a bundle by summing the prices of its constituent items.
+ * @param bundle The bundle product.
+ * @param allItems A list of all available individual items to resolve prices.
+ * @returns The total base price of the bundle.
+ */
+export const calculateBundlePrice = (bundle: Bundle, allItems: Item[]): number => {
+    if (!bundle || !bundle.contents) {
+        return 0;
+    }
+    const itemMap = new Map(allItems.map(item => [item.id, item.price]));
+    return bundle.contents.reduce((total, contentItem) => {
+        const itemPrice = itemMap.get(contentItem.itemId) || 0;
+        return total + (itemPrice * contentItem.quantity);
+    }, 0);
 };
 
-export const calculateItemAndExtrasTotal = (product: Product, extras: ExtraItem[]): number => {
-    const productTotal = calculateProductTotal(product);
-    const extrasTotal = extras.reduce((total, extra) => total + extra.price, 0);
-    return productTotal + extrasTotal;
+export const calculateStoreProductPrice = (product: StoreProduct, allItems: Item[]): number => {
+    if (product.type === 'item') {
+        return product.price;
+    }
+    return calculateBundlePrice(product, allItems);
 }
+
+// FIX: Added a helper to calculate the total for a single cart item including its extras. This resolves errors in multiple components.
+export const calculateItemAndExtrasTotal = (item: CartItem): number => {
+    const extrasTotal = item.selectedExtras.reduce((total, extra) => total + extra.price, 0);
+    return item.unitPrice + extrasTotal;
+};
+
 
 export interface DiscountCalculation {
     totalDiscount: number;
@@ -82,14 +101,16 @@ export interface DiscountCalculation {
  * Calculates the best possible discount for a shopping cart from a list of active offers.
  * @param cartItems The items currently in the user's cart.
  * @param offers The list of currently active promotional offers.
+ * @param calculateTotal A function to calculate the total for a given item.
  * @returns An object containing the total discount amount and the ID(s) of the applied offer(s).
  */
 export const applyDiscounts = (
     cartItems: CartItem[],
-    offers: Offer[]
+    offers: Offer[],
+    calculateTotal: (item: CartItem) => number
 ): DiscountCalculation => {
-    const subtotal = cartItems.reduce((sum, item) => sum + calculateItemAndExtrasTotal(item, item.selectedExtras) * item.quantity, 0);
-    
+    const subtotal = cartItems.reduce((sum, item) => sum + calculateTotal(item), 0);
+
     const activeOffers = offers.filter(o => new Date(o.expiryDate) > new Date() && o.discount);
 
     if (activeOffers.length === 0 || cartItems.length === 0) {
@@ -105,11 +126,11 @@ export const applyDiscounts = (
         } else if (discountInfo.appliesTo === 'category') {
             discountableAmount = cartItems
                 .filter(item => item.category === discountInfo.target)
-                .reduce((sum, item) => sum + calculateItemAndExtrasTotal(item, item.selectedExtras) * item.quantity, 0);
+                .reduce((sum, item) => sum + calculateTotal(item), 0);
         } else if (discountInfo.appliesTo === 'product') {
             discountableAmount = cartItems
-                .filter(item => item.id === discountInfo.target)
-                .reduce((sum, item) => sum + calculateItemAndExtrasTotal(item, item.selectedExtras) * item.quantity, 0);
+                .filter(item => item.productId === discountInfo.target)
+                .reduce((sum, item) => sum + calculateTotal(item), 0);
         }
 
         if (discountableAmount > 0) {
