@@ -8,10 +8,12 @@ import { SettingsProvider } from "./contexts/SettingsContext";
 import FullScreenLoader from "./components/FullScreenLoader";
 import { initializeFirebase } from "./firebase/config";
 
+// Statically import components critical for the initial page load (LCP)
+import MainLayout from "./components/MainLayout";
+import HomeScreen from "./screens/HomeScreen";
+
 // --- Lazy-loaded Screen Components ---
-const MainLayout = lazy(() => import("./components/MainLayout"));
 const ProtectedRoute = lazy(() => import("./components/ProtectedRoute"));
-const HomeScreen = lazy(() => import("./screens/HomeScreen"));
 const SearchResultsScreen = lazy(() => import("./screens/SearchResultsScreen"));
 const BundleDetailScreen = lazy(() => import("./screens/BundleDetailScreen"));
 const ItemDetailScreen = lazy(() => import("./screens/ItemDetailScreen"));
@@ -47,64 +49,128 @@ const App: React.FC = () => {
           <CartProvider>
             <WishlistProvider>
               <HashRouter>
-                <Suspense fallback={<FullScreenLoader />}>
-                  <div className="animate-slide-in-up">
-                    <Routes>
-                      {/* The login page is standalone and does not use the main layout. */}
-                      <Route path="/login" element={<LoginScreen />} />
+                <div className="animate-slide-in-up">
+                  <Routes>
+                    {/* The login page is standalone and does not use the main layout. */}
+                    <Route
+                      path="/login"
+                      element={
+                        <Suspense fallback={<FullScreenLoader />}>
+                          <LoginScreen />
+                        </Suspense>
+                      }
+                    />
 
-                      {/* --- ROUTES WITH MAIN LAYOUT --- */}
-                      <Route element={<MainLayout />}>
-                        {/* Public routes */}
-                        <Route path="/" element={<HomeScreen />} />
-                        <Route
-                          path="/search"
-                          element={<SearchResultsScreen />}
-                        />
-                        <Route
-                          path="/bundle/:id"
-                          element={<BundleDetailScreen />}
-                        />
-                        <Route
-                          path="/item/:id"
-                          element={<ItemDetailScreen />}
-                        />
-                        <Route path="/terms" element={<TermsScreen />} />
-                        <Route
-                          path="/privacy"
-                          element={<PrivacyPolicyScreen />}
-                        />
-
-                        {/* Protected routes */}
-                        <Route element={<ProtectedRoute />}>
-                          <Route path="/cart" element={<CartScreen />} />
-                          <Route
-                            path="/wishlist"
-                            element={<WishlistScreen />}
-                          />
-                          <Route
-                            path="/orders"
-                            element={<OrderHistoryScreen />}
-                          />
-                          <Route path="/profile" element={<ProfileScreen />} />
-                          <Route
-                            path="/checkout"
-                            element={<CheckoutScreen />}
-                          />
-                        </Route>
-                      </Route>
-
-                      {/* The order success page is also standalone. */}
+                    {/* --- ROUTES WITH MAIN LAYOUT --- */}
+                    <Route element={<MainLayout />}>
+                      {/* Public routes */}
+                      <Route path="/" element={<HomeScreen />} />
                       <Route
-                        path="/order-success/:orderId"
-                        element={<OrderSuccessScreen />}
+                        path="/search"
+                        element={
+                          <Suspense fallback={<FullScreenLoader />}>
+                            <SearchResultsScreen />
+                          </Suspense>
+                        }
+                      />
+                      <Route
+                        path="/bundle/:id"
+                        element={
+                          <Suspense fallback={<FullScreenLoader />}>
+                            <BundleDetailScreen />
+                          </Suspense>
+                        }
+                      />
+                      <Route
+                        path="/item/:id"
+                        element={
+                          <Suspense fallback={<FullScreenLoader />}>
+                            <ItemDetailScreen />
+                          </Suspense>
+                        }
+                      />
+                      <Route
+                        path="/terms"
+                        element={
+                          <Suspense fallback={<FullScreenLoader />}>
+                            <TermsScreen />
+                          </Suspense>
+                        }
+                      />
+                      <Route
+                        path="/privacy"
+                        element={
+                          <Suspense fallback={<FullScreenLoader />}>
+                            <PrivacyPolicyScreen />
+                          </Suspense>
+                        }
                       />
 
-                      {/* A fallback route to redirect any unknown paths to the home page. */}
-                      <Route path="*" element={<Navigate to="/" replace />} />
-                    </Routes>
-                  </div>
-                </Suspense>
+                      {/* Protected routes */}
+                      <Route
+                        element={
+                          <Suspense fallback={<FullScreenLoader />}>
+                            <ProtectedRoute />
+                          </Suspense>
+                        }
+                      >
+                        <Route
+                          path="/cart"
+                          element={
+                            <Suspense fallback={<FullScreenLoader />}>
+                              <CartScreen />
+                            </Suspense>
+                          }
+                        />
+                        <Route
+                          path="/wishlist"
+                          element={
+                            <Suspense fallback={<FullScreenLoader />}>
+                              <WishlistScreen />
+                            </Suspense>
+                          }
+                        />
+                        <Route
+                          path="/orders"
+                          element={
+                            <Suspense fallback={<FullScreenLoader />}>
+                              <OrderHistoryScreen />
+                            </Suspense>
+                          }
+                        />
+                        <Route
+                          path="/profile"
+                          element={
+                            <Suspense fallback={<FullScreenLoader />}>
+                              <ProfileScreen />
+                            </Suspense>
+                          }
+                        />
+                        <Route
+                          path="/checkout"
+                          element={
+                            <Suspense fallback={<FullScreenLoader />}>
+                              <CheckoutScreen />
+                            </Suspense>
+                          }
+                        />
+                      </Route>
+                    </Route>
+
+                    {/* The order success page is also standalone. */}
+                    <Route
+                      path="/order-success/:orderId"
+                      element={
+                        <Suspense fallback={<FullScreenLoader />}>
+                          <OrderSuccessScreen />
+                        </Suspense>
+                      }
+                    />
+
+                    {/* A fallback route to redirect any unknown paths to the home page. */}
+                    <Route path="*" element={<Navigate to="/" replace />} />
+                  </Routes>
+                </div>
               </HashRouter>
             </WishlistProvider>
           </CartProvider>

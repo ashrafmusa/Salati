@@ -25,7 +25,6 @@ const CartItemCard: React.FC<CartItemCardProps> = ({ item }) => {
         src={getOptimizedImageUrl(item.imageUrl, 200)}
         alt={item.arabicName}
         className="w-24 h-24 sm:w-28 sm:h-28 rounded-lg object-cover flex-shrink-0"
-        loading="lazy"
       />
       <div className="flex-grow space-y-2">
         <div className="flex justify-between items-start">
