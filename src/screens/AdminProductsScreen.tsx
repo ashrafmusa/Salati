@@ -604,7 +604,7 @@ const AdminBundlesScreen: React.FC = () => {
               {filteredBundles.map((bundle) => (
                 <div
                   key={bundle.id}
-                  className="bg-slate-50 dark:bg-slate-800/50 p-4 rounded-lg shadow-sm border dark:border-slate-700 space-y-3"
+                  className="bg-slate-50 dark:bg-slate-800/50 p-4 rounded-lg shadow-sm border dark:border-slate-700"
                 >
                   <div className="flex items-start gap-4">
                     <img
@@ -621,40 +621,42 @@ const AdminBundlesScreen: React.FC = () => {
                       </p>
                     </div>
                   </div>
-                  <div className="grid grid-cols-2 gap-4 text-center pt-3 border-t dark:border-slate-700">
-                    <div>
-                      <p className="text-xs text-slate-500 dark:text-slate-400">
-                        السعر
-                      </p>
-                      <p className="font-semibold text-slate-700 dark:text-slate-200">
-                        {calculateBundlePrice(bundle, items)} ج.س
-                      </p>
+                  <div className="mt-4 pt-4 border-t dark:border-slate-700 space-y-3">
+                    <div className="grid grid-cols-2 gap-4 text-center">
+                      <div>
+                        <p className="text-xs text-slate-500 dark:text-slate-400">
+                          السعر
+                        </p>
+                        <p className="font-semibold text-slate-700 dark:text-slate-200">
+                          {calculateBundlePrice(bundle, items)} ج.س
+                        </p>
+                      </div>
+                      <div>
+                        <p className="text-xs text-slate-500 dark:text-slate-400">
+                          المخزون
+                        </p>
+                        <p className="font-semibold text-slate-700 dark:text-slate-200">
+                          {bundle.stock}
+                        </p>
+                      </div>
                     </div>
-                    <div>
-                      <p className="text-xs text-slate-500 dark:text-slate-400">
-                        المخزون
-                      </p>
-                      <p className="font-semibold text-slate-700 dark:text-slate-200">
-                        {bundle.stock}
-                      </p>
+                    <div className="flex justify-end gap-4 pt-2">
+                      <button
+                        onClick={() => {
+                          setEditingBundle(bundle);
+                          setIsModalOpen(true);
+                        }}
+                        className="text-admin-primary font-semibold"
+                      >
+                        تعديل
+                      </button>
+                      <button
+                        onClick={() => setBundleToDelete(bundle)}
+                        className="text-red-500 font-semibold"
+                      >
+                        حذف
+                      </button>
                     </div>
-                  </div>
-                  <div className="flex justify-end gap-4 mt-2 pt-2 border-t dark:border-slate-600">
-                    <button
-                      onClick={() => {
-                        setEditingBundle(bundle);
-                        setIsModalOpen(true);
-                      }}
-                      className="text-admin-primary font-semibold"
-                    >
-                      تعديل
-                    </button>
-                    <button
-                      onClick={() => setBundleToDelete(bundle)}
-                      className="text-red-500 font-semibold"
-                    >
-                      حذف
-                    </button>
                   </div>
                 </div>
               ))}
