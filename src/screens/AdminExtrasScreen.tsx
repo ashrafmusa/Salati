@@ -107,9 +107,8 @@ const AdminExtrasScreen: React.FC = () => {
               <table className="w-full text-right">
                 <thead className="border-b-2 border-slate-100 dark:border-slate-700">
                   <tr>
-                    <th className="p-3 text-sm font-semibold text-slate-500 dark:text-slate-400 w-20"></th>
                     <th className="p-3 text-sm font-semibold text-slate-500 dark:text-slate-400">
-                      الاسم
+                      العنصر
                     </th>
                     <th className="p-3 text-sm font-semibold text-slate-500 dark:text-slate-400">
                       السعر
@@ -129,15 +128,17 @@ const AdminExtrasScreen: React.FC = () => {
                           : "bg-slate-50 dark:bg-slate-800/50"
                       } hover:bg-sky-100/50 dark:hover:bg-sky-900/20`}
                     >
-                      <td className="p-2">
-                        <img
-                          src={getOptimizedImageUrl(extra.imageUrl, 100)}
-                          alt={extra.name}
-                          className="w-14 h-14 rounded-md object-cover"
-                        />
-                      </td>
-                      <td className="p-3 font-medium text-slate-700 dark:text-slate-200">
-                        {extra.name}
+                      <td className="p-3">
+                        <div className="flex items-center gap-3">
+                          <img
+                            src={getOptimizedImageUrl(extra.imageUrl, 100)}
+                            alt={extra.name}
+                            className="w-14 h-14 rounded-md object-cover"
+                          />
+                          <span className="font-medium text-slate-700 dark:text-slate-200">
+                            {extra.name}
+                          </span>
+                        </div>
                       </td>
                       <td className="p-3 text-slate-600 dark:text-slate-300">
                         {extra.price} ج.س
