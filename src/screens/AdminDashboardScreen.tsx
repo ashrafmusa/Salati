@@ -68,6 +68,9 @@ const RecentOrders: React.FC<{ orders: AdminOrder[]; loading: boolean }> = ({
               العميل
             </th>
             <th className="p-3 text-sm font-semibold text-slate-500 dark:text-slate-400">
+              التاريخ
+            </th>
+            <th className="p-3 text-sm font-semibold text-slate-500 dark:text-slate-400">
               الإجمالي
             </th>
             <th className="p-3 text-sm font-semibold text-slate-500 dark:text-slate-400">
@@ -78,7 +81,7 @@ const RecentOrders: React.FC<{ orders: AdminOrder[]; loading: boolean }> = ({
         <tbody>
           {loading ? (
             <tr>
-              <td colSpan={4} className="text-center p-4">
+              <td colSpan={5} className="text-center p-4">
                 Loading...
               </td>
             </tr>
@@ -93,6 +96,9 @@ const RecentOrders: React.FC<{ orders: AdminOrder[]; loading: boolean }> = ({
                 </td>
                 <td className="p-3 text-slate-600 dark:text-slate-300">
                   {order.deliveryInfo.name}
+                </td>
+                <td className="p-3 text-slate-500 dark:text-slate-400 text-xs">
+                  {new Date(order.date).toLocaleDateString("ar-EG")}
                 </td>
                 <td className="p-3 text-slate-600 dark:text-slate-300">
                   {order.total.toLocaleString()} ج.س
@@ -134,13 +140,16 @@ const RecentOrders: React.FC<{ orders: AdminOrder[]; loading: boolean }> = ({
                 {order.total.toLocaleString()} ج.س
               </p>
             </div>
-            <div className="mt-2 pt-2 border-t dark:border-slate-600">
+            <div className="mt-2 pt-2 border-t dark:border-slate-600 flex justify-between items-center">
               <span
                 className={`px-2 py-1 text-xs font-semibold rounded-full ${
                   getStatusConfig(order.status).pill
                 }`}
               >
                 {order.status}
+              </span>
+              <span className="text-xs text-slate-500">
+                {new Date(order.date).toLocaleDateString("ar-EG")}
               </span>
             </div>
           </div>
