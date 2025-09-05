@@ -293,10 +293,10 @@ const AdminDashboardScreen: React.FC = () => {
   return (
     <div className="space-y-8">
       <div>
-        <h1 className="text-2xl font-bold text-slate-800 dark:text-slate-100">
+        <h2 className="text-2xl font-bold text-slate-800 dark:text-slate-100">
           نظرة عامة على لوحة التحكم
-        </h1>
-        <p className="text-slate-500 dark:text-slate-400">
+        </h2>
+        <p className="text-slate-500 dark:text-slate-400 mt-1">
           أهلاً بعودتك! إليك آخر المستجدات.
         </p>
       </div>
