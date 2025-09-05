@@ -12,7 +12,7 @@ import FullScreenLoader from "./components/FullScreenLoader";
 const MainLayout = lazy(() => import("./components/MainLayout"));
 const ProtectedRoute = lazy(() => import("./components/ProtectedRoute"));
 const HomeScreen = lazy(() => import("./screens/HomeScreen"));
-const SearchResultsScreen = lazy(() => import("./screens/searchresultsscreen"));
+const SearchResultsScreen = lazy(() => import("./screens/SearchResultsScreen"));
 const BundleDetailScreen = lazy(() => import("./screens/BundleDetailScreen"));
 const ItemDetailScreen = lazy(() => import("./screens/ItemDetailscreen"));
 const CartScreen = lazy(() => import("./screens/CartScreen"));
