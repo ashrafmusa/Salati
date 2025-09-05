@@ -15,7 +15,7 @@ import ThemeToggle from "../components/ThemeToggle";
 import firebase from "firebase/compat/app";
 import { useOnboarding } from "../contexts/OnboardingContext";
 
-export const ProfileScreen: React.FC = () => {
+const ProfileScreen: React.FC = () => {
   const { user, firebaseUser, updateUserDetails, logout } = useAuth();
   const { startGuide } = useOnboarding();
 
@@ -289,3 +289,5 @@ export const ProfileScreen: React.FC = () => {
     </div>
   );
 };
+
+export default ProfileScreen;

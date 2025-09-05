@@ -14,6 +14,7 @@ const AdminDashboardScreen = lazy(
 const AdminOrdersScreen = lazy(() => import("./screens/AdminOrdersScreen"));
 const AdminBundlesScreen = lazy(() => import("./screens/AdminBundlesScreen"));
 const AdminItemsScreen = lazy(() => import("./screens/AdminItemsScreen"));
+
 const AdminCustomersScreen = lazy(
   () => import("./screens/AdminCustomersScreen")
 );

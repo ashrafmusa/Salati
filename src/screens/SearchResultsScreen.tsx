@@ -1,13 +1,14 @@
 import React, { useState, useMemo, useEffect } from "react";
 import { useSearchParams } from "react-router-dom";
-import { StoreProduct, Review, Item, Bundle } from "../types";
+import { StoreProduct, Review, Item, Bundle, Category } from "../types";
 import { db } from "../firebase/config";
 import StoreProductCard from "../components/ProductCard";
 import FilterSidebar, { Filters } from "../components/FilterSidebar";
 import EmptyState from "../components/EmptyState";
 import { calculateBundlePrice } from "../utils/helpers";
-import SiteHeader from "../components/SiteHeader";
 import HomeScreenSkeleton from "../components/HomeScreenSkeleton";
+import SiteHeader from "../components/SiteHeader";
+import SubPageHeader from "../components/SubPageHeader";
 
 const SearchResultsScreen: React.FC = () => {
   const [searchParams] = useSearchParams();
@@ -144,10 +145,6 @@ const SearchResultsScreen: React.FC = () => {
 
   return (
     <>
-      <SiteHeader
-        onFilterClick={() => setIsFilterOpen(true)}
-        areFiltersActive={areFiltersActive}
-      />
       <main className="px-4 sm:px-6 py-6 max-w-7xl mx-auto">
         <div className="mb-6">
           <h1 className="text-2xl sm:text-3xl font-bold text-slate-800 dark:text-slate-100">
