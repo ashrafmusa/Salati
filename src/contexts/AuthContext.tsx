@@ -7,24 +7,27 @@ import React, {
   ReactNode,
   useCallback,
 } from "react";
-import { 
-    getAuth,
-    onAuthStateChanged,
-    createUserWithEmailAndPassword,
-    signInWithEmailAndPassword,
-    signOut,
-    updateProfile,
-    RecaptchaVerifier,
-    signInWithPhoneNumber,
-    User as FirebaseUser,
-    ConfirmationResult
+import {
+  getAuth,
+  onAuthStateChanged,
+  createUserWithEmailAndPassword,
+  signInWithEmailAndPassword,
+  signOut,
+  updateProfile,
+  RecaptchaVerifier,
+  signInWithPhoneNumber,
+  User as FirebaseUser,
+  ConfirmationResult,
 } from "firebase/auth";
 import { doc, getDoc, setDoc, updateDoc } from "firebase/firestore";
 import { auth, db } from "../firebase/config";
 import { User } from "../types";
 
 // The Super Admin has full permissions and is defined by their email.
-const SUPER_ADMIN_EMAILS = ["ashraf0968491090@gmail.com", "salahashrf58@gmail.com"];
+const SUPER_ADMIN_EMAILS = [
+  "ashraf0968491090@gmail.com",
+  "salahashrf58@gmail.com",
+];
 
 interface AuthContextType {
   user: User | null;
@@ -79,19 +82,22 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({
 
         if (userSnap.exists()) {
           let userData = userSnap.data() as User;
-          const isSuperAdminByEmail = fbUser.email ? SUPER_ADMIN_EMAILS.includes(fbUser.email) : false;
-          
-          if (isSuperAdminByEmail && userData.role !== 'super-admin') {
-            userData.role = 'super-admin';
-            updateDoc(userRef, { role: 'super-admin' }).catch(err => {
+          const isSuperAdminByEmail = fbUser.email
+            ? SUPER_ADMIN_EMAILS.includes(fbUser.email)
+            : false;
+
+          if (isSuperAdminByEmail && userData.role !== "super-admin") {
+            userData.role = "super-admin";
+            updateDoc(userRef, { role: "super-admin" }).catch((err) => {
               console.error("Failed to self-heal super-admin role:", err);
             });
           }
           setUser({ ...userData, uid: fbUser.uid });
-
         } else {
-          const isSuperAdmin = fbUser.email ? SUPER_ADMIN_EMAILS.includes(fbUser.email) : false;
-          
+          const isSuperAdmin = fbUser.email
+            ? SUPER_ADMIN_EMAILS.includes(fbUser.email)
+            : false;
+
           const newUser: User = {
             uid: fbUser.uid,
             email: fbUser.email,
@@ -113,12 +119,15 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({
   const registerWithEmail = useCallback(
     async (email: string, password: string, name: string) => {
       try {
-        const result = await createUserWithEmailAndPassword(auth, email, password);
+        const result = await createUserWithEmailAndPassword(
+          auth,
+          email,
+          password
+        );
         const fbUser = result.user;
         if (!fbUser) throw new Error("User creation failed.");
 
         await updateProfile(fbUser, { displayName: name });
-        
       } catch (error) {
         console.error("Registration error:", error);
         throw error;
@@ -127,14 +136,17 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({
     []
   );
 
-  const loginWithEmail = useCallback(async (email: string, password: string) => {
-    try {
-      await signInWithEmailAndPassword(auth, email, password);
-    } catch (error) {
-      console.error("Login error:", error);
-      throw error;
-    }
-  }, []);
+  const loginWithEmail = useCallback(
+    async (email: string, password: string) => {
+      try {
+        await signInWithEmailAndPassword(auth, email, password);
+      } catch (error) {
+        console.error("Login error:", error);
+        throw error;
+      }
+    },
+    []
+  );
 
   const signInWithPhone = useCallback(
     async (phoneNumber: string, recaptchaContainerId: string) => {
@@ -143,9 +155,13 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({
           (window as any).grecaptcha.reset();
         }
         const appVerifier = new RecaptchaVerifier(auth, recaptchaContainerId, {
-            'size': 'invisible'
+          size: "invisible",
         });
-        const confirmation = await signInWithPhoneNumber(auth, phoneNumber, appVerifier);
+        const confirmation = await signInWithPhoneNumber(
+          auth,
+          phoneNumber,
+          appVerifier
+        );
         setConfirmationResult(confirmation);
       } catch (error) {
         console.error("Error during phone sign-in:", error);
@@ -175,8 +191,8 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({
     async (details: { name: string; address: string; phone?: string }) => {
       if (!firebaseUser) throw new Error("User not authenticated.");
       const userRef = doc(db, "users", firebaseUser.uid);
-      
-      const updateData: { name: string; address: string; phone?: string; } = {
+
+      const updateData: { name: string; address: string; phone?: string } = {
         name: details.name,
         address: details.address,
       };
