@@ -427,10 +427,19 @@ const AdminBundlesScreen: React.FC = () => {
                   {filteredBundles.map((bundle) => (
                     <tr
                       key={bundle.id}
-                      className="border-b dark:border-slate-700 hover:bg-sky-100/50 dark:hover:bg-sky-900/20"
+                      className="border-b dark:border-slate-700 hover:bg-sky-100/50 dark:hover:bg-sky-900/20 align-middle"
                     >
-                      <td className="p-3 font-medium text-slate-700 dark:text-slate-200">
-                        {bundle.arabicName}
+                      <td className="p-3">
+                        <div className="flex items-center gap-3">
+                          <img
+                            src={getOptimizedImageUrl(bundle.imageUrl, 100)}
+                            alt={bundle.arabicName}
+                            className="w-12 h-12 rounded-md object-cover"
+                          />
+                          <span className="font-medium text-slate-700 dark:text-slate-200">
+                            {bundle.arabicName}
+                          </span>
+                        </div>
                       </td>
                       <td className="p-3 text-slate-600 dark:text-slate-300">
                         {bundle.category}
