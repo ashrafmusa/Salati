@@ -8,27 +8,10 @@ import React, {
   ReactNode,
 } from "react";
 import { db } from "../firebase/config";
-import {
-  collection,
-  doc,
-  onSnapshot,
-  query,
-  where,
-  runTransaction,
-  setDoc,
-  getDoc,
-  getDocs,
-} from "firebase/firestore";
+import { collection, doc, onSnapshot, query, where, runTransaction, setDoc } from "firebase/firestore";
 import { useAuth } from "../hooks/useAuth";
-import {
-  StoreProduct,
-  CartItem,
-  ExtraItem,
-  Offer,
-  Item,
-  Bundle,
-} from "../types";
-import { calculateBundlePrice, applyDiscounts } from "../utils/helpers";
+import { StoreProduct, CartItem, ExtraItem, Offer, Item, Bundle } from "../types";
+import { calculateBundlePrice, applyDiscounts, calculateItemAndExtrasTotal } from "../utils/helpers";
 import { useSettings } from "./SettingsContext";
 
 interface CartState {
@@ -61,7 +44,7 @@ export const CartContext = createContext<CartContextType | undefined>(
   undefined
 );
 
-const GUEST_CART_KEY = "salatiGuestCart";
+const GUEST_CART_KEY = 'salatiGuestCart';
 
 const getGuestCart = (): CartItem[] => {
   try {
@@ -94,103 +77,85 @@ export const CartProvider: React.FC<{ children: ReactNode }> = ({
 
   useEffect(() => {
     // Fetch all individual items to calculate bundle prices
-    const itemsQuery = query(collection(db, "items"));
-    const unsubscribeItems = onSnapshot(itemsQuery, (snapshot) => {
-      const fetchedItems = snapshot.docs.map(
-        (doc) => ({ id: doc.id, ...doc.data() } as Item)
-      );
-      setAllItems(fetchedItems);
+    const itemsQuery = query(collection(db, 'items'));
+    const unsubscribeItems = onSnapshot(itemsQuery, snapshot => {
+        const fetchedItems = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as Item));
+        setAllItems(fetchedItems);
     });
 
-    const offersQuery = query(
-      collection(db, "offers"),
-      where("expiryDate", ">", new Date().toISOString())
-    );
-    const unsubscribeOffers = onSnapshot(offersQuery, (snapshot) => {
-      const activeOffers = snapshot.docs.map(
-        (doc) => ({ id: doc.id, ...doc.data() } as Offer)
-      );
-      setOffers(activeOffers);
+    const offersQuery = query(collection(db, 'offers'), where('expiryDate', '>', new Date().toISOString()));
+    const unsubscribeOffers = onSnapshot(offersQuery, snapshot => {
+        const activeOffers = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as Offer));
+        setOffers(activeOffers);
     });
 
     return () => {
-      unsubscribeItems();
-      unsubscribeOffers();
+        unsubscribeItems();
+        unsubscribeOffers();
     };
   }, []);
+
 
   useEffect(() => {
     let unsubscribeCart = () => {};
 
     const mergeCartsAndListen = async () => {
-      if (!user) return;
-      const cartRef = doc(db, "users", user.uid, "cart", "current");
-      const guestItems = getGuestCart();
+        if (!user) return;
+        const cartRef = doc(db, "users", user.uid, "cart", "current");
+        const guestItems = getGuestCart();
+        
+        if (guestItems.length > 0) {
+            try {
+                await runTransaction(db, async (transaction) => {
+                    const cartDoc = await transaction.get(cartRef);
+                    const firestoreItems: CartItem[] = cartDoc.exists() && cartDoc.data()?.items ? cartDoc.data()!.items : [];
+                    
+                    guestItems.forEach(guestItem => {
+                        const existingIndex = firestoreItems.findIndex(item => item.cartId === guestItem.cartId);
+                        if (existingIndex > -1) {
+                            firestoreItems[existingIndex].quantity += guestItem.quantity;
+                        } else {
+                            firestoreItems.push(guestItem);
+                        }
+                    });
 
-      if (guestItems.length > 0) {
-        try {
-          await runTransaction(db, async (transaction) => {
-            const cartDoc = await transaction.get(cartRef);
-            const firestoreItems: CartItem[] =
-              cartDoc.exists() && cartDoc.data()?.items
-                ? cartDoc.data()!.items
-                : [];
-
-            guestItems.forEach((guestItem) => {
-              const existingIndex = firestoreItems.findIndex(
-                (item) => item.cartId === guestItem.cartId
-              );
-              if (existingIndex > -1) {
-                firestoreItems[existingIndex].quantity += guestItem.quantity;
-              } else {
-                firestoreItems.push(guestItem);
-              }
-            });
-
-            transaction.set(cartRef, { items: firestoreItems });
-          });
-          localStorage.removeItem(GUEST_CART_KEY);
-        } catch (e) {
-          console.error("Error merging carts:", e);
-          setError({ type: "merge", message: "Could not merge local cart." });
+                    transaction.set(cartRef, { items: firestoreItems });
+                });
+                localStorage.removeItem(GUEST_CART_KEY);
+            } catch (e) {
+                console.error("Error merging carts:", e);
+                setError({ type: 'merge', message: 'Could not merge local cart.'});
+            }
         }
-      }
-
-      unsubscribeCart = onSnapshot(
-        cartRef,
-        (docSnap) => {
-          setItems(
-            docSnap.exists() && docSnap.data()?.items
-              ? docSnap.data()!.items
-              : []
-          );
-          setLoading(false);
-        },
-        (err) => {
-          console.error("Error fetching cart:", err);
-          setError({ type: "fetch", message: "Failed to fetch cart data." });
-          setLoading(false);
-        }
-      );
+        
+        unsubscribeCart = onSnapshot(
+          cartRef,
+          (docSnap) => {
+            setItems(docSnap.exists() && docSnap.data()?.items ? docSnap.data()!.items : []);
+            setLoading(false);
+          },
+          (err) => {
+            console.error("Error fetching cart:", err);
+            setError({ type: "fetch", message: "Failed to fetch cart data." });
+            setLoading(false);
+          }
+        );
     };
 
     if (user) {
-      setLoading(true);
-      mergeCartsAndListen();
+        setLoading(true);
+        mergeCartsAndListen();
     } else {
-      setItems(getGuestCart());
-      setLoading(false);
+        setItems(getGuestCart());
+        setLoading(false);
     }
 
     return () => unsubscribeCart();
   }, [user]);
-
+  
   const generateCartId = (product: StoreProduct, extras: ExtraItem[]) => {
-    const extraKey =
-      product.type === "bundle"
-        ? JSON.stringify(extras.map((e) => e.id).sort())
-        : "";
-    return `${product.id}-${btoa(extraKey).replace(/=/g, "")}`;
+    const extraKey = product.type === 'bundle' ? JSON.stringify(extras.map((e) => e.id).sort()) : '';
+    return `${product.id}-${btoa(extraKey).replace(/=/g, '')}`;
   };
 
   const addToCart = useCallback(
@@ -200,28 +165,27 @@ export const CartProvider: React.FC<{ children: ReactNode }> = ({
       const action = (prevItems: CartItem[]) => {
         const newItems = [...prevItems];
         const index = newItems.findIndex((item) => item.cartId === cartId);
-
+        
         if (index > -1) {
-          newItems[index].quantity += 1;
+            newItems[index].quantity += 1;
         } else {
-          const unitPrice =
-            product.type === "item"
-              ? product.price
-              : calculateBundlePrice(product, allItems);
-
-          newItems.push({
-            cartId,
-            productId: product.id,
-            productType: product.type,
-            name: product.name,
-            arabicName: product.arabicName,
-            imageUrl: product.imageUrl,
-            quantity: 1,
-            unitPrice: unitPrice,
-            selectedExtras: product.type === "bundle" ? selectedExtras : [],
-            category: product.category,
-            stock: product.stock,
-          });
+            const unitPrice = product.type === 'item' 
+                ? product.price 
+                : calculateBundlePrice(product, allItems);
+            
+            newItems.push({
+                cartId,
+                productId: product.id,
+                productType: product.type,
+                name: product.name,
+                arabicName: product.arabicName,
+                imageUrl: product.imageUrl,
+                quantity: 1,
+                unitPrice: unitPrice,
+                selectedExtras: product.type === 'bundle' ? selectedExtras : [],
+                category: product.category,
+                stock: product.stock
+            });
         }
         return newItems;
       };
@@ -229,142 +193,116 @@ export const CartProvider: React.FC<{ children: ReactNode }> = ({
       if (user) {
         const cartRef = doc(db, "users", user.uid, "cart", "current");
         runTransaction(db, async (transaction) => {
-          const cartDoc = await transaction.get(cartRef);
-          const currentItems =
-            cartDoc.exists() && cartDoc.data()?.items
-              ? cartDoc.data()!.items
-              : [];
-          transaction.set(cartRef, { items: action(currentItems) });
-        }).catch((e) => {
-          console.error("Error adding item to cart:", e);
-          setError({ type: "add", message: "Failed to add item to cart." });
+            const cartDoc = await transaction.get(cartRef);
+            const currentItems = cartDoc.exists() && cartDoc.data()?.items ? cartDoc.data()!.items : [];
+            transaction.set(cartRef, { items: action(currentItems) });
+        }).catch(e => {
+            console.error("Error adding item to cart:", e);
+            setError({ type: "add", message: "Failed to add item to cart." });
         });
       } else {
-        setItems((prev) => {
-          const newItems = action(prev);
-          saveGuestCart(newItems);
-          return newItems;
+        setItems(prev => {
+            const newItems = action(prev);
+            saveGuestCart(newItems);
+            return newItems;
         });
       }
     },
     [user, allItems]
   );
-
+  
   const removeFromCart = useCallback(
     (cartId: string) => {
-      const action = (prevItems: CartItem[]) =>
-        prevItems.filter((item) => item.cartId !== cartId);
+        const action = (prevItems: CartItem[]) => prevItems.filter((item) => item.cartId !== cartId);
 
-      if (user) {
-        const cartRef = doc(db, "users", user.uid, "cart", "current");
-        runTransaction(db, async (transaction) => {
-          const cartDoc = await transaction.get(cartRef);
-          const currentItems =
-            cartDoc.exists() && cartDoc.data()?.items
-              ? cartDoc.data()!.items
-              : [];
-          transaction.set(cartRef, { items: action(currentItems) });
-        }).catch((e) => {
-          console.error("Error removing item:", e);
-          setError({
-            type: "remove",
-            message: "Failed to remove item from cart.",
-          });
-        });
-      } else {
-        setItems((prev) => {
-          const newItems = action(prev);
-          saveGuestCart(newItems);
-          return newItems;
-        });
-      }
+        if (user) {
+            const cartRef = doc(db, "users", user.uid, "cart", "current");
+            runTransaction(db, async (transaction) => {
+                const cartDoc = await transaction.get(cartRef);
+                const currentItems = cartDoc.exists() && cartDoc.data()?.items ? cartDoc.data()!.items : [];
+                transaction.set(cartRef, { items: action(currentItems) });
+            }).catch(e => {
+                console.error("Error removing item:", e);
+                setError({ type: "remove", message: "Failed to remove item from cart." });
+            });
+        } else {
+            setItems(prev => {
+                const newItems = action(prev);
+                saveGuestCart(newItems);
+                return newItems;
+            });
+        }
     },
     [user]
   );
-
+  
   const updateQuantity = useCallback(
     (cartId: string, quantity: number) => {
-      if (quantity <= 0) {
-        removeFromCart(cartId);
-        return;
-      }
+        if (quantity <= 0) {
+            removeFromCart(cartId);
+            return;
+        }
+        
+        const action = (prevItems: CartItem[]) => {
+             return prevItems.map((item) =>
+                item.cartId === cartId ? { ...item, quantity } : item
+            );
+        };
 
-      const action = (prevItems: CartItem[]) => {
-        return prevItems.map((item) =>
-          item.cartId === cartId ? { ...item, quantity } : item
-        );
-      };
-
-      if (user) {
-        const cartRef = doc(db, "users", user.uid, "cart", "current");
-        runTransaction(db, async (transaction) => {
-          const cartDoc = await transaction.get(cartRef);
-          const currentItems =
-            cartDoc.exists() && cartDoc.data()?.items
-              ? cartDoc.data()!.items
-              : [];
-          transaction.set(cartRef, { items: action(currentItems) });
-        }).catch((e) => {
-          console.error("Error updating quantity:", e);
-          setError({
-            type: "update",
-            message: "Failed to update item quantity.",
-          });
-        });
-      } else {
-        setItems((prev) => {
-          const newItems = action(prev);
-          saveGuestCart(newItems);
-          return newItems;
-        });
-      }
+        if (user) {
+            const cartRef = doc(db, "users", user.uid, "cart", "current");
+            runTransaction(db, async (transaction) => {
+                const cartDoc = await transaction.get(cartRef);
+                const currentItems = cartDoc.exists() && cartDoc.data()?.items ? cartDoc.data()!.items : [];
+                transaction.set(cartRef, { items: action(currentItems) });
+            }).catch(e => {
+                console.error("Error updating quantity:", e);
+                setError({ type: "update", message: "Failed to update item quantity." });
+            });
+        } else {
+            setItems(prev => {
+                const newItems = action(prev);
+                saveGuestCart(newItems);
+                return newItems;
+            });
+        }
     },
     [user, removeFromCart]
   );
-
+  
   const clearCart = useCallback(async () => {
-    if (user) {
-      const cartRef = doc(db, "users", user.uid, "cart", "current");
-      await setDoc(cartRef, { items: [] }).catch((e) =>
-        console.error("Error clearing cart:", e)
-      );
-    } else {
-      setItems([]);
-      saveGuestCart([]);
-    }
+     if (user) {
+        const cartRef = doc(db, "users", user.uid, "cart", "current");
+        await setDoc(cartRef, { items: [] }).catch(e => console.error("Error clearing cart:", e));
+     } else {
+        setItems([]);
+        saveGuestCart([]);
+     }
   }, [user]);
 
   const deliveryFee = settings?.deliveryFee || 0;
 
   const calculateCartItemTotal = (item: CartItem) => {
-    const extrasTotal = item.selectedExtras.reduce(
-      (sum, extra) => sum + extra.price,
-      0
-    );
+    const extrasTotal = item.selectedExtras.reduce((sum, extra) => sum + extra.price, 0);
     return (item.unitPrice + extrasTotal) * item.quantity;
-  };
+  }
 
   const getCartSubtotal = useMemo(() => {
-    return () =>
-      items.reduce((total, item) => total + calculateCartItemTotal(item), 0);
+    return () => items.reduce((total, item) => total + calculateCartItemTotal(item), 0);
   }, [items]);
 
   const getDiscountDetails = useMemo(() => {
     return () => {
-      const { totalDiscount, appliedOfferIds } = applyDiscounts(
-        items,
-        offers,
-        calculateCartItemTotal
-      );
-      return { amount: totalDiscount, offerIds: appliedOfferIds };
+        const { totalDiscount, appliedOfferIds } = applyDiscounts(items, offers, calculateCartItemTotal);
+        return { amount: totalDiscount, offerIds: appliedOfferIds };
     };
   }, [items, offers]);
 
   const getFinalTotal = useMemo(() => {
     return () => {
-      const subtotal = getCartSubtotal();
-      const { amount: discountAmount } = getDiscountDetails();
-      return subtotal - discountAmount + deliveryFee;
+        const subtotal = getCartSubtotal();
+        const { amount: discountAmount } = getDiscountDetails();
+        return subtotal - discountAmount + deliveryFee;
     };
   }, [getCartSubtotal, getDiscountDetails, deliveryFee]);
 
@@ -374,33 +312,10 @@ export const CartProvider: React.FC<{ children: ReactNode }> = ({
 
   const value = useMemo(
     () => ({
-      state: { items },
-      loading,
-      error,
-      deliveryFee,
-      addToCart,
-      updateQuantity,
-      removeFromCart,
-      clearCart,
-      getCartSubtotal,
-      getDiscountDetails,
-      getFinalTotal,
-      getCartCount,
+      state: { items }, loading, error, deliveryFee, addToCart, updateQuantity,
+      removeFromCart, clearCart, getCartSubtotal, getDiscountDetails, getFinalTotal, getCartCount,
     }),
-    [
-      items,
-      loading,
-      error,
-      deliveryFee,
-      addToCart,
-      updateQuantity,
-      removeFromCart,
-      clearCart,
-      getCartSubtotal,
-      getDiscountDetails,
-      getFinalTotal,
-      getCartCount,
-    ]
+    [ items, loading, error, deliveryFee, addToCart, updateQuantity, removeFromCart, clearCart, getCartSubtotal, getDiscountDetails, getFinalTotal, getCartCount ]
   );
 
   return <CartContext.Provider value={value}>{children}</CartContext.Provider>;

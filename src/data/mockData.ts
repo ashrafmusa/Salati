@@ -54,7 +54,7 @@ export const PRODUCTS: Product[] = [
     stock: 100,
     availableExtras: ['extra3', 'extra4'],
   },
-  {
+   {
     id: 'prod4',
     name: 'New Arrivals Fruit Product',
     arabicName: 'سلة فواكه الموسم الجديدة',
@@ -72,7 +72,7 @@ export const PRODUCTS: Product[] = [
 ];
 
 export const OFFERS: Offer[] = [
-  {
+  { 
     id: 'promo1',
     imageUrl: 'https://storage.googleapis.com/aistudio-hosting/salati/images/promo1.png',
     title: 'عرض خاص! خصم 20% على المنتجات الغذائية',
@@ -84,7 +84,7 @@ export const OFFERS: Offer[] = [
       target: 'منتجات غذائية'
     }
   },
-  {
+  { 
     id: 'promo2',
     imageUrl: 'https://storage.googleapis.com/aistudio-hosting/salati/images/promo2.png',
     title: 'توصيل مجاني لجميع الطلبات فوق 20,000 ج.س',
@@ -93,28 +93,28 @@ export const OFFERS: Offer[] = [
 ];
 
 export const MOCK_REVIEWS: Review[] = [
-  {
-    id: 'rev1',
-    productId: 'prod1',
-    author: 'أحمد علي',
-    rating: 5,
-    comment: 'منتج ممتاز ومكوناته طازجة. الفطور كان رائع!',
-    date: new Date(Date.now() - 1 * 24 * 60 * 60 * 1000).toISOString(),
-  },
-  {
-    id: 'rev2',
-    productId: 'prod1',
-    author: 'فاطمة محمد',
-    rating: 4,
-    comment: 'جيدة جداً، لكن أتمنى لو كانت كمية الجبنة أكبر قليلاً.',
-    date: new Date(Date.now() - 2 * 24 * 60 * 60 * 1000).toISOString(),
-  },
-  {
-    id: 'rev3',
-    productId: 'prod2',
-    author: 'خالد عمر',
-    rating: 5,
-    comment: 'المنتج العائلي موفر وممتاز. المكونات كفتنا وزيادة. شكراً سـلـتـي!',
-    date: new Date(Date.now() - 3 * 24 * 60 * 60 * 1000).toISOString(),
-  }
+    {
+        id: 'rev1',
+        productId: 'prod1',
+        author: 'أحمد علي',
+        rating: 5,
+        comment: 'منتج ممتاز ومكوناته طازجة. الفطور كان رائع!',
+        date: new Date(Date.now() - 1 * 24 * 60 * 60 * 1000).toISOString(),
+    },
+    {
+        id: 'rev2',
+        productId: 'prod1',
+        author: 'فاطمة محمد',
+        rating: 4,
+        comment: 'جيدة جداً، لكن أتمنى لو كانت كمية الجبنة أكبر قليلاً.',
+        date: new Date(Date.now() - 2 * 24 * 60 * 60 * 1000).toISOString(),
+    },
+    {
+        id: 'rev3',
+        productId: 'prod2',
+        author: 'خالد عمر',
+        rating: 5,
+        comment: 'المنتج العائلي موفر وممتاز. المكونات كفتنا وزيادة. شكراً سـلـتـي!',
+        date: new Date(Date.now() - 3 * 24 * 60 * 60 * 1000).toISOString(),
+    }
 ];

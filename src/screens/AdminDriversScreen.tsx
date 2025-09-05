@@ -1,7 +1,9 @@
 import React, { useState, useEffect } from 'react';
 import { db } from '../firebase/config';
+import { collection, onSnapshot, addDoc, updateDoc, deleteDoc, doc } from "firebase/firestore";
 import { Driver } from '../types';
-import { PlusIcon } from '../assets/icons';
+// FIX: Changed import to use adminIcons for both icons.
+import { PlusIcon, TruckIcon } from '../assets/adminIcons';
 import DriverFormModal from '../components/DriverFormModal';
 
 const AdminDriversScreen: React.FC = () => {
@@ -12,7 +14,7 @@ const AdminDriversScreen: React.FC = () => {
     const [isSaving, setIsSaving] = useState(false);
 
     useEffect(() => {
-        const unsubscribe = db.collection('drivers').onSnapshot(snapshot => {
+        const unsubscribe = onSnapshot(collection(db, 'drivers'), snapshot => {
             const fetchedDrivers = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as Driver));
             setDrivers(fetchedDrivers);
             setLoading(false);
@@ -35,9 +37,9 @@ const AdminDriversScreen: React.FC = () => {
         const { id, ...driverData } = driverToSave;
         try {
             if (editingDriver) {
-                await db.collection('drivers').doc(id).update(driverData);
+                await updateDoc(doc(db, 'drivers', id), driverData);
             } else {
-                await db.collection('drivers').add(driverData);
+                await addDoc(collection(db, 'drivers'), driverData);
             }
         } catch (error) {
             console.error("Error saving driver:", error);
@@ -49,7 +51,7 @@ const AdminDriversScreen: React.FC = () => {
     const handleDeleteDriver = async (driverId: string) => {
         if (window.confirm("Are you sure you want to delete this driver?")) {
             try {
-                await db.collection('drivers').doc(driverId).delete();
+                await deleteDoc(doc(db, 'drivers', driverId));
             } catch (error) {
                 console.error("Error deleting driver:", error);
             }
@@ -68,7 +70,7 @@ const AdminDriversScreen: React.FC = () => {
                 </button>
             </div>
             
-            {loading ? <p>Loading...</p> : (
+            {loading ? <p>Loading...</p> : drivers.length > 0 ? (
             <>
                 {/* Desktop Table View */}
                 <div className="overflow-x-auto hidden md:block">
@@ -129,6 +131,18 @@ const AdminDriversScreen: React.FC = () => {
                     ))}
                 </div>
             </>
+            ) : (
+                <div className="text-center py-16">
+                    <TruckIcon className="w-24 h-24 text-slate-300 dark:text-slate-600 mx-auto" />
+                    <h3 className="mt-4 text-xl font-bold text-slate-700 dark:text-slate-200">لا يوجد سائقون بعد</h3>
+                    <p className="mt-2 text-slate-500 dark:text-slate-400">ابدأ ببناء أسطول التوصيل الخاص بك.</p>
+                    <button 
+                        onClick={() => handleOpenModal()}
+                        className="mt-6 flex items-center mx-auto bg-admin-primary text-white px-4 py-2 rounded-lg hover:bg-admin-primary-hover transition-colors shadow-sm">
+                        <PlusIcon className="w-5 h-5 ml-2" />
+                        إضافة سائق
+                    </button>
+                </div>
             )}
 
             {isModalOpen && <DriverFormModal driver={editingDriver} onClose={handleCloseModal} onSave={handleSaveDriver} isSaving={isSaving} />}
@@ -136,4 +150,5 @@ const AdminDriversScreen: React.FC = () => {
     );
 };
 
+// FIX: Added default export to fix lazy loading issue.
 export default AdminDriversScreen;

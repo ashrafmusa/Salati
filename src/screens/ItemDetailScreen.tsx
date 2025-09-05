@@ -1,53 +1,143 @@
-import React, { useState, useEffect } from "react";
-import { useParams, Link } from "react-router-dom";
-import { db } from "../firebase/config";
-import { doc, getDoc } from "firebase/firestore";
-import { useCart } from "../hooks/useCart";
-import { useWishlist } from "../hooks/useWishlist";
-import SubPageHeader from "../components/SubPageHeader";
-import { getOptimizedImageUrl } from "../utils/helpers";
-import { Item, Review } from "../types";
-import { CheckCircleIcon, HeartIcon, SpinnerIcon } from "../assets/icons";
+import React, { useState, useEffect } from 'react';
+import { useParams, Link } from 'react-router-dom';
+import { db } from '../firebase/config';
+import { doc, getDoc, onSnapshot, query, where, orderBy, collection, addDoc } from 'firebase/firestore';
+import { useCart } from '../hooks/useCart';
+import { useWishlist } from '../hooks/useWishlist';
+import SubPageHeader from '../components/SubPageHeader';
+import { getOptimizedImageUrl } from '../utils/helpers';
+import { Item, Review } from '../types';
+import { CheckCircleIcon, HeartIcon, SpinnerIcon, StarIcon, PencilIcon } from '../assets/icons';
+import { useAuth } from '../hooks/useAuth';
+import SectionHeader from '../components/SectionHeader';
+import ReviewSummary from '../components/ReviewSummary';
+import ReviewCard from '../components/ReviewCard';
+
+
+const StarRating: React.FC<{ rating: number; reviewCount: number }> = ({ rating, reviewCount }) => (
+    <div className="flex items-center">
+        <div className="flex">
+            {[...Array(5)].map((_, i) => (
+                <StarIcon key={i} filled={i < Math.round(rating)} className={`w-5 h-5 ${i < Math.round(rating) ? 'text-yellow-400' : 'text-slate-300'}`} />
+            ))}
+        </div>
+        <span className="mr-2 text-sm text-slate-500 dark:text-slate-400">({reviewCount} مراجعات)</span>
+    </div>
+);
+
+const WriteReviewForm: React.FC<{ productId: string }> = ({ productId }) => {
+    const { user } = useAuth();
+    const [rating, setRating] = useState(0);
+    const [hoverRating, setHoverRating] = useState(0);
+    const [comment, setComment] = useState('');
+    const [isSubmitting, setIsSubmitting] = useState(false);
+
+    const handleSubmit = async (e: React.FormEvent) => {
+        e.preventDefault();
+        if (!user || rating === 0 || !comment.trim()) {
+            alert("Please provide a rating and a comment.");
+            return;
+        }
+        setIsSubmitting(true);
+        try {
+            await addDoc(collection(db, 'reviews'), {
+                productId,
+                author: user.name,
+                rating,
+                comment,
+                date: new Date().toISOString(),
+            });
+            setRating(0);
+            setComment('');
+        } catch (error) {
+            console.error("Error submitting review:", error);
+        } finally {
+            setIsSubmitting(false);
+        }
+    };
+    
+    if (!user) return null;
+
+    return (
+        <div className="bg-white dark:bg-slate-800 p-6 rounded-lg shadow-sm border dark:border-slate-700 mt-6">
+            <h4 className="text-lg font-bold flex items-center gap-2 mb-4 text-slate-800 dark:text-slate-100">
+                <PencilIcon className="w-5 h-5"/>
+                اكتب مراجعتك
+            </h4>
+            <form onSubmit={handleSubmit} className="space-y-4">
+                <div className="flex items-center justify-center gap-2" onMouseLeave={() => setHoverRating(0)}>
+                    {[1, 2, 3, 4, 5].map(star => (
+                        <StarIcon
+                            key={star}
+                            onClick={() => setRating(star)}
+                            onMouseEnter={() => setHoverRating(star)}
+                            filled={(hoverRating || rating) >= star}
+                            className={`w-8 h-8 cursor-pointer transition-colors ${(hoverRating || rating) >= star ? 'text-yellow-400' : 'text-slate-300'}`}
+                        />
+                    ))}
+                </div>
+                <textarea
+                    value={comment}
+                    onChange={e => setComment(e.target.value)}
+                    placeholder="شاركنا رأيك..."
+                    rows={4}
+                    className="w-full p-2 border rounded-md bg-white dark:bg-slate-700 text-slate-900 dark:text-slate-100 border-slate-300 dark:border-slate-600 focus:ring-primary focus:border-primary"
+                    required
+                />
+                <button type="submit" disabled={isSubmitting} className="px-6 py-2 bg-primary text-white font-semibold rounded-md hover:bg-secondary transition disabled:bg-slate-400">
+                    {isSubmitting ? 'جارِ الإرسال...' : 'إرسال المراجعة'}
+                </button>
+            </form>
+        </div>
+    );
+};
 
 const ItemDetailScreen: React.FC = () => {
   const { id } = useParams<{ id: string }>();
   const { addToCart } = useCart();
   const { isInWishlist, addToWishlist, removeFromWishlist } = useWishlist();
-
+  
   const [item, setItem] = useState<Item | null>(null);
   const [loading, setLoading] = useState(true);
   const [isAdded, setIsAdded] = useState(false);
   const [isAdding, setIsAdding] = useState(false);
+  const [reviews, setReviews] = useState<Review[]>([]);
 
   useEffect(() => {
     if (!id) return;
+    setLoading(true);
 
     const fetchItem = async () => {
-      try {
-        const itemRef = doc(db, "items", id);
-        const docSnap = await getDoc(itemRef);
-        if (docSnap.exists()) {
-          setItem({ id: docSnap.id, ...docSnap.data() } as Item);
+        try {
+            const itemRef = doc(db, 'items', id);
+            const docSnap = await getDoc(itemRef);
+            if (docSnap.exists()) {
+                setItem({ id: docSnap.id, ...docSnap.data() } as Item);
+            }
+        } catch (err) {
+            console.error("Error fetching item details:", err);
+        } finally {
+            setLoading(false);
         }
-      } catch (err) {
-        console.error("Error fetching item details:", err);
-      } finally {
-        setLoading(false);
-      }
     };
-
+    
     fetchItem();
-  }, [id]);
+    
+    const reviewsQuery = query(collection(db, 'reviews'), where('productId', '==', id), orderBy('date', 'desc'));
+    const unsubscribe = onSnapshot(reviewsQuery, snapshot => {
+        setReviews(snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as Review)));
+    });
 
+    return () => unsubscribe();
+
+  }, [id]);
+  
   const isFavorited = item ? isInWishlist(item.id) : false;
   const isOutOfStock = item?.stock !== undefined && item.stock <= 0;
+  const averageRating = reviews.length > 0 ? reviews.reduce((sum, r) => sum + r.rating, 0) / reviews.length : 0;
 
   if (loading) {
-    return (
-      <div className="flex items-center justify-center h-screen">
-        <SpinnerIcon className="w-12 h-12 text-primary animate-spin" />
-      </div>
-    );
+    return <div className="flex items-center justify-center h-screen"><SpinnerIcon className="w-12 h-12 text-primary animate-spin" /></div>;
   }
 
   if (!item) {
@@ -55,10 +145,8 @@ const ItemDetailScreen: React.FC = () => {
       <div>
         <SubPageHeader title="خطأ" />
         <div className="text-center p-8">
-          <h2 className="text-2xl font-bold">الصنف غير موجود</h2>
-          <Link to="/" className="text-primary hover:underline">
-            العودة إلى الرئيسية
-          </Link>
+            <h2 className="text-2xl font-bold">الصنف غير موجود</h2>
+            <Link to="/" className="text-primary hover:underline">العودة إلى الرئيسية</Link>
         </div>
       </div>
     );
@@ -73,70 +161,86 @@ const ItemDetailScreen: React.FC = () => {
   };
 
   const handleAddToCart = () => {
-    if (isOutOfStock) return;
+    if(isOutOfStock) return;
     setIsAdding(true);
     setTimeout(() => {
-      addToCart(item);
-      setIsAdded(true);
-      setIsAdding(false);
+        addToCart(item);
+        setIsAdded(true);
+        setIsAdding(false);
+        setTimeout(() => setIsAdded(false), 2000);
     }, 500);
   };
 
   return (
-    <>
-      <div className="bg-slate-50 dark:bg-slate-950 min-h-screen">
+    <div className="bg-slate-50 dark:bg-slate-950 min-h-screen">
         <SubPageHeader title={item.arabicName} />
         <div className="pb-40 max-w-5xl mx-auto">
-          {/* Main content here, similar to BundleDetailScreen but simplified */}
-          <p className="p-8 text-center">
-            Details for item "{item.arabicName}"
-          </p>
-        </div>
+            <div className="p-4">
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-8 items-start">
+                    <div>
+                        <img src={getOptimizedImageUrl(item.imageUrl, 800)} alt={item.arabicName} className="w-full h-auto rounded-2xl shadow-lg object-cover" />
+                        <button onClick={handleToggleWishlist} className="w-full mt-4 flex items-center justify-center gap-2 py-3 bg-white dark:bg-slate-800 border dark:border-slate-700 rounded-lg text-lg font-semibold hover:bg-slate-100 dark:hover:bg-slate-700 transition">
+                            <HeartIcon className={`w-6 h-6 ${isFavorited ? 'text-red-500' : 'text-slate-500'}`} filled={isFavorited} />
+                            {isFavorited ? 'إزالة من المفضلة' : 'إضافة للمفضلة'}
+                        </button>
+                    </div>
+                    <div className="space-y-6">
+                        <span className="font-semibold text-primary/80 text-lg">{item.category}</span>
+                        <h1 className="text-3xl md:text-4xl font-bold text-slate-900 dark:text-slate-50">{item.arabicName}</h1>
+                        {reviews.length > 0 && <StarRating rating={averageRating} reviewCount={reviews.length} />}
+                        <p className="text-slate-600 dark:text-slate-300 text-lg">{item.description}</p>
+                    </div>
+                </div>
+            </div>
 
-        {/* Sticky Footer */}
-        <div className="fixed bottom-0 left-0 right-0 bg-white/80 dark:bg-slate-800/80 p-4 border-t dark:border-slate-700 shadow-inner backdrop-blur-sm z-20">
-          <div className="max-w-5xl mx-auto">
-            {isAdded ? (
-              <div className="flex items-center justify-between">
-                <div className="flex items-center text-green-600">
-                  <CheckCircleIcon className="w-8 h-8 ml-3" />
-                  <span className="font-bold text-lg">تمت الإضافة بنجاح!</span>
+            <div className="p-4 mt-8">
+                <SectionHeader title="المراجعات والتقييمات" />
+                <div className="space-y-6">
+                    {reviews.length > 0 ? (
+                        <>
+                            <ReviewSummary reviews={reviews} />
+                            <div className="space-y-4">
+                               {reviews.map(review => <ReviewCard key={review.id} review={review} />)}
+                            </div>
+                        </>
+                    ) : (
+                        <p className="text-center text-slate-500 py-8">لا توجد مراجعات لهذا المنتج حتى الآن.</p>
+                    )}
+                    <WriteReviewForm productId={item.id} />
                 </div>
-                <Link
-                  to="/cart"
-                  className="px-4 py-2.5 rounded-lg bg-primary text-white font-semibold"
-                >
-                  عرض العربة
-                </Link>
-              </div>
-            ) : (
-              <div className="flex justify-between items-center">
-                <div>
-                  <span className="text-sm text-slate-500">الإجمالي</span>
-                  <span className="text-3xl font-bold text-secondary block">
-                    {item.price.toLocaleString()} ج.س
-                  </span>
-                </div>
-                <button
-                  onClick={handleAddToCart}
-                  disabled={isAdding || isOutOfStock}
-                  className="w-48 px-6 py-3 rounded-lg bg-primary text-white font-bold text-lg"
-                >
-                  {isOutOfStock ? (
-                    "نفدت الكمية"
-                  ) : isAdding ? (
-                    <SpinnerIcon className="w-6 h-6 animate-spin" />
-                  ) : (
-                    "إضافة للعربة"
-                  )}
-                </button>
-              </div>
-            )}
-          </div>
+            </div>
         </div>
-      </div>
-    </>
+        
+        <div className="fixed bottom-0 left-0 right-0 bg-white/80 dark:bg-slate-800/80 p-4 border-t dark:border-slate-700 shadow-inner backdrop-blur-sm z-20">
+            <div className="max-w-5xl mx-auto">
+                {isAdded ? (
+                    <div className="flex items-center justify-between">
+                        <div className="flex items-center text-green-600">
+                            <CheckCircleIcon className="w-8 h-8 ml-3" />
+                            <span className="font-bold text-lg">تمت الإضافة بنجاح!</span>
+                        </div>
+                        <Link to="/cart" className="px-4 py-2.5 rounded-lg bg-primary text-white font-semibold">عرض العربة</Link>
+                    </div>
+                ) : (
+                    <div className="flex justify-between items-center gap-4">
+                         <div>
+                            <span className="text-sm text-slate-500">الإجمالي</span>
+                            <span className="text-3xl font-bold text-secondary block">{item.price.toLocaleString()} ج.س</span>
+                        </div>
+                        <button
+                            onClick={handleAddToCart}
+                            disabled={isAdding || isOutOfStock}
+                            className="flex-grow sm:flex-grow-0 sm:w-48 px-6 py-3 rounded-lg bg-primary text-white font-bold text-lg flex items-center justify-center"
+                        >
+                           {isOutOfStock ? 'نفدت الكمية' : (isAdding ? <SpinnerIcon className="w-6 h-6 animate-spin" /> : 'إضافة للعربة')}
+                        </button>
+                    </div>
+                )}
+            </div>
+        </div>
+    </div>
   );
 };
 
+// FIX: Added default export to fix lazy loading issue.
 export default ItemDetailScreen;

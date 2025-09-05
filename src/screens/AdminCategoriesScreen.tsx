@@ -6,6 +6,7 @@ import CategoryFormModal from '../components/CategoryFormModal';
 import ConfirmationModal from '../components/ConfirmationModal';
 import { getOptimizedImageUrl } from '../utils/helpers';
 import AdminScreenHeader from '../components/AdminScreenHeader';
+import { CategoryIcon, PlusIcon } from '../assets/adminIcons';
 
 const AdminCategoriesScreen: React.FC = () => {
     const [categories, setCategories] = useState<Category[]>([]);
@@ -84,7 +85,7 @@ const AdminCategoriesScreen: React.FC = () => {
                     searchPlaceholder="ابحث باسم الفئة..."
                 />
                 
-                {loading ? <p>Loading categories...</p> : (
+                {loading ? <p>Loading categories...</p> : filteredCategories.length > 0 ? (
                     <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
                         {filteredCategories.map(category => (
                             <div key={category.id} className="bg-slate-50 dark:bg-slate-800/50 rounded-lg shadow-sm border dark:border-slate-700 overflow-hidden flex flex-col">
@@ -109,6 +110,24 @@ const AdminCategoriesScreen: React.FC = () => {
                                 </div>
                             </div>
                         ))}
+                    </div>
+                ) : (
+                    <div className="text-center py-16">
+                        <CategoryIcon className="w-24 h-24 text-slate-300 dark:text-slate-600 mx-auto" />
+                        <h3 className="mt-4 text-xl font-bold text-slate-700 dark:text-slate-200">
+                            {searchTerm ? 'لا توجد فئات مطابقة' : 'لا توجد فئات بعد'}
+                        </h3>
+                        <p className="mt-2 text-slate-500 dark:text-slate-400">
+                           {searchTerm ? 'حاول البحث بكلمة أخرى.' : 'ابدأ بإضافة فئة جديدة لمنتجاتك.'}
+                        </p>
+                        {!searchTerm && (
+                             <button 
+                                onClick={() => handleOpenModal()}
+                                className="mt-6 flex items-center mx-auto bg-admin-primary text-white px-4 py-2 rounded-lg hover:bg-admin-primary-hover transition-colors shadow-sm">
+                                <PlusIcon className="w-5 h-5 ml-2" />
+                                إضافة فئة
+                            </button>
+                        )}
                     </div>
                 )}
 
@@ -136,4 +155,5 @@ const AdminCategoriesScreen: React.FC = () => {
     );
 };
 
+// FIX: Added default export to fix lazy loading issue.
 export default AdminCategoriesScreen;

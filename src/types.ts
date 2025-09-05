@@ -131,25 +131,25 @@ export interface Category {
 }
 
 export interface StoreSettings {
-  deliveryFee: number;
+    deliveryFee: number;
 }
 
 // Admin Panel Specific Types
 // FIX: Added the `Customer` interface to resolve import errors in other files.
 export interface Customer extends User {
-  joinDate: string; // ISO date string
-  orderHistory: string[]; // array of order IDs
+    joinDate: string; // ISO date string
+    orderHistory: string[]; // array of order IDs
 }
 
 export interface Driver {
-  id: string;
-  name: string;
-  phone: string;
-  status: 'Available' | 'On-Delivery' | 'Offline';
+    id: string;
+    name: string;
+    phone: string;
+    status: 'Available' | 'On-Delivery' | 'Offline';
 }
 
 export interface AdminOrder extends Order {
-  customer?: Omit<User, 'role'>;
+    customer?: Omit<User, 'role'>;
 }
 
 export interface AdminNotification {

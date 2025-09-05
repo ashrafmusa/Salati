@@ -1,7 +1,7 @@
-// FIX: Switched to Firebase v8 compat imports to resolve module export errors.
-import firebase from "firebase/compat/app";
-import "firebase/compat/auth";
-import "firebase/compat/firestore";
+// FIX: Switched to Firebase v9 modular imports to resolve module export errors across the app.
+import { initializeApp } from "firebase/app";
+import { getAuth } from "firebase/auth";
+import { getFirestore } from "firebase/firestore";
 
 // --- PASTE YOUR WEB APP'S FIREBASE CONFIGURATION HERE ---
 // You can get this from the Firebase console for your project.
@@ -17,9 +17,8 @@ const firebaseConfig = {
 
 
 // Initialize Firebase
-// Check if the app is already initialized to avoid errors.
-const app = !firebase.apps.length ? firebase.initializeApp(firebaseConfig) : firebase.app();
+const app = initializeApp(firebaseConfig);
 
-// FIX: Switched to v8 compat syntax for auth and firestore.
-export const auth = firebase.auth();
-export const db = firebase.firestore();
+// Initialize and export Firebase services
+export const auth = getAuth(app);
+export const db = getFirestore(app);

@@ -4,6 +4,7 @@ import { AdminOrder, OrderStatus, Driver } from '../types';
 import OrderDetailsModal from '../components/OrderDetailsModal';
 import ConfirmationModal from '../components/ConfirmationModal';
 import { db } from '../firebase/config';
+import { collection, query, orderBy, onSnapshot, doc, updateDoc, deleteDoc } from "firebase/firestore";
 import AdminScreenHeader from '../components/AdminScreenHeader';
 
 const getStatusPillClasses = (status: OrderStatus) => {
@@ -35,7 +36,7 @@ const AdminOrdersScreen: React.FC = () => {
         isOpen: false, title: '', message: '', onConfirm: () => {}
     });
     
-    const [searchParams, setSearchParams] = useSearchParams();
+    const [searchParams] = useSearchParams();
     const statusFilterFromUrl = searchParams.get('status') as OrderStatus | null;
     const [filter, setFilter] = useState<OrderStatus | 'all'>(statusFilterFromUrl || 'all');
 
@@ -46,9 +47,8 @@ const AdminOrdersScreen: React.FC = () => {
     }, [statusFilterFromUrl]);
 
     useEffect(() => {
-        const unsubscribeOrders = db.collection('orders')
-            .orderBy('date', 'desc')
-            .onSnapshot(snapshot => {
+        const ordersQuery = query(collection(db, 'orders'), orderBy('date', 'desc'));
+        const unsubscribeOrders = onSnapshot(ordersQuery, snapshot => {
                 const fetchedOrders = snapshot.docs.map(doc => ({
                     id: doc.id,
                     ...doc.data()
@@ -60,7 +60,7 @@ const AdminOrdersScreen: React.FC = () => {
                 setLoading(false);
             });
 
-        const unsubscribeDrivers = db.collection('drivers').onSnapshot(snapshot => {
+        const unsubscribeDrivers = onSnapshot(collection(db, 'drivers'), snapshot => {
             const fetchedDrivers = snapshot.docs.map(doc => ({
                 id: doc.id,
                 ...doc.data()
@@ -76,7 +76,7 @@ const AdminOrdersScreen: React.FC = () => {
 
     const updateOrder = async (orderId: string, updates: Partial<AdminOrder>) => {
         try {
-            await db.collection('orders').doc(orderId).update(updates);
+            await updateDoc(doc(db, 'orders', orderId), updates);
         } catch (error) {
             console.error("Error updating order:", error);
             alert("Failed to update order.");
@@ -143,7 +143,7 @@ const AdminOrdersScreen: React.FC = () => {
             isDestructive: true,
             onConfirm: async () => {
                 try {
-                    await db.collection('orders').doc(orderId).delete();
+                    await deleteDoc(doc(db, 'orders', orderId));
                 } catch (error) {
                     console.error("Error deleting order:", error);
                     alert("Failed to delete order. Please check console for details.");
@@ -353,4 +353,5 @@ const AdminOrdersScreen: React.FC = () => {
     );
 };
 
+// FIX: Added default export to fix lazy loading issue.
 export default AdminOrdersScreen;
