@@ -296,13 +296,18 @@ const Header: React.FC<{ onMenuClick: () => void }> = ({ onMenuClick }) => {
 
 const AdminLayout: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
+  const location = useLocation();
 
   return (
     <div className="flex h-screen bg-admin-bg dark:bg-slate-900 text-charcoal dark:text-slate-200">
       <Sidebar isOpen={isSidebarOpen} setIsOpen={setIsSidebarOpen} />
       <div className="flex-1 flex flex-col transition-all duration-300 md:mr-64">
         <Header onMenuClick={() => setIsSidebarOpen(true)} />
-        <main className="flex-1 p-4 md:p-8 overflow-y-auto">{children}</main>
+        <main className="flex-1 p-4 md:p-8 overflow-y-auto">
+          <div key={location.pathname} className="animate-fade-in">
+            {children}
+          </div>
+        </main>
       </div>
     </div>
   );

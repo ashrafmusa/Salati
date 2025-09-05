@@ -7,6 +7,7 @@ import { WishlistProvider } from "./contexts/WishlistContext";
 import { SettingsProvider } from "./contexts/SettingsContext";
 import FullScreenLoader from "./components/FullScreenLoader";
 import { initializeFirebase } from "./firebase/config";
+import ScrollToTop from "./components/ScrollToTop";
 
 // Statically import components critical for the initial page load (LCP)
 import MainLayout from "./components/MainLayout";
@@ -49,6 +50,7 @@ const App: React.FC = () => {
           <CartProvider>
             <WishlistProvider>
               <HashRouter>
+                <ScrollToTop />
                 <div className="animate-slide-in-up">
                   <Routes>
                     {/* The login page is standalone and does not use the main layout. */}

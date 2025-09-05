@@ -6,6 +6,7 @@ import { useAuth } from "./hooks/useAuth";
 import FullScreenLoader from "./components/FullScreenLoader";
 import { ToastProvider } from "./contexts/ToastContext";
 import { initializeFirebase } from "./firebase/config";
+import ScrollToTop from "./components/ScrollToTop";
 
 // --- Lazy-loaded Admin Components ---
 const AdminLayout = lazy(() => import("./components/AdminLayout"));
@@ -103,6 +104,7 @@ const AdminApp: React.FC = () => {
       <AuthProvider>
         <ToastProvider>
           <HashRouter>
+            <ScrollToTop />
             <Suspense fallback={<FullScreenLoader />}>
               <AdminLayout>
                 <ProtectedAdminRoutes />
