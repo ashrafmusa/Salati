@@ -211,7 +211,7 @@ const BundleFormModal: React.FC<{
                     type="button"
                     key={item.id}
                     onClick={() => addContentItem(item)}
-                    className="w-full text-right p-2 rounded hover:bg-slate-100 dark:hover:bg-slate-800 flex justify-between items-center"
+                    className="w-full text-right p-2 rounded hover:bg-slate-100 dark:hover:bg-slate-800 flex items-center gap-4"
                   >
                     <span>{item.arabicName}</span>
                     <span className="text-sm text-slate-500">
@@ -232,27 +232,33 @@ const BundleFormModal: React.FC<{
                   return (
                     <div
                       key={index}
-                      className="flex items-center gap-2 p-1 bg-slate-50 dark:bg-slate-800 rounded"
+                      className="flex items-center justify-between p-1 bg-slate-50 dark:bg-slate-800 rounded"
                     >
-                      <span className="flex-grow text-sm font-medium">
+                      <span className="text-sm font-medium">
                         {item?.arabicName}
                       </span>
-                      <input
-                        type="number"
-                        min="1"
-                        value={content.quantity}
-                        onChange={(e) =>
-                          handleContentChange(index, "quantity", e.target.value)
-                        }
-                        className="w-16 p-1 text-center rounded border-slate-300 dark:border-slate-600 bg-white dark:bg-slate-700"
-                      />
-                      <button
-                        type="button"
-                        onClick={() => removeContentItem(index)}
-                        className="text-red-500 p-1"
-                      >
-                        <TrashIcon className="w-4 h-4" />
-                      </button>
+                      <div className="flex items-center gap-2">
+                        <input
+                          type="number"
+                          min="1"
+                          value={content.quantity}
+                          onChange={(e) =>
+                            handleContentChange(
+                              index,
+                              "quantity",
+                              e.target.value
+                            )
+                          }
+                          className="w-16 p-1 text-center rounded border-slate-300 dark:border-slate-600 bg-white dark:bg-slate-700"
+                        />
+                        <button
+                          type="button"
+                          onClick={() => removeContentItem(index)}
+                          className="text-red-500 p-1"
+                        >
+                          <TrashIcon className="w-4 h-4" />
+                        </button>
+                      </div>
                     </div>
                   );
                 })}

@@ -1,5 +1,4 @@
 
-
 export interface User {
   uid: string;
   phone: string | null;
@@ -7,16 +6,43 @@ export interface User {
   address?: string;
   role: 'customer' | 'sub-admin' | 'admin' | 'super-admin' | 'driver';
   email?: string | null;
-  password?: string; // Only for mock data, will be obsolete
 }
 
-export interface ProductContentItem {
+export interface Item {
+  id: string;
+  type: 'item';
   name: string;
-  quantity: string;
-  // FIX: The price was optional, which is not safe for calculations. Made it required.
+  arabicName: string;
+  imageUrl: string;
+  category: string;
+  description: string;
   price: number;
-  imageUrl?: string;
+  stock: number;
+  averageRating?: number;
+  reviewCount?: number;
 }
+
+export interface BundleContent {
+  itemId: string;
+  quantity: number;
+}
+
+export interface Bundle {
+  id: string;
+  type: 'bundle';
+  name: string;
+  arabicName: string;
+  imageUrl: string;
+  category: string;
+  description: string;
+  contents: BundleContent[];
+  stock: number;
+  availableExtras?: string[];
+  averageRating?: number;
+  reviewCount?: number;
+}
+
+export type StoreProduct = Item | Bundle;
 
 export interface ExtraItem {
   id: string;
@@ -25,25 +51,20 @@ export interface ExtraItem {
   imageUrl: string;
 }
 
-export interface Product {
-  id: string;
+export interface CartItem {
+  cartId: string; // Unique ID for cart instance
+  productId: string;
+  productType: 'item' | 'bundle';
   name: string;
   arabicName: string;
   imageUrl: string;
+  quantity: number;
+  unitPrice: number; // Price of one unit (item or bundle)
+  selectedExtras: ExtraItem[];
   category: string;
-  description: string;
-  contents: ProductContentItem[];
-  stock?: number;
-  availableExtras?: string[]; // IDs of available extras
-  averageRating?: number; // Calculated field
-  reviewCount?: number; // Calculated field
+  stock: number;
 }
 
-export interface CartItem extends Product {
-  cartId: string; // Unique ID for this cart instance (productId + extras)
-  quantity: number;
-  selectedExtras: ExtraItem[];
-}
 
 export enum OrderStatus {
   Preparing = "قيد التجهيز",
@@ -79,7 +100,7 @@ export interface Discount {
   type: 'percentage' | 'fixed';
   value: number;
   appliesTo: 'all' | 'category' | 'product';
-  target?: string; // category name or product ID
+  target?: string; // category name or product ID (can be item or bundle id)
 }
 
 export interface Offer {
@@ -87,16 +108,16 @@ export interface Offer {
   imageUrl: string;
   title: string;
   expiryDate: string; // ISO date string
-  link?: string; // e.g., '#/product/prod1' or '#/category/العائلية'
-  callToAction?: string; // e.g., 'تسوق الآن'
+  link?: string;
+  callToAction?: string;
   discount?: Discount;
 }
 
 export interface Review {
   id: string;
-  productId: string;
+  productId: string; // Can be an Item ID or a Bundle ID
   author: string;
-  rating: number; // e.g., 1-5
+  rating: number;
   comment: string;
   date: string; // ISO date string
 }
@@ -109,25 +130,25 @@ export interface Category {
 }
 
 export interface StoreSettings {
-    deliveryFee: number;
+  deliveryFee: number;
+  logoUrl: string;
 }
-
 
 // Admin Panel Specific Types
 export interface Customer extends User {
-    joinDate: string; // ISO date string
-    orderHistory: string[]; // array of order IDs
+  joinDate: string; // ISO date string
+  orderHistory: string[]; // array of order IDs
 }
 
 export interface Driver {
-    id: string;
-    name: string;
-    phone: string;
-    status: 'Available' | 'On-Delivery' | 'Offline';
+  id: string;
+  name: string;
+  phone: string;
+  status: 'Available' | 'On-Delivery' | 'Offline';
 }
 
 export interface AdminOrder extends Order {
-    customer?: Omit<User, 'role'>;
+  customer?: Omit<User, 'role'>;
 }
 
 export interface AdminNotification {
