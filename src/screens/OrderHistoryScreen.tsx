@@ -1,9 +1,11 @@
+
+
+
 import React, { useState, useEffect } from 'react';
 import SubPageHeader from '../components/SubPageHeader';
 import { Order, OrderStatus } from '../types';
 import { useAuth } from '../hooks/useAuth';
 import { db } from '../firebase/config';
-import { collection, query, where, orderBy, onSnapshot } from "firebase/firestore";
 import { calculateItemAndExtrasTotal } from '../utils/helpers';
 
 const getStatusColor = (status: OrderStatus) => {
@@ -15,7 +17,7 @@ const getStatusColor = (status: OrderStatus) => {
         case OrderStatus.Cancelled:
             return 'bg-red-100 text-red-800 dark:bg-red-900/50 dark:text-red-300';
         default:
-            return 'bg-slate-100 text-slate-800 dark:bg-slate-700 dark:text-slate-200';
+            return 'bg-gray-100 text-gray-800 dark:bg-gray-700 dark:text-gray-200';
     }
 }
 
@@ -23,11 +25,11 @@ const OrderCard: React.FC<{ order: Order }> = ({ order }) => {
     const date = new Date(order.date).toLocaleDateString('ar-EG');
 
     return (
-        <div className="bg-white dark:bg-slate-800 p-4 rounded-lg shadow-sm">
-            <div className="flex justify-between items-center mb-4 pb-2 border-b dark:border-slate-700">
+        <div className="bg-white dark:bg-gray-800 p-4 rounded-lg shadow-sm">
+            <div className="flex justify-between items-center mb-4 pb-2 border-b dark:border-gray-700">
                 <div>
-                    <h3 className="font-bold text-slate-800 dark:text-slate-100">طلب #{order.id.slice(0, 7).toUpperCase()}</h3>
-                    <p className="text-sm text-slate-500 dark:text-slate-400">{date}</p>
+                    <h3 className="font-bold text-gray-800 dark:text-gray-100">طلب #{order.id.slice(0, 7).toUpperCase()}</h3>
+                    <p className="text-sm text-gray-500 dark:text-gray-400">{date}</p>
                 </div>
                 <span className={`px-3 py-1 text-sm font-semibold rounded-full ${getStatusColor(order.status)}`}>
                     {order.status}
@@ -35,35 +37,25 @@ const OrderCard: React.FC<{ order: Order }> = ({ order }) => {
             </div>
             <div className="space-y-2 mb-4">
                 {order.items.map(item => (
-                    <div key={item.cartId} className="flex justify-between text-slate-600 dark:text-slate-300 text-sm">
+                    <div key={item.cartId} className="flex justify-between text-gray-600 dark:text-gray-300 text-sm">
                         <span>{item.arabicName} (x{item.quantity})</span>
-                        <span>{calculateItemAndExtrasTotal(item) * item.quantity} ج.س</span>
+                        <span>{calculateItemAndExtrasTotal(item, item.selectedExtras) * item.quantity} ج.س</span>
                     </div>
                 ))}
             </div>
-            {(order.subtotal !== undefined || order.deliveryFee !== undefined || (order.discountAmount && order.discountAmount > 0)) && (
-                <div className="space-y-1 text-sm text-slate-600 dark:text-slate-300 pt-2 border-t dark:border-slate-700">
-                    {order.subtotal !== undefined && (
-                        <div className="flex justify-between">
-                            <span>المجموع الفرعي</span>
-                            <span>{order.subtotal} ج.س</span>
-                        </div>
-                    )}
-                    {order.deliveryFee !== undefined && (
-                        <div className="flex justify-between">
-                            <span>رسوم التوصيل</span>
-                            <span>{order.deliveryFee} ج.س</span>
-                        </div>
-                    )}
-                    {order.discountAmount !== undefined && order.discountAmount > 0 && (
-                        <div className="flex justify-between font-semibold text-green-600 dark:text-green-400">
-                            <span>الخصم</span>
-                            <span>-{order.discountAmount} ج.س</span>
-                        </div>
-                    )}
+            {order.subtotal !== undefined && order.deliveryFee !== undefined ? (
+                <div className="space-y-1 text-sm text-gray-600 dark:text-gray-300 pt-2 border-t dark:border-gray-700">
+                    <div className="flex justify-between">
+                        <span>المجموع الفرعي</span>
+                        <span>{order.subtotal} ج.س</span>
+                    </div>
+                    <div className="flex justify-between">
+                        <span>رسوم التوصيل</span>
+                        <span>{order.deliveryFee} ج.س</span>
+                    </div>
                 </div>
-            )}
-            <div className="flex justify-between font-bold text-lg pt-2 border-t dark:border-slate-700 text-slate-900 dark:text-slate-50 mt-2">
+            ) : null}
+            <div className="flex justify-between font-bold text-lg pt-2 border-t dark:border-gray-700 text-gray-900 dark:text-gray-50 mt-2">
                 <span>الإجمالي</span>
                 <span>{order.total} ج.س</span>
             </div>
@@ -82,13 +74,11 @@ const OrderHistoryScreen: React.FC = () => {
             return;
         }
 
-        const ordersQuery = query(
-            collection(db, 'orders'), 
-            where('userId', '==', user.uid), 
-            orderBy('date', 'desc')
-        );
+        const ordersQuery = db.collection('orders')
+            .where('userId', '==', user.uid)
+            .orderBy('date', 'desc');
 
-        const unsubscribe = onSnapshot(ordersQuery, (snapshot) => {
+        const unsubscribe = ordersQuery.onSnapshot((snapshot) => {
             const userOrders = snapshot.docs.map(doc => ({
                 id: doc.id,
                 ...doc.data()
@@ -108,7 +98,7 @@ const OrderHistoryScreen: React.FC = () => {
             <SubPageHeader title="طلباتي" backPath="/profile" />
             <div className="p-4 max-w-2xl mx-auto">
                 {loading ? (
-                     <p className="text-center text-slate-500 dark:text-slate-400 mt-8">جاري تحميل الطلبات...</p>
+                     <p className="text-center text-gray-500 dark:text-gray-400 mt-8">جاري تحميل الطلبات...</p>
                 ) : orders.length > 0 ? (
                     <div className="space-y-4">
                         {orders.map(order => (
@@ -116,12 +106,11 @@ const OrderHistoryScreen: React.FC = () => {
                         ))}
                     </div>
                 ) : (
-                    <p className="text-center text-slate-500 dark:text-slate-400 mt-8">لا يوجد طلبات سابقة.</p>
+                    <p className="text-center text-gray-500 dark:text-gray-400 mt-8">لا يوجد طلبات سابقة.</p>
                 )}
             </div>
         </div>
     );
 };
 
-// FIX: Added default export to fix lazy loading issue.
 export default OrderHistoryScreen;
