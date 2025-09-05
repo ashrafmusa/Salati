@@ -19,14 +19,22 @@ const MainLayout: React.FC = () => {
 
   return (
     <div className="bg-warmBeige dark:bg-slate-950 text-charcoal dark:text-slate-200 min-h-screen font-sans flex flex-col">
-      <div className="flex-grow">
-        <main className={showNavBar ? "pb-52" : ""}>
+      {/* 
+              This div is the main scrollable content area. 
+              It's a flex column where <main> grows to push the <Footer> to the bottom.
+              The padding-bottom (`pb-52`) creates a "safe area" so that when scrolled to the end,
+              the footer content is not obscured by the fixed navigation bar or floating WhatsApp button.
+            */}
+      <div className={`flex-grow flex flex-col ${showNavBar ? "pb-52" : ""}`}>
+        <main className="flex-grow">
           <Outlet /> {/* Renders the nested child route's component */}
         </main>
+        <Footer />
       </div>
+
+      {/* Fixed/Floating elements are rendered outside the main scrollable content flow */}
       {showNavBar && <NavigationBar />}
       {showWhatsAppButton && <WhatsAppButton showNavBar={showNavBar} />}
-      <Footer />
     </div>
   );
 };
