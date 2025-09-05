@@ -32,6 +32,8 @@ const WishlistScreen = lazy(() =>
     default: module.WishlistScreen,
   }))
 );
+const TermsScreen = lazy(() => import("./screens/TermsScreen"));
+const PrivacyPolicyScreen = lazy(() => import("./screens/PrivacyPolicyScreen"));
 
 const App: React.FC = () => {
   return (
@@ -58,6 +60,11 @@ const App: React.FC = () => {
                         <Route
                           path="/product/:id"
                           element={<ProductDetailScreen />}
+                        />
+                        <Route path="/terms" element={<TermsScreen />} />
+                        <Route
+                          path="/privacy"
+                          element={<PrivacyPolicyScreen />}
                         />
 
                         {/* Protected routes */}
