@@ -154,6 +154,4 @@ const AdminCategoriesScreen: React.FC = () => {
         </>
     );
 };
-
-// FIX: Added default export to fix lazy loading issue.
 export default AdminCategoriesScreen;

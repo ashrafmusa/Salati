@@ -2,7 +2,6 @@ import React, { useState, useEffect } from 'react';
 import { db } from '../firebase/config';
 import { collection, onSnapshot, addDoc, updateDoc, deleteDoc, doc } from "firebase/firestore";
 import { Driver } from '../types';
-// FIX: Changed import to use adminIcons for both icons.
 import { PlusIcon, TruckIcon } from '../assets/adminIcons';
 import DriverFormModal from '../components/DriverFormModal';
 
@@ -149,6 +148,4 @@ const AdminDriversScreen: React.FC = () => {
         </div>
     );
 };
-
-// FIX: Added default export to fix lazy loading issue.
 export default AdminDriversScreen;

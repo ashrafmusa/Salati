@@ -160,6 +160,4 @@ const AdminExtrasScreen: React.FC = () => {
         </>
     );
 };
-
-// FIX: Added default export to fix lazy loading issue.
 export default AdminExtrasScreen;

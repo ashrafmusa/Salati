@@ -237,6 +237,4 @@ const AdminItemsScreen: React.FC = () => {
         </>
     );
 };
-
-// FIX: Added default export to fix lazy loading issue.
 export default AdminItemsScreen;

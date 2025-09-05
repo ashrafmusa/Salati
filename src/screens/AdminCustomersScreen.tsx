@@ -198,6 +198,4 @@ const AdminCustomersScreen: React.FC = () => {
         </div>
     );
 };
-
-// FIX: Added default export to fix lazy loading issue.
 export default AdminCustomersScreen;

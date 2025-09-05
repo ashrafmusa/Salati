@@ -100,6 +100,4 @@ const AdminSettingsScreen: React.FC = () => {
         </div>
     );
 };
-
-// FIX: Added default export to fix lazy loading issue.
 export default AdminSettingsScreen;
