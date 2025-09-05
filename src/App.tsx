@@ -5,7 +5,6 @@ import { AuthProvider } from "./contexts/AuthContext";
 import { ThemeProvider } from "./contexts/ThemeContext";
 import { WishlistProvider } from "./contexts/WishlistContext";
 import { SettingsProvider } from "./contexts/SettingsContext";
-import { OnboardingProvider } from "./contexts/OnboardingContext";
 import FullScreenLoader from "./components/FullScreenLoader";
 import { initializeFirebase } from "./firebase/config";
 
@@ -47,71 +46,66 @@ const App: React.FC = () => {
         <SettingsProvider>
           <CartProvider>
             <WishlistProvider>
-              <OnboardingProvider>
-                <HashRouter>
-                  <Suspense fallback={<FullScreenLoader />}>
-                    <div className="animate-slide-in-up">
-                      <Routes>
-                        {/* The login page is standalone and does not use the main layout. */}
-                        <Route path="/login" element={<LoginScreen />} />
+              <HashRouter>
+                <Suspense fallback={<FullScreenLoader />}>
+                  <div className="animate-slide-in-up">
+                    <Routes>
+                      {/* The login page is standalone and does not use the main layout. */}
+                      <Route path="/login" element={<LoginScreen />} />
 
-                        {/* --- ROUTES WITH MAIN LAYOUT --- */}
-                        <Route element={<MainLayout />}>
-                          {/* Public routes */}
-                          <Route path="/" element={<HomeScreen />} />
-                          <Route
-                            path="/search"
-                            element={<SearchResultsScreen />}
-                          />
-                          <Route
-                            path="/bundle/:id"
-                            element={<BundleDetailScreen />}
-                          />
-                          <Route
-                            path="/item/:id"
-                            element={<ItemDetailScreen />}
-                          />
-                          <Route path="/terms" element={<TermsScreen />} />
-                          <Route
-                            path="/privacy"
-                            element={<PrivacyPolicyScreen />}
-                          />
-
-                          {/* Protected routes */}
-                          <Route element={<ProtectedRoute />}>
-                            <Route path="/cart" element={<CartScreen />} />
-                            <Route
-                              path="/wishlist"
-                              element={<WishlistScreen />}
-                            />
-                            <Route
-                              path="/orders"
-                              element={<OrderHistoryScreen />}
-                            />
-                            <Route
-                              path="/profile"
-                              element={<ProfileScreen />}
-                            />
-                            <Route
-                              path="/checkout"
-                              element={<CheckoutScreen />}
-                            />
-                          </Route>
-                        </Route>
-
-                        {/* The order success page is also standalone. */}
+                      {/* --- ROUTES WITH MAIN LAYOUT --- */}
+                      <Route element={<MainLayout />}>
+                        {/* Public routes */}
+                        <Route path="/" element={<HomeScreen />} />
                         <Route
-                          path="/order-success/:orderId"
-                          element={<OrderSuccessScreen />}
+                          path="/search"
+                          element={<SearchResultsScreen />}
+                        />
+                        <Route
+                          path="/bundle/:id"
+                          element={<BundleDetailScreen />}
+                        />
+                        <Route
+                          path="/item/:id"
+                          element={<ItemDetailScreen />}
+                        />
+                        <Route path="/terms" element={<TermsScreen />} />
+                        <Route
+                          path="/privacy"
+                          element={<PrivacyPolicyScreen />}
                         />
 
-                        {/* A fallback route to redirect any unknown paths to the home page. */}
-                        <Route path="*" element={<Navigate to="/" replace />} />
-                      </Routes>
-                    </div>
-                  </Suspense>
-                </HashRouter>
-              </OnboardingProvider>
+                        {/* Protected routes */}
+                        <Route element={<ProtectedRoute />}>
+                          <Route path="/cart" element={<CartScreen />} />
+                          <Route
+                            path="/wishlist"
+                            element={<WishlistScreen />}
+                          />
+                          <Route
+                            path="/orders"
+                            element={<OrderHistoryScreen />}
+                          />
+                          <Route path="/profile" element={<ProfileScreen />} />
+                          <Route
+                            path="/checkout"
+                            element={<CheckoutScreen />}
+                          />
+                        </Route>
+                      </Route>
+
+                      {/* The order success page is also standalone. */}
+                      <Route
+                        path="/order-success/:orderId"
+                        element={<OrderSuccessScreen />}
+                      />
+
+                      {/* A fallback route to redirect any unknown paths to the home page. */}
+                      <Route path="*" element={<Navigate to="/" replace />} />
+                    </Routes>
+                  </div>
+                </Suspense>
+              </HashRouter>
             </WishlistProvider>
           </CartProvider>
         </SettingsProvider>
