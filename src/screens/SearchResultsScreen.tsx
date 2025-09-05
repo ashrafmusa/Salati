@@ -1,14 +1,13 @@
 import React, { useState, useMemo, useEffect } from "react";
 import { useSearchParams } from "react-router-dom";
-import { StoreProduct, Review, Item, Bundle, Category } from "../types";
+import { StoreProduct, Review, Item, Bundle } from "../types";
 import { db } from "../firebase/config";
+import { collection, onSnapshot, getDocs } from "firebase/firestore";
 import StoreProductCard from "../components/ProductCard";
 import FilterSidebar, { Filters } from "../components/FilterSidebar";
 import EmptyState from "../components/EmptyState";
 import { calculateBundlePrice } from "../utils/helpers";
 import HomeScreenSkeleton from "../components/HomeScreenSkeleton";
-import SiteHeader from "../components/SiteHeader";
-import SubPageHeader from "../components/SubPageHeader";
 
 const SearchResultsScreen: React.FC = () => {
   const [searchParams] = useSearchParams();
@@ -58,27 +57,30 @@ const SearchResultsScreen: React.FC = () => {
   useEffect(() => {
     setLoading(true);
     const unsubscribers = [
-      db.collection("items").onSnapshot((snapshot) => {
+      onSnapshot(collection(db, "items"), (snapshot) => {
         setItems(
           snapshot.docs.map((doc) => ({ id: doc.id, ...doc.data() } as Item))
         );
       }),
-      db.collection("bundles").onSnapshot((snapshot) => {
+      onSnapshot(collection(db, "bundles"), (snapshot) => {
         setBundles(
           snapshot.docs.map((doc) => ({ id: doc.id, ...doc.data() } as Bundle))
         );
       }),
-      db.collection("reviews").onSnapshot((snapshot) => {
+      onSnapshot(collection(db, "reviews"), (snapshot) => {
         setReviews(snapshot.docs.map((doc) => doc.data() as Review));
       }),
     ];
 
-    Promise.all([
-      db.collection("items").get(),
-      db.collection("bundles").get(),
-    ]).then(() => {
+    // A simple way to determine initial load completion
+    const initialLoad = async () => {
+      await Promise.all([
+        getDocs(collection(db, "items")),
+        getDocs(collection(db, "bundles")),
+      ]);
       setLoading(false);
-    });
+    };
+    initialLoad();
 
     return () => unsubscribers.forEach((unsub) => unsub());
   }, []);
