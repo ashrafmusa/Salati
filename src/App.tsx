@@ -7,7 +7,7 @@ import { WishlistProvider } from "./contexts/WishlistContext";
 import { SettingsProvider } from "./contexts/SettingsContext";
 import FullScreenLoader from "./components/FullScreenLoader";
 import { initializeFirebase } from "./firebase/config";
-import ScrollToTop from "./components/ScrollToTopButton";
+import ScrollToTop from "./components/ScrollToTop";
 
 // Statically import components critical for the initial page load (LCP)
 import MainLayout from "./components/MainLayout";
