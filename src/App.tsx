@@ -14,7 +14,7 @@ const ProtectedRoute = lazy(() => import("./components/ProtectedRoute"));
 const HomeScreen = lazy(() => import("./screens/HomeScreen"));
 const SearchResultsScreen = lazy(() => import("./screens/SearchResultsScreen"));
 const BundleDetailScreen = lazy(() => import("./screens/BundleDetailScreen"));
-const ItemDetailScreen = lazy(() => import("./screens/ItemDetailscreen"));
+const ItemDetailScreen = lazy(() => import("./screens/ItemDetailScreen"));
 const CartScreen = lazy(() => import("./screens/CartScreen"));
 const OrderHistoryScreen = lazy(() => import("./screens/OrderHistoryScreen"));
 const CheckoutScreen = lazy(() => import("./screens/CheckoutScreen"));
