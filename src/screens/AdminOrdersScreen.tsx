@@ -13,27 +13,25 @@ import {
   updateDoc,
   deleteDoc,
   QueryConstraint,
+  writeBatch,
 } from "firebase/firestore";
 import AdminScreenHeader from "../components/AdminScreenHeader";
 import { useToast } from "../contexts/ToastContext";
 import SortableHeader from "../components/SortableHeader";
-import {
-  usePaginatedFirestore,
-  PaginatedSortConfig,
-} from "../hooks/usePaginatedFirestore";
+import { usePaginatedFirestore } from "../hooks/usePaginatedFirestore";
 import Pagination from "../components/Pagination";
 
 const getStatusPillClasses = (status: OrderStatus) => {
   switch (status) {
     case OrderStatus.Delivered:
       return {
-        dot: "bg-status-delivered",
+        dot: "bg-green-500",
         select:
           "bg-green-100 text-green-800 dark:bg-green-900/50 dark:text-green-300 border-green-500/50 dark:border-green-500/70",
       };
     case OrderStatus.Preparing:
       return {
-        dot: "bg-status-preparing",
+        dot: "bg-yellow-500",
         select:
           "bg-yellow-100 text-yellow-800 dark:bg-yellow-900/50 dark:text-yellow-300 border-yellow-500/50 dark:border-yellow-500/70",
       };
@@ -45,13 +43,13 @@ const getStatusPillClasses = (status: OrderStatus) => {
       };
     case OrderStatus.OutForDelivery:
       return {
-        dot: "bg-status-delivering",
+        dot: "bg-blue-500",
         select:
           "bg-blue-100 text-blue-800 dark:bg-blue-900/50 dark:text-blue-300 border-blue-500/50 dark:border-blue-500/70",
       };
     case OrderStatus.Cancelled:
       return {
-        dot: "bg-status-cancelled",
+        dot: "bg-red-500",
         select:
           "bg-red-100 text-red-800 dark:bg-red-900/50 dark:text-red-300 border-red-500/50 dark:border-red-500/70",
       };
@@ -97,6 +95,8 @@ const AdminOrdersScreen: React.FC = () => {
   const [paymentStatusFilter, setPaymentStatusFilter] = useState<
     "all" | "paid" | "unpaid"
   >("all");
+
+  const [selectedOrders, setSelectedOrders] = useState<string[]>([]);
 
   useEffect(() => {
     if (statusFilterFromUrl) {
@@ -158,6 +158,10 @@ const AdminOrdersScreen: React.FC = () => {
     );
   }, [paginatedOrders, searchTerm]);
 
+  useEffect(() => {
+    setSelectedOrders([]);
+  }, [paginatedOrders]);
+
   const updateOrder = async (orderId: string, updates: Partial<AdminOrder>) => {
     try {
       await updateDoc(doc(db, "orders", orderId), updates);
@@ -165,6 +169,41 @@ const AdminOrdersScreen: React.FC = () => {
     } catch (error) {
       console.error("Error updating order:", error);
       showToast("Failed to update order.", "error");
+    }
+  };
+
+  const handleBulkStatusChange = async (newStatus: OrderStatus) => {
+    if (selectedOrders.length === 0) return;
+    const batch = writeBatch(db);
+    selectedOrders.forEach((orderId) => {
+      const orderRef = doc(db, "orders", orderId);
+      batch.update(orderRef, { status: newStatus });
+    });
+    try {
+      await batch.commit();
+      showToast(
+        `${selectedOrders.length} orders updated to "${newStatus}"`,
+        "success"
+      );
+      setSelectedOrders([]);
+    } catch (error) {
+      showToast("Failed to update orders.", "error");
+    }
+  };
+
+  const handleSelectAll = (e: React.ChangeEvent<HTMLInputElement>) => {
+    if (e.target.checked) {
+      setSelectedOrders(filteredOrders.map((o) => o.id));
+    } else {
+      setSelectedOrders([]);
+    }
+  };
+
+  const handleSelectOrder = (orderId: string, isSelected: boolean) => {
+    if (isSelected) {
+      setSelectedOrders((prev) => [...prev, orderId]);
+    } else {
+      setSelectedOrders((prev) => prev.filter((id) => id !== orderId));
     }
   };
 
@@ -290,15 +329,13 @@ const AdminOrdersScreen: React.FC = () => {
   return (
     <>
       <div className="h-full flex flex-col bg-white dark:bg-slate-800 p-4 md:p-6 rounded-lg shadow-md">
-        <div className="flex flex-col sm:flex-row justify-between items-center mb-6 gap-4">
-          <div className="w-full sm:w-auto">
-            <AdminScreenHeader
-              title="قائمة الطلبات"
-              searchTerm={searchTerm}
-              onSearchChange={setSearchTerm}
-              searchPlaceholder="ابحث بالرقم أو اسم العميل..."
-            />
-          </div>
+        <AdminScreenHeader
+          title="قائمة الطلبات"
+          searchTerm={searchTerm}
+          onSearchChange={setSearchTerm}
+          searchPlaceholder="ابحث بالرقم أو اسم العميل..."
+        />
+        <div className="flex flex-col sm:flex-row justify-between items-center mb-6 gap-2">
           <div className="w-full sm:w-auto flex flex-col sm:flex-row gap-2">
             <select
               value={statusFilter}
@@ -341,6 +378,26 @@ const AdminOrdersScreen: React.FC = () => {
               <option value="unpaid">غير مدفوع</option>
             </select>
           </div>
+          {selectedOrders.length > 0 && (
+            <div className="w-full sm:w-auto flex items-center gap-2 p-2 bg-sky-100 dark:bg-sky-900/50 rounded-lg">
+              <span className="text-sm font-semibold text-sky-800 dark:text-sky-200">
+                {selectedOrders.length} orders selected
+              </span>
+              <select
+                onChange={(e) =>
+                  handleBulkStatusChange(e.target.value as OrderStatus)
+                }
+                className={`text-xs ${inputSelectClasses}`}
+              >
+                <option>Change status...</option>
+                {Object.values(OrderStatus).map((s) => (
+                  <option key={s} value={s}>
+                    {s}
+                  </option>
+                ))}
+              </select>
+            </div>
+          )}
         </div>
 
         <div className="flex-grow overflow-y-auto">
@@ -352,6 +409,16 @@ const AdminOrdersScreen: React.FC = () => {
                 <table className="w-full text-right">
                   <thead className="border-b-2 border-slate-100 dark:border-slate-700">
                     <tr>
+                      <th className="p-3 w-4">
+                        <input
+                          type="checkbox"
+                          onChange={handleSelectAll}
+                          checked={
+                            selectedOrders.length === filteredOrders.length &&
+                            filteredOrders.length > 0
+                          }
+                        />
+                      </th>
                       <SortableHeader<AdminOrder>
                         label="رقم الطلب"
                         sortKey="id"
@@ -393,6 +460,15 @@ const AdminOrdersScreen: React.FC = () => {
                               : "bg-slate-50 dark:bg-slate-800/50"
                           } hover:bg-sky-100/50 dark:hover:bg-sky-900/20`}
                         >
+                          <td className="p-3 w-4">
+                            <input
+                              type="checkbox"
+                              checked={selectedOrders.includes(order.id)}
+                              onChange={(e) =>
+                                handleSelectOrder(order.id, e.target.checked)
+                              }
+                            />
+                          </td>
                           <td className="p-3 font-medium text-slate-700 dark:text-slate-200">
                             {order.id.slice(0, 7).toUpperCase()}
                           </td>
