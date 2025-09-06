@@ -15,7 +15,7 @@ const StoreProductCard: React.FC<StoreProductCardProps> = ({
   product,
   price,
 }) => {
-  const { addToCart } = useCart();
+  const { addToCart, areAllItemsLoaded } = useCart();
   const { isInWishlist, addToWishlist, removeFromWishlist } = useWishlist();
 
   const isFavorited = isInWishlist(product.id);
@@ -24,11 +24,13 @@ const StoreProductCard: React.FC<StoreProductCardProps> = ({
 
   const isOutOfStock = product.stock <= 0;
   const isLowStock = product.stock > 0 && product.stock < 10;
+  const isAddToCartDisabled =
+    isOutOfStock || (product.type === "bundle" && !areAllItemsLoaded);
 
   const handleAddToCart = (e: React.MouseEvent<HTMLButtonElement>) => {
     e.preventDefault();
     e.stopPropagation();
-    if (isOutOfStock) return;
+    if (isAddToCartDisabled) return;
     addToCart(product, []);
   };
 
@@ -108,10 +110,15 @@ const StoreProductCard: React.FC<StoreProductCardProps> = ({
           </span>
           <button
             onClick={handleAddToCart}
-            disabled={isOutOfStock}
+            disabled={isAddToCartDisabled}
             className="bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300 rounded-full p-2.5 shadow-sm transition-all duration-300 ease-in-out transform group-hover:bg-primary group-hover:text-white group-hover:scale-110 group-hover:rotate-90 active:scale-95 disabled:bg-slate-200 dark:disabled:bg-slate-700 disabled:cursor-not-allowed group-hover:disabled:transform-none group-hover:disabled:rotate-0"
             aria-label={
               isOutOfStock ? "Out of stock" : `Add ${product.name} to cart`
+            }
+            title={
+              isAddToCartDisabled && !isOutOfStock
+                ? "Loading pricing info..."
+                : ""
             }
           >
             <PlusIcon className="w-6 h-6" />

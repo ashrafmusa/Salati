@@ -43,6 +43,7 @@ export interface CartContextType {
   error: CartError | null;
   deliveryFee: number;
   deliveryMethod: "delivery" | "pickup";
+  areAllItemsLoaded: boolean;
   setDeliveryMethod: (method: "delivery" | "pickup") => void;
   addToCart: (product: StoreProduct, selectedExtras?: ExtraItem[]) => void;
   updateQuantity: (cartId: string, quantity: number) => void;
@@ -91,6 +92,7 @@ export const CartProvider: React.FC<{ children: ReactNode }> = ({
   const [deliveryMethod, setDeliveryMethod] = useState<"delivery" | "pickup">(
     "delivery"
   );
+  const [areAllItemsLoaded, setAreAllItemsLoaded] = useState(false);
 
   useEffect(() => {
     const itemsQuery = query(collection(db, "items"));
@@ -99,6 +101,7 @@ export const CartProvider: React.FC<{ children: ReactNode }> = ({
         (doc) => ({ id: doc.id, ...doc.data() } as Item)
       );
       setAllItems(fetchedItems);
+      setAreAllItemsLoaded(true);
     });
 
     const offersQuery = query(
@@ -194,6 +197,10 @@ export const CartProvider: React.FC<{ children: ReactNode }> = ({
 
   const addToCart = useCallback(
     (product: StoreProduct, selectedExtras: ExtraItem[] = []) => {
+      if (product.type === "bundle" && !areAllItemsLoaded) {
+        console.error("Items not loaded yet, cannot add bundle to cart.");
+        return;
+      }
       const cartId = generateCartId(product, selectedExtras);
 
       const action = (prevItems: CartItem[]) => {
@@ -252,7 +259,7 @@ export const CartProvider: React.FC<{ children: ReactNode }> = ({
         });
       }
     },
-    [user, allItems]
+    [user, allItems, areAllItemsLoaded]
   );
 
   const removeFromCart = useCallback(
@@ -403,6 +410,7 @@ export const CartProvider: React.FC<{ children: ReactNode }> = ({
       getCartCount,
       deliveryMethod,
       setDeliveryMethod,
+      areAllItemsLoaded,
     }),
     [
       items,
@@ -418,6 +426,7 @@ export const CartProvider: React.FC<{ children: ReactNode }> = ({
       getFinalTotal,
       getCartCount,
       deliveryMethod,
+      areAllItemsLoaded,
     ]
   );
 

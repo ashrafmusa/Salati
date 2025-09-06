@@ -133,7 +133,7 @@ const WriteReviewForm: React.FC<{ productId: string }> = ({ productId }) => {
 
 const BundleDetailScreen: React.FC = () => {
   const { id } = useParams<{ id: string }>();
-  const { addToCart } = useCart();
+  const { addToCart, areAllItemsLoaded } = useCart();
   const { isInWishlist, addToWishlist, removeFromWishlist } = useWishlist();
 
   const [bundle, setBundle] = useState<Bundle | null>(null);
@@ -260,7 +260,7 @@ const BundleDetailScreen: React.FC = () => {
   };
 
   const handleAddToCart = () => {
-    if (isOutOfStock) return;
+    if (isOutOfStock || !areAllItemsLoaded) return;
     setIsAdding(true);
     setTimeout(() => {
       addToCart(bundle, selectedExtras);
@@ -276,6 +276,13 @@ const BundleDetailScreen: React.FC = () => {
         ? prev.filter((e) => e.id !== extra.id)
         : [...prev, extra]
     );
+  };
+
+  const getButtonContent = () => {
+    if (isOutOfStock) return "نفدت الكمية";
+    if (!areAllItemsLoaded) return "...جار التحميل";
+    if (isAdding) return <SpinnerIcon className="w-6 h-6 animate-spin" />;
+    return "إضافة للعربة";
   };
 
   return (
@@ -344,20 +351,28 @@ const BundleDetailScreen: React.FC = () => {
                       (c) => c.itemId === item.id
                     );
                     return (
-                      <li key={item.id} className="flex items-center gap-3">
-                        <img
-                          src={getOptimizedImageUrl(item.imageUrl, 100)}
-                          alt={item.arabicName}
-                          className="w-12 h-12 rounded-md object-cover"
-                        />
-                        <div>
-                          <p className="font-semibold text-slate-700 dark:text-slate-200">
-                            {item.arabicName}
-                          </p>
-                          <p className="text-sm text-slate-500">
-                            الكمية: {content?.quantity}
-                          </p>
+                      <li
+                        key={item.id}
+                        className="flex justify-between items-center gap-3"
+                      >
+                        <div className="flex items-center gap-3">
+                          <img
+                            src={getOptimizedImageUrl(item.imageUrl, 100)}
+                            alt={item.arabicName}
+                            className="w-12 h-12 rounded-md object-cover"
+                          />
+                          <div>
+                            <p className="font-semibold text-slate-700 dark:text-slate-200">
+                              {item.arabicName}
+                            </p>
+                            <p className="text-sm text-slate-500">
+                              الكمية: {content?.quantity}
+                            </p>
+                          </div>
                         </div>
+                        <p className="text-sm font-semibold text-slate-600 dark:text-slate-300">
+                          {item.price.toLocaleString()} ج.س
+                        </p>
                       </li>
                     );
                   })}
@@ -459,16 +474,10 @@ const BundleDetailScreen: React.FC = () => {
               </div>
               <button
                 onClick={handleAddToCart}
-                disabled={isAdding || isOutOfStock}
+                disabled={isAdding || isOutOfStock || !areAllItemsLoaded}
                 className="flex-grow sm:flex-grow-0 sm:w-48 px-6 py-3 rounded-lg bg-primary text-white font-bold text-lg flex items-center justify-center transition-colors disabled:bg-slate-400 dark:disabled:bg-slate-600 disabled:cursor-not-allowed"
               >
-                {isOutOfStock ? (
-                  "نفدت الكمية"
-                ) : isAdding ? (
-                  <SpinnerIcon className="w-6 h-6 animate-spin" />
-                ) : (
-                  "إضافة للعربة"
-                )}
+                {getButtonContent()}
               </button>
             </div>
           )}
