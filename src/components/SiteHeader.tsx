@@ -48,7 +48,7 @@ const SiteHeader: React.FC<SiteHeaderProps> = ({
   };
 
   return (
-    <header className="sticky top-0 z-20 bg-warmBeige/80 dark:bg-slate-950/80 backdrop-blur-lg border-b dark:border-slate-800 transition-shadow duration-300 header-shadow">
+    <header className="sticky top-0 z-20 bg-white/80 dark:bg-slate-900/80 backdrop-blur-lg border-b dark:border-slate-800 transition-shadow duration-300 header-shadow">
       <div className="px-4 sm:px-6 py-3 max-w-7xl mx-auto flex items-center gap-4">
         <Logo
           imgProps={{ width: 48, height: 48 }}
@@ -72,7 +72,7 @@ const SiteHeader: React.FC<SiteHeaderProps> = ({
               <item.icon className="w-5 h-5" />
               <span>{item.label}</span>
               {item.path === "/cart" && cartCount > 0 && (
-                <span className="absolute -top-1 -right-1 bg-accent text-white text-xs font-bold rounded-full h-5 w-5 flex items-center justify-center border-2 border-warmBeige dark:border-slate-950">
+                <span className="absolute -top-1 -right-1 bg-accent text-white text-xs font-bold rounded-full h-5 w-5 flex items-center justify-center border-2 border-white dark:border-slate-900">
                   {cartCount}
                 </span>
               )}
@@ -106,7 +106,7 @@ const SiteHeader: React.FC<SiteHeaderProps> = ({
         >
           <FilterIcon className="w-5 h-5" />
           {areFiltersActive && (
-            <span className="absolute -top-1 -right-1 block w-3 h-3 bg-primary rounded-full border-2 border-warmBeige dark:border-slate-950"></span>
+            <span className="absolute -top-1 -right-1 block w-3 h-3 bg-primary rounded-full border-2 border-slate-50 dark:border-slate-900"></span>
           )}
         </button>
       </div>

@@ -184,7 +184,7 @@ const HomeScreen: React.FC = () => {
         </h1>
         <PromotionalBanner />
 
-        <section>
+        <section className="mt-12">
           <SectionHeader title="تسوق حسب الفئة" />
           <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
             {categories
@@ -216,7 +216,7 @@ const HomeScreen: React.FC = () => {
         </section>
 
         {topRatedProducts.length > 0 && (
-          <section>
+          <section className="mt-12">
             <SectionHeader title="الأكثر تقييماً" />
             <div className="flex gap-6 overflow-x-auto pb-4 -mx-4 px-4 no-scrollbar">
               {topRatedProducts.map((product, index) => (
@@ -235,7 +235,7 @@ const HomeScreen: React.FC = () => {
           </section>
         )}
 
-        <section>
+        <section className="mt-12">
           <SectionHeader title="جميع المنتجات" />
           {noProductsAvailable ? (
             <EmptyState message="لا توجد منتجات متاحة في المتجر حالياً." />

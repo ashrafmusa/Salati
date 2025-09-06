@@ -21,7 +21,6 @@ export default {
           DEFAULT: '#D21034', 
           hover: '#a60d29'
         },
-        warmBeige: '#F5F5DC',
         charcoal: '#1A1A1A',
         admin: {
           primary: '#007A33',

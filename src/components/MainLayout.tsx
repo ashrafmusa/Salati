@@ -19,7 +19,7 @@ const MainLayout: React.FC = () => {
   );
 
   return (
-    <div className="bg-warmBeige dark:bg-slate-950 text-charcoal dark:text-slate-200 min-h-screen font-sans flex flex-col max-w-full overflow-x-hidden">
+    <div className="bg-slate-50 dark:bg-slate-950 text-charcoal dark:text-slate-200 min-h-screen font-sans flex flex-col max-w-full overflow-x-hidden">
       <div
         className={`flex-grow flex flex-col ${
           showNavBarOnPage ? "pb-24 md:pb-0" : ""

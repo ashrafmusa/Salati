@@ -101,7 +101,7 @@ const StoreProductCard: React.FC<StoreProductCardProps> = ({
         <p className="text-xs text-slate-500 dark:text-slate-400 font-semibold uppercase tracking-wider">
           {product.category}
         </p>
-        <h3 className="text-lg font-bold text-slate-800 dark:text-slate-100 truncate mt-1 group-hover:text-primary-dark transition-colors">
+        <h3 className="text-lg font-semibold text-slate-800 dark:text-slate-100 truncate mt-2 group-hover:text-primary-dark transition-colors">
           {product.arabicName}
         </h3>
         <div className="flex justify-between items-center mt-4">
