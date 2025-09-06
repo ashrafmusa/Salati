@@ -21,7 +21,7 @@ import {
 import AdminNotifications from "./AdminNotifications";
 import ThemeToggle from "./ThemeToggle";
 import { useAuth } from "../hooks/useAuth";
-import AdminNavigationBar from "./AdminNavigationbar";
+import AdminNavigationBar from "./AdminNavigationBar";
 
 interface NavLinkItem {
   to: string;
