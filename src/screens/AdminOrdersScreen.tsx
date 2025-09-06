@@ -264,7 +264,7 @@ const AdminOrdersScreen: React.FC = () => {
 
   return (
     <>
-      <div className="bg-white dark:bg-slate-800 p-4 md:p-6 rounded-lg shadow-md">
+      <div className="h-full flex flex-col bg-white dark:bg-slate-800 p-4 md:p-6 rounded-lg shadow-md">
         <div className="flex flex-col sm:flex-row justify-between items-center mb-6 gap-4">
           <AdminScreenHeader
             title="قائمة الطلبات"
@@ -288,65 +288,179 @@ const AdminOrdersScreen: React.FC = () => {
           </div>
         </div>
 
-        {loading ? (
-          <p>Loading orders...</p>
-        ) : (
-          <>
-            <div className="overflow-x-auto hidden md:block">
-              <table className="w-full text-right">
-                <thead className="border-b-2 border-slate-100 dark:border-slate-700">
-                  <tr>
-                    <SortableHeader<AdminOrder>
-                      label="رقم الطلب"
-                      sortKey="id"
-                      requestSort={requestSort}
-                      sortConfig={sortConfig}
-                    />
-                    <th className="p-3 text-sm font-semibold text-slate-500 dark:text-slate-400">
-                      العميل
-                    </th>
-                    <SortableHeader<AdminOrder>
-                      label="الإجمالي"
-                      sortKey="total"
-                      requestSort={requestSort}
-                      sortConfig={sortConfig}
-                    />
-                    <th className="p-3 text-sm font-semibold text-slate-500 dark:text-slate-400">
-                      حالة الدفع
-                    </th>
-                    <th className="p-3 text-sm font-semibold text-slate-500 dark:text-slate-400">
-                      حالة الطلب
-                    </th>
-                    <th className="p-3 text-sm font-semibold text-slate-500 dark:text-slate-400">
-                      السائق
-                    </th>
-                    <th className="p-3 text-sm font-semibold text-slate-500 dark:text-slate-400">
-                      إجراءات
-                    </th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {sortedOrders.map((order, index) => {
-                    const statusClasses = getStatusPillClasses(order.status);
-                    return (
-                      <tr
-                        key={order.id}
-                        className={`border-b dark:border-slate-700 transition-colors ${
-                          index % 2 === 0
-                            ? "bg-white dark:bg-slate-800"
-                            : "bg-slate-50 dark:bg-slate-800/50"
-                        } hover:bg-sky-100/50 dark:hover:bg-sky-900/20`}
-                      >
-                        <td className="p-3 font-medium text-slate-700 dark:text-slate-200">
-                          {order.id.slice(0, 7).toUpperCase()}
-                        </td>
-                        <td className="p-3 text-slate-600 dark:text-slate-300">
-                          {order.deliveryInfo.name}
-                        </td>
-                        <td className="p-3 text-slate-600 dark:text-slate-300">
+        <div className="flex-grow overflow-y-auto">
+          {loading ? (
+            <p>Loading orders...</p>
+          ) : (
+            <>
+              <div className="overflow-x-auto hidden md:block">
+                <table className="w-full text-right">
+                  <thead className="border-b-2 border-slate-100 dark:border-slate-700">
+                    <tr>
+                      <SortableHeader<AdminOrder>
+                        label="رقم الطلب"
+                        sortKey="id"
+                        requestSort={requestSort}
+                        sortConfig={sortConfig}
+                      />
+                      <th className="p-3 text-sm font-semibold text-slate-500 dark:text-slate-400">
+                        العميل
+                      </th>
+                      <SortableHeader<AdminOrder>
+                        label="الإجمالي"
+                        sortKey="total"
+                        requestSort={requestSort}
+                        sortConfig={sortConfig}
+                      />
+                      <th className="p-3 text-sm font-semibold text-slate-500 dark:text-slate-400">
+                        حالة الدفع
+                      </th>
+                      <th className="p-3 text-sm font-semibold text-slate-500 dark:text-slate-400">
+                        حالة الطلب
+                      </th>
+                      <th className="p-3 text-sm font-semibold text-slate-500 dark:text-slate-400">
+                        السائق
+                      </th>
+                      <th className="p-3 text-sm font-semibold text-slate-500 dark:text-slate-400">
+                        إجراءات
+                      </th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {sortedOrders.map((order, index) => {
+                      const statusClasses = getStatusPillClasses(order.status);
+                      return (
+                        <tr
+                          key={order.id}
+                          className={`border-b dark:border-slate-700 transition-colors ${
+                            index % 2 === 0
+                              ? "bg-white dark:bg-slate-800"
+                              : "bg-slate-50 dark:bg-slate-800/50"
+                          } hover:bg-sky-100/50 dark:hover:bg-sky-900/20`}
+                        >
+                          <td className="p-3 font-medium text-slate-700 dark:text-slate-200">
+                            {order.id.slice(0, 7).toUpperCase()}
+                          </td>
+                          <td className="p-3 text-slate-600 dark:text-slate-300">
+                            {order.deliveryInfo.name}
+                          </td>
+                          <td className="p-3 text-slate-600 dark:text-slate-300">
+                            {order.total} ج.س
+                          </td>
+                          <td className="p-3">
+                            <span
+                              className={`px-2 py-1 text-xs font-semibold rounded-full ${
+                                order.paymentStatus === "paid"
+                                  ? "bg-green-100 text-green-800 dark:bg-green-900/50 dark:text-green-300"
+                                  : "bg-amber-100 text-amber-800 dark:bg-amber-900/50 dark:text-amber-300"
+                              }`}
+                            >
+                              {order.paymentStatus === "paid"
+                                ? "مدفوع"
+                                : "غير مدفوع"}
+                            </span>
+                          </td>
+                          <td className="p-3 w-48">
+                            <div className="flex items-center gap-2">
+                              <span
+                                className={`w-2.5 h-2.5 rounded-full ${statusClasses.dot}`}
+                              ></span>
+                              <select
+                                id={`status-${order.id}`}
+                                value={order.status}
+                                onChange={(e) =>
+                                  handleStatusChange(
+                                    order,
+                                    e.target.value as OrderStatus
+                                  )
+                                }
+                                className={`p-1.5 w-full rounded text-sm border focus:ring-2 focus:ring-admin-primary focus:outline-none font-semibold ${statusClasses.select}`}
+                                onClick={(e) => e.stopPropagation()}
+                              >
+                                {Object.values(OrderStatus).map((s) => (
+                                  <option key={s} value={s}>
+                                    {s}
+                                  </option>
+                                ))}
+                              </select>
+                            </div>
+                          </td>
+                          <td className="p-3 w-40">
+                            <select
+                              value={order.driverId || ""}
+                              onChange={(e) =>
+                                handleDriverChange(
+                                  order.id,
+                                  e.target.value || null
+                                )
+                              }
+                              className="p-2 w-full rounded text-sm border-slate-300 dark:border-slate-600 focus:ring-admin-primary focus:border-admin-primary bg-white dark:bg-slate-700 text-slate-900 dark:text-slate-100"
+                              onClick={(e) => e.stopPropagation()}
+                            >
+                              <option value="">اختر سائق</option>
+                              {drivers.map((d) => (
+                                <option key={d.id} value={d.id}>
+                                  {d.name}
+                                </option>
+                              ))}
+                            </select>
+                          </td>
+                          <td className="p-3 space-x-4 space-x-reverse">
+                            <button
+                              onClick={() => setSelectedOrder(order)}
+                              className="text-admin-primary hover:underline text-sm font-semibold"
+                            >
+                              التفاصيل
+                            </button>
+                            {order.status === OrderStatus.Cancelled && (
+                              <button
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  handleDeleteOrder(order.id);
+                                }}
+                                className="text-red-500 hover:underline text-sm font-semibold"
+                              >
+                                حذف
+                              </button>
+                            )}
+                          </td>
+                        </tr>
+                      );
+                    })}
+                  </tbody>
+                </table>
+              </div>
+
+              <div className="space-y-4 md:hidden">
+                {sortedOrders.map((order) => {
+                  const statusClasses = getStatusPillClasses(order.status);
+                  return (
+                    <div
+                      key={order.id}
+                      className={`bg-slate-50 dark:bg-slate-800/50 p-4 rounded-lg shadow-sm border-l-4 ${statusClasses.dot.replace(
+                        "bg-",
+                        "border-"
+                      )}`}
+                    >
+                      <div className="flex justify-between items-start mb-3">
+                        <div>
+                          <p className="text-sm text-slate-500 dark:text-slate-400">
+                            طلب #{order.id.slice(0, 7).toUpperCase()}
+                          </p>
+                          <p className="font-bold text-slate-800 dark:text-slate-100">
+                            {order.deliveryInfo.name}
+                          </p>
+                        </div>
+                        <p className="text-xl font-bold text-primary dark:text-green-400">
                           {order.total} ج.س
-                        </td>
-                        <td className="p-3">
+                        </p>
+                      </div>
+
+                      <div className="pt-3 border-t dark:border-slate-700">
+                        <div className="mb-3">
+                          <label className="text-xs text-slate-500 dark:text-slate-400 block mb-1">
+                            حالة الدفع:
+                          </label>
                           <span
                             className={`px-2 py-1 text-xs font-semibold rounded-full ${
                               order.paymentStatus === "paid"
@@ -358,14 +472,14 @@ const AdminOrdersScreen: React.FC = () => {
                               ? "مدفوع"
                               : "غير مدفوع"}
                           </span>
-                        </td>
-                        <td className="p-3 w-48">
-                          <div className="flex items-center gap-2">
-                            <span
-                              className={`w-2.5 h-2.5 rounded-full ${statusClasses.dot}`}
-                            ></span>
+                        </div>
+                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                          <div>
+                            <label className="text-xs text-slate-500 dark:text-slate-400 block mb-1">
+                              حالة الطلب:
+                            </label>
                             <select
-                              id={`status-${order.id}`}
+                              id={`status-mobile-${order.id}`}
                               value={order.status}
                               onChange={(e) =>
                                 handleStatusChange(
@@ -373,8 +487,7 @@ const AdminOrdersScreen: React.FC = () => {
                                   e.target.value as OrderStatus
                                 )
                               }
-                              className={`p-1.5 w-full rounded text-sm border focus:ring-2 focus:ring-admin-primary focus:outline-none font-semibold ${statusClasses.select}`}
-                              onClick={(e) => e.stopPropagation()}
+                              className={`p-2 w-full rounded text-sm border focus:ring-admin-primary focus:outline-none font-semibold ${statusClasses.select}`}
                             >
                               {Object.values(OrderStatus).map((s) => (
                                 <option key={s} value={s}>
@@ -383,173 +496,62 @@ const AdminOrdersScreen: React.FC = () => {
                               ))}
                             </select>
                           </div>
-                        </td>
-                        <td className="p-3 w-40">
-                          <select
-                            value={order.driverId || ""}
-                            onChange={(e) =>
-                              handleDriverChange(
-                                order.id,
-                                e.target.value || null
-                              )
-                            }
-                            className="p-2 w-full rounded text-sm border-slate-300 dark:border-slate-600 focus:ring-admin-primary focus:border-admin-primary bg-white dark:bg-slate-700 text-slate-900 dark:text-slate-100"
-                            onClick={(e) => e.stopPropagation()}
-                          >
-                            <option value="">اختر سائق</option>
-                            {drivers.map((d) => (
-                              <option key={d.id} value={d.id}>
-                                {d.name}
-                              </option>
-                            ))}
-                          </select>
-                        </td>
-                        <td className="p-3 space-x-4 space-x-reverse">
-                          <button
-                            onClick={() => setSelectedOrder(order)}
-                            className="text-admin-primary hover:underline text-sm font-semibold"
-                          >
-                            التفاصيل
-                          </button>
-                          {order.status === OrderStatus.Cancelled && (
+                          <div>
+                            <label className="text-xs text-slate-500 dark:text-slate-400 block mb-1">
+                              السائق:
+                            </label>
+                            <select
+                              value={order.driverId || ""}
+                              onChange={(e) =>
+                                handleDriverChange(
+                                  order.id,
+                                  e.target.value || null
+                                )
+                              }
+                              className={`p-2 w-full rounded text-sm ${inputSelectClasses}`}
+                            >
+                              <option value="">اختر سائق</option>
+                              {drivers.map((d) => (
+                                <option key={d.id} value={d.id}>
+                                  {d.name}
+                                </option>
+                              ))}
+                            </select>
+                          </div>
+                        </div>
+                      </div>
+                      <div className="mt-4 pt-3 border-t dark:border-slate-700">
+                        {order.status === OrderStatus.Cancelled ? (
+                          <div className="flex items-center gap-2">
                             <button
-                              onClick={(e) => {
-                                e.stopPropagation();
-                                handleDeleteOrder(order.id);
-                              }}
-                              className="text-red-500 hover:underline text-sm font-semibold"
+                              onClick={() => setSelectedOrder(order)}
+                              className="flex-grow bg-admin-primary/10 text-admin-primary font-semibold px-3 py-2 text-sm rounded hover:bg-admin-primary/20 transition-colors"
+                            >
+                              عرض التفاصيل
+                            </button>
+                            <button
+                              onClick={() => handleDeleteOrder(order.id)}
+                              className="flex-shrink-0 bg-red-500/10 text-red-500 font-semibold px-4 py-2 text-sm rounded hover:bg-red-500/20 transition-colors"
                             >
                               حذف
                             </button>
-                          )}
-                        </td>
-                      </tr>
-                    );
-                  })}
-                </tbody>
-              </table>
-            </div>
-
-            <div className="space-y-4 md:hidden">
-              {sortedOrders.map((order) => {
-                const statusClasses = getStatusPillClasses(order.status);
-                return (
-                  <div
-                    key={order.id}
-                    className={`bg-slate-50 dark:bg-slate-800/50 p-4 rounded-lg shadow-sm border-l-4 ${statusClasses.dot.replace(
-                      "bg-",
-                      "border-"
-                    )}`}
-                  >
-                    <div className="flex justify-between items-start mb-3">
-                      <div>
-                        <p className="text-sm text-slate-500 dark:text-slate-400">
-                          طلب #{order.id.slice(0, 7).toUpperCase()}
-                        </p>
-                        <p className="font-bold text-slate-800 dark:text-slate-100">
-                          {order.deliveryInfo.name}
-                        </p>
-                      </div>
-                      <p className="text-xl font-bold text-primary dark:text-green-400">
-                        {order.total} ج.س
-                      </p>
-                    </div>
-
-                    <div className="pt-3 border-t dark:border-slate-700">
-                      <div className="mb-3">
-                        <label className="text-xs text-slate-500 dark:text-slate-400 block mb-1">
-                          حالة الدفع:
-                        </label>
-                        <span
-                          className={`px-2 py-1 text-xs font-semibold rounded-full ${
-                            order.paymentStatus === "paid"
-                              ? "bg-green-100 text-green-800 dark:bg-green-900/50 dark:text-green-300"
-                              : "bg-amber-100 text-amber-800 dark:bg-amber-900/50 dark:text-amber-300"
-                          }`}
-                        >
-                          {order.paymentStatus === "paid"
-                            ? "مدفوع"
-                            : "غير مدفوع"}
-                        </span>
-                      </div>
-                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                        <div>
-                          <label className="text-xs text-slate-500 dark:text-slate-400 block mb-1">
-                            حالة الطلب:
-                          </label>
-                          <select
-                            id={`status-mobile-${order.id}`}
-                            value={order.status}
-                            onChange={(e) =>
-                              handleStatusChange(
-                                order,
-                                e.target.value as OrderStatus
-                              )
-                            }
-                            className={`p-2 w-full rounded text-sm border focus:ring-admin-primary focus:outline-none font-semibold ${statusClasses.select}`}
-                          >
-                            {Object.values(OrderStatus).map((s) => (
-                              <option key={s} value={s}>
-                                {s}
-                              </option>
-                            ))}
-                          </select>
-                        </div>
-                        <div>
-                          <label className="text-xs text-slate-500 dark:text-slate-400 block mb-1">
-                            السائق:
-                          </label>
-                          <select
-                            value={order.driverId || ""}
-                            onChange={(e) =>
-                              handleDriverChange(
-                                order.id,
-                                e.target.value || null
-                              )
-                            }
-                            className={`p-2 w-full rounded text-sm ${inputSelectClasses}`}
-                          >
-                            <option value="">اختر سائق</option>
-                            {drivers.map((d) => (
-                              <option key={d.id} value={d.id}>
-                                {d.name}
-                              </option>
-                            ))}
-                          </select>
-                        </div>
-                      </div>
-                    </div>
-                    <div className="mt-4 pt-3 border-t dark:border-slate-700">
-                      {order.status === OrderStatus.Cancelled ? (
-                        <div className="flex items-center gap-2">
+                          </div>
+                        ) : (
                           <button
                             onClick={() => setSelectedOrder(order)}
-                            className="flex-grow bg-admin-primary/10 text-admin-primary font-semibold px-3 py-2 text-sm rounded hover:bg-admin-primary/20 transition-colors"
+                            className="w-full bg-admin-primary/10 text-admin-primary font-semibold px-3 py-2 text-sm rounded hover:bg-admin-primary/20 transition-colors"
                           >
                             عرض التفاصيل
                           </button>
-                          <button
-                            onClick={() => handleDeleteOrder(order.id)}
-                            className="flex-shrink-0 bg-red-500/10 text-red-500 font-semibold px-4 py-2 text-sm rounded hover:bg-red-500/20 transition-colors"
-                          >
-                            حذف
-                          </button>
-                        </div>
-                      ) : (
-                        <button
-                          onClick={() => setSelectedOrder(order)}
-                          className="w-full bg-admin-primary/10 text-admin-primary font-semibold px-3 py-2 text-sm rounded hover:bg-admin-primary/20 transition-colors"
-                        >
-                          عرض التفاصيل
-                        </button>
-                      )}
+                        )}
+                      </div>
                     </div>
-                  </div>
-                );
-              })}
-            </div>
-          </>
-        )}
+                  );
+                })}
+              </div>
+            </>
+          )}
+        </div>
       </div>
       {selectedOrder && (
         <OrderDetailsModal

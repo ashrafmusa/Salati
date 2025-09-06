@@ -88,7 +88,7 @@ const AdminExtrasScreen: React.FC = () => {
 
   return (
     <>
-      <div className="bg-white dark:bg-slate-800 p-4 md:p-6 rounded-lg shadow-md">
+      <div className="h-full flex flex-col bg-white dark:bg-slate-800 p-4 md:p-6 rounded-lg shadow-md">
         <AdminScreenHeader
           title="إدارة الإضافات"
           buttonText="إضافة عنصر"
@@ -98,132 +98,134 @@ const AdminExtrasScreen: React.FC = () => {
           searchPlaceholder="ابحث باسم العنصر..."
         />
 
-        {loading ? (
-          <p>Loading extra items...</p>
-        ) : filteredExtras.length > 0 ? (
-          <>
-            {/* Desktop Table View */}
-            <div className="overflow-x-auto hidden md:block">
-              <table className="w-full text-right">
-                <thead className="border-b-2 border-slate-100 dark:border-slate-700">
-                  <tr>
-                    <th className="p-3 text-sm font-semibold text-slate-500 dark:text-slate-400">
-                      العنصر
-                    </th>
-                    <th className="p-3 text-sm font-semibold text-slate-500 dark:text-slate-400">
-                      السعر
-                    </th>
-                    <th className="p-3 text-sm font-semibold text-slate-500 dark:text-slate-400">
-                      إجراءات
-                    </th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {filteredExtras.map((extra, index) => (
-                    <tr
-                      key={extra.id}
-                      className={`border-b dark:border-slate-700 transition-colors ${
-                        index % 2 === 0
-                          ? "bg-white dark:bg-slate-800"
-                          : "bg-slate-50 dark:bg-slate-800/50"
-                      } hover:bg-sky-100/50 dark:hover:bg-sky-900/20`}
-                    >
-                      <td className="p-3">
-                        <div className="flex items-center gap-3">
-                          <img
-                            src={getOptimizedImageUrl(extra.imageUrl, 100)}
-                            alt={extra.name}
-                            className="w-14 h-14 rounded-md object-cover"
-                          />
-                          <span className="font-medium text-slate-700 dark:text-slate-200">
-                            {extra.name}
-                          </span>
-                        </div>
-                      </td>
-                      <td className="p-3 text-slate-600 dark:text-slate-300">
-                        {extra.price} ج.س
-                      </td>
-                      <td className="p-3 space-x-4 space-x-reverse">
-                        <button
-                          onClick={() => handleOpenModal(extra)}
-                          className="text-admin-primary hover:underline text-sm font-semibold"
-                        >
-                          تعديل
-                        </button>
-                        <button
-                          onClick={() => setExtraToDelete(extra)}
-                          className="text-red-500 hover:underline text-sm font-semibold"
-                        >
-                          حذف
-                        </button>
-                      </td>
+        <div className="flex-grow overflow-y-auto">
+          {loading ? (
+            <p>Loading extra items...</p>
+          ) : filteredExtras.length > 0 ? (
+            <>
+              {/* Desktop Table View */}
+              <div className="overflow-x-auto hidden md:block">
+                <table className="w-full text-right">
+                  <thead className="border-b-2 border-slate-100 dark:border-slate-700">
+                    <tr>
+                      <th className="p-3 text-sm font-semibold text-slate-500 dark:text-slate-400">
+                        العنصر
+                      </th>
+                      <th className="p-3 text-sm font-semibold text-slate-500 dark:text-slate-400">
+                        السعر
+                      </th>
+                      <th className="p-3 text-sm font-semibold text-slate-500 dark:text-slate-400">
+                        إجراءات
+                      </th>
                     </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
-            {/* Mobile Card View */}
-            <div className="space-y-4 md:hidden">
-              {filteredExtras.map((extra) => (
-                <div
-                  key={extra.id}
-                  className="bg-slate-50 dark:bg-slate-800/50 p-4 rounded-lg shadow-sm border dark:border-slate-700"
-                >
-                  <div className="flex items-start gap-4">
-                    <img
-                      src={getOptimizedImageUrl(extra.imageUrl, 150)}
-                      alt={extra.name}
-                      className="w-20 h-20 rounded-md object-cover flex-shrink-0"
-                    />
-                    <div className="flex-grow">
-                      <p className="font-bold text-lg text-slate-800 dark:text-slate-100">
-                        {extra.name}
-                      </p>
-                      <p className="font-semibold text-primary dark:text-green-400">
-                        {extra.price} ج.س
-                      </p>
+                  </thead>
+                  <tbody>
+                    {filteredExtras.map((extra, index) => (
+                      <tr
+                        key={extra.id}
+                        className={`border-b dark:border-slate-700 transition-colors ${
+                          index % 2 === 0
+                            ? "bg-white dark:bg-slate-800"
+                            : "bg-slate-50 dark:bg-slate-800/50"
+                        } hover:bg-sky-100/50 dark:hover:bg-sky-900/20`}
+                      >
+                        <td className="p-3">
+                          <div className="flex items-center gap-3">
+                            <img
+                              src={getOptimizedImageUrl(extra.imageUrl, 100)}
+                              alt={extra.name}
+                              className="w-14 h-14 rounded-md object-cover"
+                            />
+                            <span className="font-medium text-slate-700 dark:text-slate-200">
+                              {extra.name}
+                            </span>
+                          </div>
+                        </td>
+                        <td className="p-3 text-slate-600 dark:text-slate-300">
+                          {extra.price} ج.س
+                        </td>
+                        <td className="p-3 space-x-4 space-x-reverse">
+                          <button
+                            onClick={() => handleOpenModal(extra)}
+                            className="text-admin-primary hover:underline text-sm font-semibold"
+                          >
+                            تعديل
+                          </button>
+                          <button
+                            onClick={() => setExtraToDelete(extra)}
+                            className="text-red-500 hover:underline text-sm font-semibold"
+                          >
+                            حذف
+                          </button>
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+              {/* Mobile Card View */}
+              <div className="space-y-4 md:hidden">
+                {filteredExtras.map((extra) => (
+                  <div
+                    key={extra.id}
+                    className="bg-slate-50 dark:bg-slate-800/50 p-4 rounded-lg shadow-sm border dark:border-slate-700"
+                  >
+                    <div className="flex items-start gap-4">
+                      <img
+                        src={getOptimizedImageUrl(extra.imageUrl, 150)}
+                        alt={extra.name}
+                        className="w-20 h-20 rounded-md object-cover flex-shrink-0"
+                      />
+                      <div className="flex-grow">
+                        <p className="font-bold text-lg text-slate-800 dark:text-slate-100">
+                          {extra.name}
+                        </p>
+                        <p className="font-semibold text-primary dark:text-green-400">
+                          {extra.price} ج.س
+                        </p>
+                      </div>
+                    </div>
+                    <div className="flex justify-end gap-4 mt-4 pt-4 border-t dark:border-slate-700">
+                      <button
+                        onClick={() => handleOpenModal(extra)}
+                        className="text-admin-primary font-semibold"
+                      >
+                        تعديل
+                      </button>
+                      <button
+                        onClick={() => setExtraToDelete(extra)}
+                        className="text-red-500 font-semibold"
+                      >
+                        حذف
+                      </button>
                     </div>
                   </div>
-                  <div className="flex justify-end gap-4 mt-4 pt-4 border-t dark:border-slate-700">
-                    <button
-                      onClick={() => handleOpenModal(extra)}
-                      className="text-admin-primary font-semibold"
-                    >
-                      تعديل
-                    </button>
-                    <button
-                      onClick={() => setExtraToDelete(extra)}
-                      className="text-red-500 font-semibold"
-                    >
-                      حذف
-                    </button>
-                  </div>
-                </div>
-              ))}
+                ))}
+              </div>
+            </>
+          ) : (
+            <div className="text-center py-16">
+              <BeakerIcon className="w-24 h-24 text-slate-300 dark:text-slate-600 mx-auto" />
+              <h3 className="mt-4 text-xl font-bold text-slate-700 dark:text-slate-200">
+                {searchTerm ? "لا توجد إضافات مطابقة" : "لا توجد إضافات بعد"}
+              </h3>
+              <p className="mt-2 text-slate-500 dark:text-slate-400">
+                {searchTerm
+                  ? "حاول البحث بكلمة أخرى."
+                  : "ابدأ بإضافة العناصر الإضافية لمنتجاتك."}
+              </p>
+              {!searchTerm && (
+                <button
+                  onClick={() => handleOpenModal()}
+                  className="mt-6 flex items-center mx-auto bg-admin-primary text-white px-4 py-2 rounded-lg hover:bg-admin-primary-hover transition-colors shadow-sm"
+                >
+                  <PlusIcon className="w-5 h-5 ml-2" />
+                  إضافة عنصر
+                </button>
+              )}
             </div>
-          </>
-        ) : (
-          <div className="text-center py-16">
-            <BeakerIcon className="w-24 h-24 text-slate-300 dark:text-slate-600 mx-auto" />
-            <h3 className="mt-4 text-xl font-bold text-slate-700 dark:text-slate-200">
-              {searchTerm ? "لا توجد إضافات مطابقة" : "لا توجد إضافات بعد"}
-            </h3>
-            <p className="mt-2 text-slate-500 dark:text-slate-400">
-              {searchTerm
-                ? "حاول البحث بكلمة أخرى."
-                : "ابدأ بإضافة العناصر الإضافية لمنتجاتك."}
-            </p>
-            {!searchTerm && (
-              <button
-                onClick={() => handleOpenModal()}
-                className="mt-6 flex items-center mx-auto bg-admin-primary text-white px-4 py-2 rounded-lg hover:bg-admin-primary-hover transition-colors shadow-sm"
-              >
-                <PlusIcon className="w-5 h-5 ml-2" />
-                إضافة عنصر
-              </button>
-            )}
-          </div>
-        )}
+          )}
+        </div>
       </div>
 
       {isModalOpen && (

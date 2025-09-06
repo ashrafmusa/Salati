@@ -273,7 +273,7 @@ const AdminItemsScreen: React.FC = () => {
 
   return (
     <>
-      <div className="bg-white dark:bg-slate-800 p-6 rounded-lg shadow-md">
+      <div className="h-full flex flex-col bg-white dark:bg-slate-800 p-6 rounded-lg shadow-md">
         <AdminScreenHeader
           title="إدارة الأصناف"
           buttonText="إضافة صنف"
@@ -286,159 +286,161 @@ const AdminItemsScreen: React.FC = () => {
           searchPlaceholder="ابحث عن صنف..."
         />
 
-        {loading ? (
-          <p>Loading...</p>
-        ) : filteredItems.length > 0 ? (
-          <>
-            {/* Desktop Table View */}
-            <div className="overflow-x-auto hidden md:block">
-              <table className="w-full text-right">
-                <thead>
-                  <tr className="border-b-2 border-slate-100 dark:border-slate-700">
-                    <th className="p-3 text-sm font-semibold text-slate-500">
-                      الصنف
-                    </th>
-                    <th className="p-3 text-sm font-semibold text-slate-500">
-                      الفئة
-                    </th>
-                    <th className="p-3 text-sm font-semibold text-slate-500">
-                      السعر
-                    </th>
-                    <th className="p-3 text-sm font-semibold text-slate-500">
-                      المخزون
-                    </th>
-                    <th className="p-3 text-sm font-semibold text-slate-500">
-                      إجراءات
-                    </th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {filteredItems.map((item) => (
-                    <tr
-                      key={item.id}
-                      className="border-b dark:border-slate-700 hover:bg-sky-100/50"
-                    >
-                      <td className="p-3 flex items-center gap-3">
-                        <img
-                          src={getOptimizedImageUrl(item.imageUrl, 100)}
-                          alt={item.arabicName}
-                          className="w-12 h-12 rounded-md object-cover"
-                        />
-                        <span className="font-medium">{item.arabicName}</span>
-                      </td>
-                      <td className="p-3">{item.category}</td>
-                      <td className="p-3">{item.price} ج.س</td>
-                      <td className="p-3">{item.stock}</td>
-                      <td className="p-3 space-x-4 space-x-reverse">
+        <div className="flex-grow overflow-y-auto">
+          {loading ? (
+            <p>Loading...</p>
+          ) : filteredItems.length > 0 ? (
+            <>
+              {/* Desktop Table View */}
+              <div className="overflow-x-auto hidden md:block">
+                <table className="w-full text-right">
+                  <thead>
+                    <tr className="border-b-2 border-slate-100 dark:border-slate-700">
+                      <th className="p-3 text-sm font-semibold text-slate-500">
+                        الصنف
+                      </th>
+                      <th className="p-3 text-sm font-semibold text-slate-500">
+                        الفئة
+                      </th>
+                      <th className="p-3 text-sm font-semibold text-slate-500">
+                        السعر
+                      </th>
+                      <th className="p-3 text-sm font-semibold text-slate-500">
+                        المخزون
+                      </th>
+                      <th className="p-3 text-sm font-semibold text-slate-500">
+                        إجراءات
+                      </th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {filteredItems.map((item) => (
+                      <tr
+                        key={item.id}
+                        className="border-b dark:border-slate-700 hover:bg-sky-100/50"
+                      >
+                        <td className="p-3 flex items-center gap-3">
+                          <img
+                            src={getOptimizedImageUrl(item.imageUrl, 100)}
+                            alt={item.arabicName}
+                            className="w-12 h-12 rounded-md object-cover"
+                          />
+                          <span className="font-medium">{item.arabicName}</span>
+                        </td>
+                        <td className="p-3">{item.category}</td>
+                        <td className="p-3">{item.price} ج.س</td>
+                        <td className="p-3">{item.stock}</td>
+                        <td className="p-3 space-x-4 space-x-reverse">
+                          <button
+                            onClick={() => {
+                              setEditingItem(item);
+                              setIsModalOpen(true);
+                            }}
+                            className="text-admin-primary hover:underline"
+                          >
+                            تعديل
+                          </button>
+                          <button
+                            onClick={() => setItemToDelete(item)}
+                            className="text-red-500 hover:underline"
+                          >
+                            حذف
+                          </button>
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+              {/* Mobile Card View */}
+              <div className="space-y-4 md:hidden">
+                {filteredItems.map((item) => (
+                  <div
+                    key={item.id}
+                    className="bg-slate-50 dark:bg-slate-800/50 p-4 rounded-lg shadow-sm border dark:border-slate-700"
+                  >
+                    <div className="flex items-start gap-4">
+                      <img
+                        src={getOptimizedImageUrl(item.imageUrl, 150)}
+                        alt={item.arabicName}
+                        className="w-20 h-20 rounded-md object-cover flex-shrink-0"
+                      />
+                      <div className="flex-grow">
+                        <p className="font-bold text-lg text-slate-800 dark:text-slate-100">
+                          {item.arabicName}
+                        </p>
+                        <p className="text-sm text-slate-500 dark:text-slate-400">
+                          {item.category}
+                        </p>
+                      </div>
+                    </div>
+                    <div className="mt-4 pt-4 border-t dark:border-slate-700 space-y-3">
+                      <div className="grid grid-cols-2 gap-4 text-center">
+                        <div>
+                          <p className="text-xs text-slate-500 dark:text-slate-400">
+                            السعر
+                          </p>
+                          <p className="font-semibold text-slate-700 dark:text-slate-200">
+                            {item.price} ج.س
+                          </p>
+                        </div>
+                        <div>
+                          <p className="text-xs text-slate-500 dark:text-slate-400">
+                            المخزون
+                          </p>
+                          <p className="font-semibold text-slate-700 dark:text-slate-200">
+                            {item.stock}
+                          </p>
+                        </div>
+                      </div>
+                      <div className="flex justify-end gap-4 pt-2">
                         <button
                           onClick={() => {
                             setEditingItem(item);
                             setIsModalOpen(true);
                           }}
-                          className="text-admin-primary hover:underline"
+                          className="text-admin-primary font-semibold"
                         >
                           تعديل
                         </button>
                         <button
                           onClick={() => setItemToDelete(item)}
-                          className="text-red-500 hover:underline"
+                          className="text-red-500 font-semibold"
                         >
                           حذف
                         </button>
-                      </td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
-            {/* Mobile Card View */}
-            <div className="space-y-4 md:hidden">
-              {filteredItems.map((item) => (
-                <div
-                  key={item.id}
-                  className="bg-slate-50 dark:bg-slate-800/50 p-4 rounded-lg shadow-sm border dark:border-slate-700"
+                      </div>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </>
+          ) : (
+            <div className="text-center py-16">
+              <PackageIcon className="w-24 h-24 text-slate-300 dark:text-slate-600 mx-auto" />
+              <h3 className="mt-4 text-xl font-bold text-slate-700 dark:text-slate-200">
+                {searchTerm ? "لا توجد أصناف مطابقة" : "لا توجد أصناف بعد"}
+              </h3>
+              <p className="mt-2 text-slate-500 dark:text-slate-400">
+                {searchTerm
+                  ? "حاول البحث بكلمة أخرى."
+                  : "ابدأ بإضافة الأصناف الفردية لمنتجاتك."}
+              </p>
+              {!searchTerm && (
+                <button
+                  onClick={() => {
+                    setEditingItem(null);
+                    setIsModalOpen(true);
+                  }}
+                  className="mt-6 flex items-center mx-auto bg-admin-primary text-white px-4 py-2 rounded-lg hover:bg-admin-primary-hover transition-colors shadow-sm"
                 >
-                  <div className="flex items-start gap-4">
-                    <img
-                      src={getOptimizedImageUrl(item.imageUrl, 150)}
-                      alt={item.arabicName}
-                      className="w-20 h-20 rounded-md object-cover flex-shrink-0"
-                    />
-                    <div className="flex-grow">
-                      <p className="font-bold text-lg text-slate-800 dark:text-slate-100">
-                        {item.arabicName}
-                      </p>
-                      <p className="text-sm text-slate-500 dark:text-slate-400">
-                        {item.category}
-                      </p>
-                    </div>
-                  </div>
-                  <div className="mt-4 pt-4 border-t dark:border-slate-700 space-y-3">
-                    <div className="grid grid-cols-2 gap-4 text-center">
-                      <div>
-                        <p className="text-xs text-slate-500 dark:text-slate-400">
-                          السعر
-                        </p>
-                        <p className="font-semibold text-slate-700 dark:text-slate-200">
-                          {item.price} ج.س
-                        </p>
-                      </div>
-                      <div>
-                        <p className="text-xs text-slate-500 dark:text-slate-400">
-                          المخزون
-                        </p>
-                        <p className="font-semibold text-slate-700 dark:text-slate-200">
-                          {item.stock}
-                        </p>
-                      </div>
-                    </div>
-                    <div className="flex justify-end gap-4 pt-2">
-                      <button
-                        onClick={() => {
-                          setEditingItem(item);
-                          setIsModalOpen(true);
-                        }}
-                        className="text-admin-primary font-semibold"
-                      >
-                        تعديل
-                      </button>
-                      <button
-                        onClick={() => setItemToDelete(item)}
-                        className="text-red-500 font-semibold"
-                      >
-                        حذف
-                      </button>
-                    </div>
-                  </div>
-                </div>
-              ))}
+                  <PlusIcon className="w-5 h-5 ml-2" />
+                  إضافة صنف
+                </button>
+              )}
             </div>
-          </>
-        ) : (
-          <div className="text-center py-16">
-            <PackageIcon className="w-24 h-24 text-slate-300 dark:text-slate-600 mx-auto" />
-            <h3 className="mt-4 text-xl font-bold text-slate-700 dark:text-slate-200">
-              {searchTerm ? "لا توجد أصناف مطابقة" : "لا توجد أصناف بعد"}
-            </h3>
-            <p className="mt-2 text-slate-500 dark:text-slate-400">
-              {searchTerm
-                ? "حاول البحث بكلمة أخرى."
-                : "ابدأ بإضافة الأصناف الفردية لمنتجاتك."}
-            </p>
-            {!searchTerm && (
-              <button
-                onClick={() => {
-                  setEditingItem(null);
-                  setIsModalOpen(true);
-                }}
-                className="mt-6 flex items-center mx-auto bg-admin-primary text-white px-4 py-2 rounded-lg hover:bg-admin-primary-hover transition-colors shadow-sm"
-              >
-                <PlusIcon className="w-5 h-5 ml-2" />
-                إضافة صنف
-              </button>
-            )}
-          </div>
-        )}
+          )}
+        </div>
       </div>
       {isModalOpen && (
         <ItemFormModal

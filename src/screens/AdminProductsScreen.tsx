@@ -510,7 +510,7 @@ const AdminBundlesScreen: React.FC = () => {
 
   return (
     <>
-      <div className="bg-white dark:bg-slate-800 p-4 md:p-6 rounded-lg shadow-md">
+      <div className="h-full flex flex-col bg-white dark:bg-slate-800 p-4 md:p-6 rounded-lg shadow-md">
         <div className="flex flex-col sm:flex-row justify-between items-center mb-6 gap-4">
           <h2 className="text-xl font-bold text-slate-800 dark:text-slate-100 self-start sm:self-center">
             إدارة الحزم
@@ -546,157 +546,159 @@ const AdminBundlesScreen: React.FC = () => {
           </div>
         </div>
 
-        {loading ? (
-          <p>Loading...</p>
-        ) : (
-          <>
-            {/* Desktop Table View */}
-            <div className="overflow-x-auto hidden md:block">
-              <table className="w-full text-right">
-                <thead>
-                  <tr className="border-b-2 border-slate-100 dark:border-slate-700">
-                    <SortableHeader<Bundle & { calculatedPrice: number }>
-                      label="اسم الحزمة"
-                      sortKey="arabicName"
-                      requestSort={requestSort}
-                      sortConfig={sortConfig}
-                    />
-                    <SortableHeader<Bundle & { calculatedPrice: number }>
-                      label="الفئة"
-                      sortKey="category"
-                      requestSort={requestSort}
-                      sortConfig={sortConfig}
-                    />
-                    <SortableHeader<Bundle & { calculatedPrice: number }>
-                      label="السعر المحسوب"
-                      sortKey="calculatedPrice"
-                      requestSort={requestSort}
-                      sortConfig={sortConfig}
-                    />
-                    <SortableHeader<Bundle & { calculatedPrice: number }>
-                      label="المخزون"
-                      sortKey="stock"
-                      requestSort={requestSort}
-                      sortConfig={sortConfig}
-                    />
-                    <th className="p-3 text-sm font-semibold text-slate-500 dark:text-slate-400">
-                      إجراءات
-                    </th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {sortedBundles.map((bundle) => (
-                    <tr
-                      key={bundle.id}
-                      className="border-b dark:border-slate-700 hover:bg-sky-100/50 dark:hover:bg-sky-900/20 align-middle"
-                    >
-                      <td className="p-3">
-                        <div className="flex items-center gap-3">
-                          <img
-                            src={getOptimizedImageUrl(bundle.imageUrl, 100)}
-                            alt={bundle.arabicName}
-                            className="w-12 h-12 rounded-md object-cover"
-                          />
-                          <span className="font-medium text-slate-700 dark:text-slate-200">
-                            {bundle.arabicName}
-                          </span>
+        <div className="flex-grow overflow-y-auto">
+          {loading ? (
+            <p>Loading...</p>
+          ) : (
+            <>
+              {/* Desktop Table View */}
+              <div className="overflow-x-auto hidden md:block">
+                <table className="w-full text-right">
+                  <thead>
+                    <tr className="border-b-2 border-slate-100 dark:border-slate-700">
+                      <SortableHeader<Bundle & { calculatedPrice: number }>
+                        label="اسم الحزمة"
+                        sortKey="arabicName"
+                        requestSort={requestSort}
+                        sortConfig={sortConfig}
+                      />
+                      <SortableHeader<Bundle & { calculatedPrice: number }>
+                        label="الفئة"
+                        sortKey="category"
+                        requestSort={requestSort}
+                        sortConfig={sortConfig}
+                      />
+                      <SortableHeader<Bundle & { calculatedPrice: number }>
+                        label="السعر المحسوب"
+                        sortKey="calculatedPrice"
+                        requestSort={requestSort}
+                        sortConfig={sortConfig}
+                      />
+                      <SortableHeader<Bundle & { calculatedPrice: number }>
+                        label="المخزون"
+                        sortKey="stock"
+                        requestSort={requestSort}
+                        sortConfig={sortConfig}
+                      />
+                      <th className="p-3 text-sm font-semibold text-slate-500 dark:text-slate-400">
+                        إجراءات
+                      </th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {sortedBundles.map((bundle) => (
+                      <tr
+                        key={bundle.id}
+                        className="border-b dark:border-slate-700 hover:bg-sky-100/50 dark:hover:bg-sky-900/20 align-middle"
+                      >
+                        <td className="p-3">
+                          <div className="flex items-center gap-3">
+                            <img
+                              src={getOptimizedImageUrl(bundle.imageUrl, 100)}
+                              alt={bundle.arabicName}
+                              className="w-12 h-12 rounded-md object-cover"
+                            />
+                            <span className="font-medium text-slate-700 dark:text-slate-200">
+                              {bundle.arabicName}
+                            </span>
+                          </div>
+                        </td>
+                        <td className="p-3 text-slate-600 dark:text-slate-300">
+                          {bundle.category}
+                        </td>
+                        <td className="p-3 text-slate-600 dark:text-slate-300">
+                          {bundle.calculatedPrice} ج.س
+                        </td>
+                        <td className="p-3 text-slate-600 dark:text-slate-300">
+                          {bundle.stock}
+                        </td>
+                        <td className="p-3 space-x-4 space-x-reverse">
+                          <button
+                            onClick={() => {
+                              setEditingBundle(bundle);
+                              setIsModalOpen(true);
+                            }}
+                            className="text-admin-primary hover:underline"
+                          >
+                            تعديل
+                          </button>
+                          <button
+                            onClick={() => setBundleToDelete(bundle)}
+                            className="text-red-500 hover:underline"
+                          >
+                            حذف
+                          </button>
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+              {/* Mobile Card View */}
+              <div className="space-y-4 md:hidden">
+                {sortedBundles.map((bundle) => (
+                  <div
+                    key={bundle.id}
+                    className="bg-slate-50 dark:bg-slate-800/50 p-4 rounded-lg shadow-sm border dark:border-slate-700"
+                  >
+                    <div className="flex items-start gap-4">
+                      <img
+                        src={getOptimizedImageUrl(bundle.imageUrl, 150)}
+                        alt={bundle.arabicName}
+                        className="w-20 h-20 rounded-md object-cover flex-shrink-0"
+                      />
+                      <div className="flex-grow">
+                        <p className="font-bold text-lg text-slate-800 dark:text-slate-100">
+                          {bundle.arabicName}
+                        </p>
+                        <p className="text-sm text-slate-500 dark:text-slate-400">
+                          {bundle.category}
+                        </p>
+                      </div>
+                    </div>
+                    <div className="mt-4 pt-4 border-t dark:border-slate-700 space-y-3">
+                      <div className="grid grid-cols-2 gap-4 text-center">
+                        <div>
+                          <p className="text-xs text-slate-500 dark:text-slate-400">
+                            السعر
+                          </p>
+                          <p className="font-semibold text-slate-700 dark:text-slate-200">
+                            {bundle.calculatedPrice} ج.س
+                          </p>
                         </div>
-                      </td>
-                      <td className="p-3 text-slate-600 dark:text-slate-300">
-                        {bundle.category}
-                      </td>
-                      <td className="p-3 text-slate-600 dark:text-slate-300">
-                        {bundle.calculatedPrice} ج.س
-                      </td>
-                      <td className="p-3 text-slate-600 dark:text-slate-300">
-                        {bundle.stock}
-                      </td>
-                      <td className="p-3 space-x-4 space-x-reverse">
+                        <div>
+                          <p className="text-xs text-slate-500 dark:text-slate-400">
+                            المخزون
+                          </p>
+                          <p className="font-semibold text-slate-700 dark:text-slate-200">
+                            {bundle.stock}
+                          </p>
+                        </div>
+                      </div>
+                      <div className="flex justify-end gap-4 pt-2">
                         <button
                           onClick={() => {
                             setEditingBundle(bundle);
                             setIsModalOpen(true);
                           }}
-                          className="text-admin-primary hover:underline"
+                          className="text-admin-primary font-semibold"
                         >
                           تعديل
                         </button>
                         <button
                           onClick={() => setBundleToDelete(bundle)}
-                          className="text-red-500 hover:underline"
+                          className="text-red-500 font-semibold"
                         >
                           حذف
                         </button>
-                      </td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
-            {/* Mobile Card View */}
-            <div className="space-y-4 md:hidden">
-              {sortedBundles.map((bundle) => (
-                <div
-                  key={bundle.id}
-                  className="bg-slate-50 dark:bg-slate-800/50 p-4 rounded-lg shadow-sm border dark:border-slate-700"
-                >
-                  <div className="flex items-start gap-4">
-                    <img
-                      src={getOptimizedImageUrl(bundle.imageUrl, 150)}
-                      alt={bundle.arabicName}
-                      className="w-20 h-20 rounded-md object-cover flex-shrink-0"
-                    />
-                    <div className="flex-grow">
-                      <p className="font-bold text-lg text-slate-800 dark:text-slate-100">
-                        {bundle.arabicName}
-                      </p>
-                      <p className="text-sm text-slate-500 dark:text-slate-400">
-                        {bundle.category}
-                      </p>
-                    </div>
-                  </div>
-                  <div className="mt-4 pt-4 border-t dark:border-slate-700 space-y-3">
-                    <div className="grid grid-cols-2 gap-4 text-center">
-                      <div>
-                        <p className="text-xs text-slate-500 dark:text-slate-400">
-                          السعر
-                        </p>
-                        <p className="font-semibold text-slate-700 dark:text-slate-200">
-                          {bundle.calculatedPrice} ج.س
-                        </p>
-                      </div>
-                      <div>
-                        <p className="text-xs text-slate-500 dark:text-slate-400">
-                          المخزون
-                        </p>
-                        <p className="font-semibold text-slate-700 dark:text-slate-200">
-                          {bundle.stock}
-                        </p>
                       </div>
                     </div>
-                    <div className="flex justify-end gap-4 pt-2">
-                      <button
-                        onClick={() => {
-                          setEditingBundle(bundle);
-                          setIsModalOpen(true);
-                        }}
-                        className="text-admin-primary font-semibold"
-                      >
-                        تعديل
-                      </button>
-                      <button
-                        onClick={() => setBundleToDelete(bundle)}
-                        className="text-red-500 font-semibold"
-                      >
-                        حذف
-                      </button>
-                    </div>
                   </div>
-                </div>
-              ))}
-            </div>
-          </>
-        )}
+                ))}
+              </div>
+            </>
+          )}
+        </div>
       </div>
 
       {isModalOpen && (

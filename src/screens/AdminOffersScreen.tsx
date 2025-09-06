@@ -423,7 +423,7 @@ const AdminOffersScreen: React.FC = () => {
 
   return (
     <>
-      <div className="bg-white dark:bg-slate-800 p-4 md:p-6 rounded-lg shadow-md">
+      <div className="h-full flex flex-col bg-white dark:bg-slate-800 p-4 md:p-6 rounded-lg shadow-md">
         <AdminScreenHeader
           title="إدارة العروض"
           buttonText="إضافة عرض"
@@ -436,73 +436,126 @@ const AdminOffersScreen: React.FC = () => {
           searchPlaceholder="ابحث بعنوان العرض..."
         />
 
-        {loading ? (
-          <p>Loading...</p>
-        ) : sortedOffers.length > 0 ? (
-          <>
-            {/* Desktop Table View */}
-            <div className="overflow-x-auto hidden md:block">
-              <table className="w-full text-right">
-                <thead className="border-b-2 border-slate-100 dark:border-slate-700">
-                  <tr>
-                    <SortableHeader<Offer>
-                      label="العرض"
-                      sortKey="title"
-                      requestSort={requestSort}
-                      sortConfig={sortConfig}
-                    />
-                    <th className="p-3 text-sm font-semibold text-slate-500 dark:text-slate-400">
-                      تفاصيل الخصم
-                    </th>
-                    <SortableHeader<Offer>
-                      label="تاريخ الانتهاء"
-                      sortKey="expiryDate"
-                      requestSort={requestSort}
-                      sortConfig={sortConfig}
-                    />
-                    <th className="p-3 text-sm font-semibold text-slate-500 dark:text-slate-400">
-                      الحالة
-                    </th>
-                    <th className="p-3 text-sm font-semibold text-slate-500 dark:text-slate-400">
-                      إجراءات
-                    </th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {sortedOffers.map((offer) => {
-                    const isExpired = new Date(offer.expiryDate) < new Date();
-                    return (
-                      <tr
-                        key={offer.id}
-                        className="border-b dark:border-slate-700 hover:bg-sky-100/50 dark:hover:bg-sky-900/20 align-middle"
-                      >
-                        <td className="p-3">
-                          <div className="flex items-center gap-3">
-                            <img
-                              src={getOptimizedImageUrl(offer.imageUrl, 100)}
-                              alt={offer.title}
-                              className="w-16 h-10 rounded-md object-cover"
+        <div className="flex-grow overflow-y-auto">
+          {loading ? (
+            <p>Loading...</p>
+          ) : sortedOffers.length > 0 ? (
+            <>
+              {/* Desktop Table View */}
+              <div className="overflow-x-auto hidden md:block">
+                <table className="w-full text-right">
+                  <thead className="border-b-2 border-slate-100 dark:border-slate-700">
+                    <tr>
+                      <SortableHeader<Offer>
+                        label="العرض"
+                        sortKey="title"
+                        requestSort={requestSort}
+                        sortConfig={sortConfig}
+                      />
+                      <th className="p-3 text-sm font-semibold text-slate-500 dark:text-slate-400">
+                        تفاصيل الخصم
+                      </th>
+                      <SortableHeader<Offer>
+                        label="تاريخ الانتهاء"
+                        sortKey="expiryDate"
+                        requestSort={requestSort}
+                        sortConfig={sortConfig}
+                      />
+                      <th className="p-3 text-sm font-semibold text-slate-500 dark:text-slate-400">
+                        الحالة
+                      </th>
+                      <th className="p-3 text-sm font-semibold text-slate-500 dark:text-slate-400">
+                        إجراءات
+                      </th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {sortedOffers.map((offer) => {
+                      const isExpired = new Date(offer.expiryDate) < new Date();
+                      return (
+                        <tr
+                          key={offer.id}
+                          className="border-b dark:border-slate-700 hover:bg-sky-100/50 dark:hover:bg-sky-900/20 align-middle"
+                        >
+                          <td className="p-3">
+                            <div className="flex items-center gap-3">
+                              <img
+                                src={getOptimizedImageUrl(offer.imageUrl, 100)}
+                                alt={offer.title}
+                                className="w-16 h-10 rounded-md object-cover"
+                              />
+                              <span className="font-medium text-slate-700 dark:text-slate-200">
+                                {offer.title}
+                              </span>
+                            </div>
+                          </td>
+                          <td className="p-3">
+                            <DiscountDetails
+                              discount={offer.discount}
+                              products={products}
+                              className="p-2"
                             />
-                            <span className="font-medium text-slate-700 dark:text-slate-200">
-                              {offer.title}
+                          </td>
+                          <td className="p-3 text-slate-600 dark:text-slate-300">
+                            {new Date(offer.expiryDate).toLocaleDateString(
+                              "ar-EG"
+                            )}
+                          </td>
+                          <td className="p-3">
+                            <span
+                              className={`px-3 py-1 text-xs font-bold rounded-full ${
+                                isExpired
+                                  ? "bg-red-200 text-red-800 dark:bg-red-900/50 dark:text-red-300"
+                                  : "bg-green-200 text-green-800 dark:bg-green-900/50 dark:text-green-300"
+                              }`}
+                            >
+                              {isExpired ? "منتهي" : "نشط"}
                             </span>
-                          </div>
-                        </td>
-                        <td className="p-3">
-                          <DiscountDetails
-                            discount={offer.discount}
-                            products={products}
-                            className="p-2"
-                          />
-                        </td>
-                        <td className="p-3 text-slate-600 dark:text-slate-300">
-                          {new Date(offer.expiryDate).toLocaleDateString(
-                            "ar-EG"
-                          )}
-                        </td>
-                        <td className="p-3">
+                          </td>
+                          <td className="p-3 space-x-4 space-x-reverse">
+                            <button
+                              onClick={() => {
+                                setEditingOffer(offer);
+                                setIsModalOpen(true);
+                              }}
+                              className="text-admin-primary hover:underline"
+                            >
+                              تعديل
+                            </button>
+                            <button
+                              onClick={() => setOfferToDelete(offer)}
+                              className="text-red-500 hover:underline"
+                            >
+                              حذف
+                            </button>
+                          </td>
+                        </tr>
+                      );
+                    })}
+                  </tbody>
+                </table>
+              </div>
+              {/* Mobile Card View */}
+              <div className="space-y-4 md:hidden">
+                {sortedOffers.map((offer) => {
+                  const isExpired = new Date(offer.expiryDate) < new Date();
+                  return (
+                    <div
+                      key={offer.id}
+                      className="bg-slate-50 dark:bg-slate-800/50 p-4 rounded-lg shadow-sm border dark:border-slate-700 flex flex-col md:flex-row items-start gap-4"
+                    >
+                      <img
+                        src={getOptimizedImageUrl(offer.imageUrl, 400)}
+                        alt={offer.title}
+                        className="w-full md:w-48 h-32 md:h-auto rounded-md object-cover shadow-sm flex-shrink-0"
+                      />
+                      <div className="flex-grow w-full space-y-2">
+                        <div className="flex justify-between items-start">
+                          <p className="font-bold text-lg text-slate-800 dark:text-slate-100 flex-1">
+                            {offer.title}
+                          </p>
                           <span
-                            className={`px-3 py-1 text-xs font-bold rounded-full ${
+                            className={`px-3 py-1 text-xs font-bold rounded-full flex-shrink-0 ml-3 ${
                               isExpired
                                 ? "bg-red-200 text-red-800 dark:bg-red-900/50 dark:text-red-300"
                                 : "bg-green-200 text-green-800 dark:bg-green-900/50 dark:text-green-300"
@@ -510,115 +563,66 @@ const AdminOffersScreen: React.FC = () => {
                           >
                             {isExpired ? "منتهي" : "نشط"}
                           </span>
-                        </td>
-                        <td className="p-3 space-x-4 space-x-reverse">
-                          <button
-                            onClick={() => {
-                              setEditingOffer(offer);
-                              setIsModalOpen(true);
-                            }}
-                            className="text-admin-primary hover:underline"
-                          >
-                            تعديل
-                          </button>
-                          <button
-                            onClick={() => setOfferToDelete(offer)}
-                            className="text-red-500 hover:underline"
-                          >
-                            حذف
-                          </button>
-                        </td>
-                      </tr>
-                    );
-                  })}
-                </tbody>
-              </table>
-            </div>
-            {/* Mobile Card View */}
-            <div className="space-y-4 md:hidden">
-              {sortedOffers.map((offer) => {
-                const isExpired = new Date(offer.expiryDate) < new Date();
-                return (
-                  <div
-                    key={offer.id}
-                    className="bg-slate-50 dark:bg-slate-800/50 p-4 rounded-lg shadow-sm border dark:border-slate-700 flex flex-col md:flex-row items-start gap-4"
-                  >
-                    <img
-                      src={getOptimizedImageUrl(offer.imageUrl, 400)}
-                      alt={offer.title}
-                      className="w-full md:w-48 h-32 md:h-auto rounded-md object-cover shadow-sm flex-shrink-0"
-                    />
-                    <div className="flex-grow w-full space-y-2">
-                      <div className="flex justify-between items-start">
-                        <p className="font-bold text-lg text-slate-800 dark:text-slate-100 flex-1">
-                          {offer.title}
+                        </div>
+                        <p className="text-sm text-slate-500 dark:text-slate-400">
+                          ينتهي في:{" "}
+                          {new Date(offer.expiryDate).toLocaleDateString(
+                            "ar-EG"
+                          )}
                         </p>
-                        <span
-                          className={`px-3 py-1 text-xs font-bold rounded-full flex-shrink-0 ml-3 ${
-                            isExpired
-                              ? "bg-red-200 text-red-800 dark:bg-red-900/50 dark:text-red-300"
-                              : "bg-green-200 text-green-800 dark:bg-green-900/50 dark:text-green-300"
-                          }`}
-                        >
-                          {isExpired ? "منتهي" : "نشط"}
-                        </span>
+                        <DiscountDetails
+                          discount={offer.discount}
+                          products={products}
+                        />
                       </div>
-                      <p className="text-sm text-slate-500 dark:text-slate-400">
-                        ينتهي في:{" "}
-                        {new Date(offer.expiryDate).toLocaleDateString("ar-EG")}
-                      </p>
-                      <DiscountDetails
-                        discount={offer.discount}
-                        products={products}
-                      />
+                      <div className="w-full md:w-auto flex-shrink-0 flex md:flex-col justify-end md:justify-start gap-2 self-stretch pt-2 md:pt-0 border-t md:border-t-0 dark:border-slate-700">
+                        <button
+                          onClick={() => {
+                            setEditingOffer(offer);
+                            setIsModalOpen(true);
+                          }}
+                          className="flex-1 md:flex-none text-admin-primary bg-admin-primary/10 hover:bg-admin-primary/20 text-sm font-semibold px-4 py-2 rounded-md transition"
+                        >
+                          تعديل
+                        </button>
+                        <button
+                          onClick={() => setOfferToDelete(offer)}
+                          className="flex-1 md:flex-none text-red-500 bg-red-500/10 hover:bg-red-500/20 text-sm font-semibold px-4 py-2 rounded-md transition"
+                        >
+                          حذف
+                        </button>
+                      </div>
                     </div>
-                    <div className="w-full md:w-auto flex-shrink-0 flex md:flex-col justify-end md:justify-start gap-2 self-stretch pt-2 md:pt-0 border-t md:border-t-0 dark:border-slate-700">
-                      <button
-                        onClick={() => {
-                          setEditingOffer(offer);
-                          setIsModalOpen(true);
-                        }}
-                        className="flex-1 md:flex-none text-admin-primary bg-admin-primary/10 hover:bg-admin-primary/20 text-sm font-semibold px-4 py-2 rounded-md transition"
-                      >
-                        تعديل
-                      </button>
-                      <button
-                        onClick={() => setOfferToDelete(offer)}
-                        className="flex-1 md:flex-none text-red-500 bg-red-500/10 hover:bg-red-500/20 text-sm font-semibold px-4 py-2 rounded-md transition"
-                      >
-                        حذف
-                      </button>
-                    </div>
-                  </div>
-                );
-              })}
+                  );
+                })}
+              </div>
+            </>
+          ) : (
+            <div className="text-center py-16">
+              <GiftIcon className="w-24 h-24 text-slate-300 dark:text-slate-600 mx-auto" />
+              <h3 className="mt-4 text-xl font-bold text-slate-700 dark:text-slate-200">
+                {searchTerm ? "لا توجد عروض مطابقة" : "لا توجد عروض بعد"}
+              </h3>
+              <p className="mt-2 text-slate-500 dark:text-slate-400">
+                {searchTerm
+                  ? "حاول البحث بكلمة أخرى."
+                  : "ابدأ بإنشاء عرض ترويجي جديد."}
+              </p>
+              {!searchTerm && (
+                <button
+                  onClick={() => {
+                    setEditingOffer(null);
+                    setIsModalOpen(true);
+                  }}
+                  className="mt-6 flex items-center mx-auto bg-admin-primary text-white px-4 py-2 rounded-lg hover:bg-admin-primary-hover transition-colors shadow-sm"
+                >
+                  <PlusIcon className="w-5 h-5 ml-2" />
+                  إضافة عرض
+                </button>
+              )}
             </div>
-          </>
-        ) : (
-          <div className="text-center py-16">
-            <GiftIcon className="w-24 h-24 text-slate-300 dark:text-slate-600 mx-auto" />
-            <h3 className="mt-4 text-xl font-bold text-slate-700 dark:text-slate-200">
-              {searchTerm ? "لا توجد عروض مطابقة" : "لا توجد عروض بعد"}
-            </h3>
-            <p className="mt-2 text-slate-500 dark:text-slate-400">
-              {searchTerm
-                ? "حاول البحث بكلمة أخرى."
-                : "ابدأ بإنشاء عرض ترويجي جديد."}
-            </p>
-            {!searchTerm && (
-              <button
-                onClick={() => {
-                  setEditingOffer(null);
-                  setIsModalOpen(true);
-                }}
-                className="mt-6 flex items-center mx-auto bg-admin-primary text-white px-4 py-2 rounded-lg hover:bg-admin-primary-hover transition-colors shadow-sm"
-              >
-                <PlusIcon className="w-5 h-5 ml-2" />
-                إضافة عرض
-              </button>
-            )}
-          </div>
-        )}
+          )}
+        </div>
       </div>
 
       <ConfirmationModal
