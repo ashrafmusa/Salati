@@ -17,7 +17,7 @@ const AdminDashboardScreen = lazy(
   () => import("./screens/AdminDashboardScreen")
 );
 const AdminOrdersScreen = lazy(() => import("./screens/AdminOrdersScreen"));
-const AdminBundlesScreen = lazy(() => import("./screens/AdminProductsScreen")); // Renamed for clarity
+const AdminBundlesScreen = lazy(() => import("./screens/AdminProductsScreen"));
 const AdminItemsScreen = lazy(() => import("./screens/AdminItemsScreen"));
 const AdminCustomersScreen = lazy(
   () => import("./screens/AdminCustomersScreen")
@@ -41,50 +41,51 @@ const ProtectedAdminRoutes: React.FC = () => {
   }
 
   if (!user || user.role === "customer") {
-    // Redirect to customer app's login page if not any type of admin
     window.location.href = "./index.html#/login";
-    return null; // Render nothing while redirecting
+    return null;
   }
 
-  // Specific routes for the 'driver' role
   if (user.role === "driver") {
     return (
-      <Routes>
-        <Route path="/" element={<DriverDashboardScreen />} />
-        <Route path="*" element={<Navigate to="/" replace />} />
-      </Routes>
+      <AdminLayout>
+        <Routes>
+          <Route path="/" element={<DriverDashboardScreen />} />
+          <Route path="*" element={<Navigate to="/" replace />} />
+        </Routes>
+      </AdminLayout>
     );
   }
 
   return (
-    <Routes>
-      {/* Routes accessible to all admin levels (sub-admin, admin, super-admin) */}
-      <Route path="/" element={<AdminDashboardScreen />} />
-      <Route path="/orders" element={<AdminOrdersScreen />} />
+    <AdminLayout>
+      <Routes>
+        {/* Routes accessible to all admin levels */}
+        <Route path="/" element={<AdminDashboardScreen />} />
+        <Route path="/orders" element={<AdminOrdersScreen />} />
 
-      {/* Routes accessible only to 'admin' and 'super-admin' */}
-      {(user.role === "admin" || user.role === "super-admin") && (
-        <>
-          <Route path="/bundles" element={<AdminBundlesScreen />} />
-          <Route path="/offers" element={<AdminOffersScreen />} />
-          <Route path="/drivers" element={<AdminDriversScreen />} />
-        </>
-      )}
+        {/* Routes for admin and super-admin */}
+        {(user.role === "admin" || user.role === "super-admin") && (
+          <>
+            <Route path="/bundles" element={<AdminBundlesScreen />} />
+            <Route path="/offers" element={<AdminOffersScreen />} />
+            <Route path="/drivers" element={<AdminDriversScreen />} />
+          </>
+        )}
 
-      {/* Routes accessible only to 'super-admin' */}
-      {user.role === "super-admin" && (
-        <>
-          <Route path="/users" element={<AdminCustomersScreen />} />
-          <Route path="/items" element={<AdminItemsScreen />} />
-          <Route path="/categories" element={<AdminCategoriesScreen />} />
-          <Route path="/extras" element={<AdminExtrasScreen />} />
-          <Route path="/settings" element={<AdminSettingsScreen />} />
-        </>
-      )}
+        {/* Routes for super-admin only */}
+        {user.role === "super-admin" && (
+          <>
+            <Route path="/users" element={<AdminCustomersScreen />} />
+            <Route path="/items" element={<AdminItemsScreen />} />
+            <Route path="/categories" element={<AdminCategoriesScreen />} />
+            <Route path="/extras" element={<AdminExtrasScreen />} />
+            <Route path="/settings" element={<AdminSettingsScreen />} />
+          </>
+        )}
 
-      {/* Fallback route to redirect any unknown/unauthorized paths to the dashboard */}
-      <Route path="*" element={<Navigate to="/" replace />} />
-    </Routes>
+        <Route path="*" element={<Navigate to="/" replace />} />
+      </Routes>
+    </AdminLayout>
   );
 };
 
@@ -113,9 +114,7 @@ const AdminApp: React.FC = () => {
                 <HashRouter>
                   <ScrollToTop />
                   <Suspense fallback={<FullScreenLoader />}>
-                    <AdminLayout>
-                      <ProtectedAdminRoutes />
-                    </AdminLayout>
+                    <ProtectedAdminRoutes />
                   </Suspense>
                 </HashRouter>
               </ToastProvider>
