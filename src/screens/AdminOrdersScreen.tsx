@@ -412,7 +412,7 @@ const AdminOrdersScreen: React.FC = () => {
                             {order.id.slice(0, 7).toUpperCase()}
                           </td>
                           <td className="p-3 text-slate-600 dark:text-slate-300">
-                            {order.deliveryInfo.name}
+                            {order.deliveryInfo?.name || "غير معروف"}
                           </td>
                           <td className="p-3 text-slate-600 dark:text-slate-300 font-semibold">
                             {order.deliveryMethod === "pickup"
@@ -420,7 +420,7 @@ const AdminOrdersScreen: React.FC = () => {
                               : "توصيل"}
                           </td>
                           <td className="p-3 text-slate-600 dark:text-slate-300">
-                            {order.total.toLocaleString()} ج.س
+                            {(order.total ?? 0).toLocaleString()} ج.س
                           </td>
                           <td className="p-3 w-48">
                             <div className="flex items-center gap-2">
@@ -515,11 +515,11 @@ const AdminOrdersScreen: React.FC = () => {
                             طلب #{order.id.slice(0, 7).toUpperCase()}
                           </p>
                           <p className="font-bold text-slate-800 dark:text-slate-100">
-                            {order.deliveryInfo.name}
+                            {order.deliveryInfo?.name || "غير معروف"}
                           </p>
                         </div>
                         <p className="text-xl font-bold text-primary dark:text-green-400">
-                          {order.total.toLocaleString()} ج.س
+                          {(order.total ?? 0).toLocaleString()} ج.س
                         </p>
                       </div>
 

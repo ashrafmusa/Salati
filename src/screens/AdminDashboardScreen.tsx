@@ -351,28 +351,28 @@ const AdminDashboardScreen: React.FC = () => {
           title="إجمالي الإيرادات"
           value={loading ? "..." : `${stats.totalRevenue.toLocaleString()}`}
           icon={<CurrencyDollarIcon />}
-          colorClass="bg-status-delivered"
+          textColor="text-green-500"
         />
         <StatCard
           to={`/orders?status=${OrderStatus.Preparing}`}
           title="الطلبات الجديدة"
           value={loading ? "..." : stats.newOrders}
           icon={<OrdersIcon />}
-          colorClass="bg-status-preparing"
+          textColor="text-amber-500"
         />
         <StatCard
           to="/users"
           title="العملاء"
           value={loading ? "..." : allUsersCount}
           icon={<CustomersIcon />}
-          colorClass="bg-status-delivering"
+          textColor="text-blue-500"
         />
         <StatCard
           to="/items"
           title="منتجات تحتاج إعادة تخزين"
           value={loading ? "..." : allLowStockItems}
           icon={<PackageIcon />}
-          colorClass="bg-status-cancelled"
+          textColor="text-red-500"
         />
       </div>
 

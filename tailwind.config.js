@@ -26,17 +26,10 @@ export default {
         admin: {
           primary: '#007A33',
           'primary-hover': '#005c29',
-          bg: '#F5F5DC',
           sidebar: '#1A1A1A',
           'sidebar-hover': '#333333',
           'sidebar-text': '#f3f4f6',
         },
-        status: {
-          preparing: '#f59e0b', // amber-500
-          delivering: '#3b82f6', // blue-500
-          delivered: '#22c55e', // green-500
-          cancelled: '#ef4444', // red-500
-        }
       },
       fontFamily: {
         sans: ['Almarai', 'Lato', 'sans-serif'],
