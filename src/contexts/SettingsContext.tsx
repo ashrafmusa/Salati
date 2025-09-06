@@ -29,6 +29,11 @@ export const useSettings = () => {
 
 const DEFAULT_LOGO_URL =
   "https://res.cloudinary.com/dolmzcken/image/upload/v1756915579/ml9gwjd3vkqz84ban7lm.png";
+const DEFAULT_SETTINGS: StoreSettings = {
+  deliveryFee: 500,
+  logoUrl: DEFAULT_LOGO_URL,
+  storeAddress: "Please configure your store address in the admin panel.",
+};
 
 export const SettingsProvider: React.FC<{ children: ReactNode }> = ({
   children,
@@ -43,15 +48,15 @@ export const SettingsProvider: React.FC<{ children: ReactNode }> = ({
       settingsRef,
       (docSnap) => {
         if (docSnap.exists()) {
-          const data = docSnap.data() as StoreSettings;
-          setSettings({ ...data, logoUrl: data.logoUrl || DEFAULT_LOGO_URL });
-        } else {
-          // FIX: Added missing 'storeAddress' property to match the StoreSettings type.
+          const data = docSnap.data() as Partial<StoreSettings>;
+          // Ensure all properties have a value to prevent crashes.
           setSettings({
-            deliveryFee: 500,
-            logoUrl: DEFAULT_LOGO_URL,
-            storeAddress: "",
-          }); // Default value
+            deliveryFee: data.deliveryFee ?? DEFAULT_SETTINGS.deliveryFee,
+            logoUrl: data.logoUrl || DEFAULT_SETTINGS.logoUrl,
+            storeAddress: data.storeAddress || DEFAULT_SETTINGS.storeAddress,
+          });
+        } else {
+          setSettings(DEFAULT_SETTINGS);
           console.warn(
             "Store settings not found in Firestore, using default values."
           );
@@ -60,12 +65,7 @@ export const SettingsProvider: React.FC<{ children: ReactNode }> = ({
       },
       (err) => {
         console.error("Error fetching store settings:", err);
-        // FIX: Added missing 'storeAddress' property to match the StoreSettings type.
-        setSettings({
-          deliveryFee: 500,
-          logoUrl: DEFAULT_LOGO_URL,
-          storeAddress: "",
-        }); // Fallback on error
+        setSettings(DEFAULT_SETTINGS); // Fallback on error
         setLoading(false);
       }
     );
