@@ -1,307 +1,255 @@
-import React, { useState, useEffect, useMemo } from "react";
+import React, { useState, useMemo } from "react";
 import { db } from "../firebase/config";
 import {
   collection,
-  onSnapshot,
-  doc,
+  addDoc,
   updateDoc,
   deleteDoc,
+  doc,
 } from "firebase/firestore";
-import { User } from "../types";
-import { useAuth } from "../hooks/useAuth";
-import AdminScreenHeader from "../components/AdminScreenHeader";
+import { Driver } from "../types";
+import { PlusIcon, TruckIcon } from "../assets/adminIcons";
+import DriverFormModal from "../components/DriverFormModal";
 import { useToast } from "../contexts/ToastContext";
-import { useSortableData } from "../hooks/useSortableData";
+import { usePaginatedFirestore } from "../hooks/usePaginatedFirestore";
 import SortableHeader from "../components/SortableHeader";
+import Pagination from "../components/Pagination";
 
-const RoleBadge: React.FC<{ role: User["role"] }> = ({ role }) => {
-  const roleConfig = {
-    "super-admin": {
-      text: "Super Admin",
-      color:
-        "bg-amber-100 text-amber-800 dark:bg-amber-900/50 dark:text-amber-300 border border-amber-300",
-    },
-    admin: {
-      text: "Admin",
-      color:
-        "bg-slate-200 text-slate-800 dark:bg-slate-700 dark:text-slate-200 border border-slate-400",
-    },
-    "sub-admin": {
-      text: "Sub-Admin",
-      color:
-        "bg-sky-100 text-sky-800 dark:bg-sky-900/50 dark:text-sky-300 border border-sky-300",
-    },
-    driver: {
-      text: "Driver",
-      color:
-        "bg-green-100 text-green-800 dark:bg-green-900/50 dark:text-green-300 border border-green-300",
-    },
-    customer: {
-      text: "Customer",
-      color:
-        "bg-gray-100 text-gray-800 dark:bg-gray-900/50 dark:text-gray-300 border border-gray-300",
-    },
-  };
-  const config = roleConfig[role] || roleConfig["customer"];
-  return (
-    <span
-      className={`px-2.5 py-1 text-xs font-bold rounded-full inline-block ${config.color}`}
-    >
-      {config.text}
-    </span>
-  );
-};
-
-const AdminCustomersScreen: React.FC = () => {
-  const { user: adminUser } = useAuth();
+const AdminDriversScreen: React.FC = () => {
+  const [isModalOpen, setIsModalOpen] = useState(false);
+  const [editingDriver, setEditingDriver] = useState<Driver | null>(null);
+  const [isSaving, setIsSaving] = useState(false);
   const { showToast } = useToast();
-  const [users, setUsers] = useState<User[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [searchTerm, setSearchTerm] = useState("");
-
-  useEffect(() => {
-    const unsubscribe = onSnapshot(
-      collection(db, "users"),
-      (snapshot) => {
-        const fetchedUsers = snapshot.docs.map((doc) => doc.data() as User);
-        setUsers(fetchedUsers);
-        setLoading(false);
-      },
-      (err) => {
-        console.error("Error fetching users: ", err);
-        setLoading(false);
-      }
-    );
-
-    return () => unsubscribe();
-  }, []);
-
-  const filteredUsers = useMemo(() => {
-    return users.filter(
-      (user) =>
-        user.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        (user.email || "").toLowerCase().includes(searchTerm.toLowerCase()) ||
-        (user.phone || "").includes(searchTerm)
-    );
-  }, [users, searchTerm]);
 
   const {
-    items: sortedUsers,
+    documents: drivers,
+    loading,
+    nextPage,
+    prevPage,
+    hasNextPage,
+    hasPrevPage,
     requestSort,
     sortConfig,
-  } = useSortableData(filteredUsers, { key: "name", direction: "ascending" });
+  } = usePaginatedFirestore<Driver>("drivers", {
+    key: "name",
+    direction: "ascending",
+  });
 
-  const handleRoleChange = async (uid: string, newRole: User["role"]) => {
-    try {
-      await updateDoc(doc(db, "users", uid), { role: newRole });
-      showToast("User role updated successfully!", "success");
-    } catch (error) {
-      console.error("Error updating user role:", error);
-      showToast("Failed to update user role.", "error");
-    }
+  const handleOpenModal = (driver?: Driver) => {
+    setEditingDriver(driver || null);
+    setIsModalOpen(true);
   };
 
-  const handleDeleteUser = async (uid: string, name: string) => {
+  const handleCloseModal = () => {
+    setIsModalOpen(false);
+    setEditingDriver(null);
+  };
+
+  const handleSaveDriver = async (driverToSave: Driver) => {
+    setIsSaving(true);
+    const { id, ...driverData } = driverToSave;
+    try {
+      if (editingDriver) {
+        await updateDoc(doc(db, "drivers", id), driverData);
+        showToast("Driver details updated successfully!", "success");
+      } else {
+        await addDoc(collection(db, "drivers"), driverData);
+        showToast("New driver added successfully!", "success");
+      }
+    } catch (error) {
+      console.error("Error saving driver:", error);
+      showToast("Failed to save driver details.", "error");
+    }
+    setIsSaving(false);
+    handleCloseModal();
+  };
+
+  const handleDeleteDriver = async (driverId: string, driverName: string) => {
     if (
-      window.confirm(
-        `Are you sure you want to delete the user "${name}"? This action is permanent and cannot be undone.`
-      )
+      window.confirm(`Are you sure you want to delete driver "${driverName}"?`)
     ) {
       try {
-        await deleteDoc(doc(db, "users", uid));
-        showToast(`User "${name}" deleted successfully.`, "success");
+        await deleteDoc(doc(db, "drivers", driverId));
+        showToast(`Driver "${driverName}" has been deleted.`, "success");
       } catch (error) {
-        console.error("Error deleting user:", error);
-        showToast("Failed to delete user.", "error");
+        console.error("Error deleting driver:", error);
+        showToast("Failed to delete driver.", "error");
       }
     }
-  };
-
-  const getManagementPermissions = (
-    targetUser: User
-  ): { canChangeRole: boolean; canDelete: boolean } => {
-    if (adminUser?.role !== "super-admin" || adminUser.uid === targetUser.uid) {
-      return { canChangeRole: false, canDelete: false };
-    }
-    return {
-      canChangeRole: true,
-      canDelete: targetUser.role !== "super-admin",
-    };
   };
 
   return (
     <div className="h-full flex flex-col bg-white dark:bg-slate-800 p-4 md:p-6 rounded-lg shadow-md">
-      <AdminScreenHeader
-        title="إدارة المستخدمين"
-        searchTerm={searchTerm}
-        onSearchChange={setSearchTerm}
-        searchPlaceholder="ابحث بالاسم، الإيميل، أو الهاتف..."
-      />
+      <div className="flex justify-between items-center mb-6">
+        <h2 className="text-xl font-bold text-slate-800 dark:text-slate-100">
+          قائمة السائقين
+        </h2>
+        <button
+          onClick={() => handleOpenModal()}
+          className="flex items-center bg-admin-primary text-white px-4 py-2 rounded-lg hover:bg-admin-primary-hover transition-all duration-200 transform active:scale-95 shadow-sm"
+        >
+          <PlusIcon className="w-5 h-5 ml-2" />
+          إضافة سائق
+        </button>
+      </div>
 
       <div className="flex-grow overflow-y-auto">
         {loading ? (
-          <p>Loading users...</p>
-        ) : (
+          <p>Loading...</p>
+        ) : drivers.length > 0 ? (
           <>
             {/* Desktop Table View */}
             <div className="overflow-x-auto hidden md:block">
               <table className="w-full text-right">
                 <thead className="border-b-2 border-slate-100 dark:border-slate-700">
                   <tr>
-                    <SortableHeader<User>
-                      label="المستخدم"
+                    <SortableHeader<Driver>
+                      label="اسم السائق"
                       sortKey="name"
                       requestSort={requestSort}
                       sortConfig={sortConfig}
                     />
                     <th className="p-3 text-sm font-semibold text-slate-500 dark:text-slate-400">
-                      رقم الهاتف / الإيميل
+                      رقم الهاتف
                     </th>
+                    <SortableHeader<Driver>
+                      label="الحالة"
+                      sortKey="status"
+                      requestSort={requestSort}
+                      sortConfig={sortConfig}
+                    />
                     <th className="p-3 text-sm font-semibold text-slate-500 dark:text-slate-400">
                       إجراءات
                     </th>
                   </tr>
                 </thead>
                 <tbody>
-                  {sortedUsers.map((user, index) => {
-                    const permissions = getManagementPermissions(user);
-                    return (
-                      <tr
-                        key={user.uid}
-                        className={`border-b dark:border-slate-700 transition-colors ${
-                          index % 2 === 0
-                            ? "bg-white dark:bg-slate-800"
-                            : "bg-slate-50 dark:bg-slate-800/50"
-                        } hover:bg-sky-100/50 dark:hover:bg-sky-900/20`}
+                  {drivers.map((driver, index) => (
+                    <tr
+                      key={driver.id}
+                      className={`border-b dark:border-slate-700 transition-colors ${
+                        index % 2 === 0
+                          ? "bg-white dark:bg-slate-800"
+                          : "bg-slate-50 dark:bg-slate-800/50"
+                      } hover:bg-sky-100/50 dark:hover:bg-sky-900/20`}
+                    >
+                      <td className="p-3 font-medium text-slate-700 dark:text-slate-200">
+                        {driver.name}
+                      </td>
+                      <td
+                        className="p-3 text-slate-600 dark:text-slate-300"
+                        dir="ltr"
                       >
-                        <td className="p-3">
-                          <div className="flex items-center gap-3">
-                            <div className="w-10 h-10 bg-slate-200 dark:bg-slate-700 rounded-full flex items-center justify-center font-bold text-slate-500">
-                              {user.name.charAt(0).toUpperCase()}
-                            </div>
-                            <div>
-                              <p className="font-medium text-slate-800 dark:text-slate-100">
-                                {user.name}
-                              </p>
-                              <RoleBadge role={user.role} />
-                            </div>
-                          </div>
-                        </td>
-                        <td
-                          className="p-3 text-slate-600 dark:text-slate-300"
-                          dir="ltr"
+                        {driver.phone}
+                      </td>
+                      <td className="p-3 text-slate-600 dark:text-slate-300">
+                        {driver.status}
+                      </td>
+                      <td className="p-3 space-x-4 space-x-reverse">
+                        <button
+                          onClick={() => handleOpenModal(driver)}
+                          className="text-admin-primary hover:underline text-sm font-semibold"
                         >
-                          {user.phone || user.email}
-                        </td>
-                        <td className="p-3">
-                          <div className="flex items-center gap-4">
-                            {permissions.canChangeRole ? (
-                              <select
-                                value={user.role}
-                                onChange={(e) =>
-                                  handleRoleChange(
-                                    user.uid,
-                                    e.target.value as User["role"]
-                                  )
-                                }
-                                className={`p-1.5 w-32 rounded text-sm border-slate-300 dark:border-slate-600 focus:ring-admin-primary focus:border-admin-primary bg-white dark:bg-slate-700 text-slate-900 dark:text-slate-100`}
-                              >
-                                <option value="customer">Customer</option>
-                                <option value="driver">Driver</option>
-                                <option value="sub-admin">Sub-Admin</option>
-                                <option value="admin">Admin</option>
-                                <option value="super-admin">Super Admin</option>
-                              </select>
-                            ) : (
-                              <div className="w-32">
-                                <RoleBadge role={user.role} />
-                              </div>
-                            )}
-                            <button
-                              onClick={() =>
-                                handleDeleteUser(user.uid, user.name)
-                              }
-                              disabled={!permissions.canDelete}
-                              className="text-red-500 hover:underline text-sm font-semibold disabled:opacity-50 disabled:cursor-not-allowed"
-                            >
-                              حذف
-                            </button>
-                          </div>
-                        </td>
-                      </tr>
-                    );
-                  })}
+                          تعديل
+                        </button>
+                        <button
+                          onClick={() =>
+                            handleDeleteDriver(driver.id, driver.name)
+                          }
+                          className="text-red-500 hover:underline text-sm font-semibold"
+                        >
+                          حذف
+                        </button>
+                      </td>
+                    </tr>
+                  ))}
                 </tbody>
               </table>
             </div>
-
             {/* Mobile Card View */}
             <div className="space-y-4 md:hidden">
-              {sortedUsers.map((user) => {
-                const permissions = getManagementPermissions(user);
-                return (
-                  <div
-                    key={user.uid}
-                    className="bg-slate-50 dark:bg-slate-800/50 p-4 rounded-lg shadow-sm border dark:border-slate-700 space-y-3"
-                  >
+              {drivers.map((driver) => (
+                <div
+                  key={driver.id}
+                  className="bg-slate-50 dark:bg-slate-800/50 p-4 rounded-lg shadow-sm border dark:border-slate-700"
+                >
+                  <div className="flex justify-between items-start">
                     <div>
-                      <div className="flex justify-between items-start">
-                        <p className="font-bold text-lg text-slate-800 dark:text-slate-100">
-                          {user.name}
-                        </p>
-                        <RoleBadge role={user.role} />
-                      </div>
+                      <p className="font-bold text-slate-800 dark:text-slate-100">
+                        {driver.name}
+                      </p>
                       <p
-                        className="text-sm text-slate-600 dark:text-slate-300 mt-1"
+                        className="text-sm text-slate-500 dark:text-slate-400"
                         dir="ltr"
                       >
-                        {user.phone || user.email}
+                        {driver.phone}
                       </p>
                     </div>
-                    <div className="pt-3 border-t dark:border-slate-700 space-y-2">
-                      <div className="flex items-center justify-between">
-                        <label className="text-sm font-medium text-slate-600 dark:text-slate-300">
-                          الدور:
-                        </label>
-                        {permissions.canChangeRole ? (
-                          <select
-                            value={user.role}
-                            onChange={(e) =>
-                              handleRoleChange(
-                                user.uid,
-                                e.target.value as User["role"]
-                              )
-                            }
-                            className={`p-1 w-36 rounded text-xs border-slate-300 dark:border-slate-600 focus:ring-admin-primary focus:border-admin-primary bg-white dark:bg-slate-700 text-slate-900 dark:text-slate-100`}
-                          >
-                            <option value="customer">Customer</option>
-                            <option value="driver">Driver</option>
-                            <option value="sub-admin">Sub-Admin</option>
-                            <option value="admin">Admin</option>
-                            <option value="super-admin">Super Admin</option>
-                          </select>
-                        ) : (
-                          <span className="text-sm font-semibold">
-                            {user.role}
-                          </span>
-                        )}
-                      </div>
-                      <button
-                        onClick={() => handleDeleteUser(user.uid, user.name)}
-                        disabled={!permissions.canDelete}
-                        className="w-full text-right text-red-500 hover:underline text-sm font-semibold disabled:opacity-50 disabled:cursor-not-allowed pt-2"
-                      >
-                        حذف المستخدم
-                      </button>
-                    </div>
+                    <span
+                      className={`px-2 py-1 text-xs font-semibold rounded-full ${
+                        driver.status === "Available"
+                          ? "bg-green-100 text-green-800 dark:bg-green-900/50 dark:text-green-300"
+                          : driver.status === "On-Delivery"
+                          ? "bg-blue-100 text-blue-800 dark:bg-blue-900/50 dark:text-blue-300"
+                          : "bg-slate-200 text-slate-700 dark:bg-slate-700 dark:text-slate-200"
+                      }`}
+                    >
+                      {driver.status}
+                    </span>
                   </div>
-                );
-              })}
+                  <div className="flex justify-end gap-4 mt-4 pt-2 border-t dark:border-slate-600">
+                    <button
+                      onClick={() => handleOpenModal(driver)}
+                      className="text-admin-primary font-semibold"
+                    >
+                      تعديل
+                    </button>
+                    <button
+                      onClick={() => handleDeleteDriver(driver.id, driver.name)}
+                      className="text-red-500 font-semibold"
+                    >
+                      حذف
+                    </button>
+                  </div>
+                </div>
+              ))}
             </div>
           </>
+        ) : (
+          <div className="text-center py-16">
+            <TruckIcon className="w-24 h-24 text-slate-300 dark:text-slate-600 mx-auto" />
+            <h3 className="mt-4 text-xl font-bold text-slate-700 dark:text-slate-200">
+              لا يوجد سائقون بعد
+            </h3>
+            <p className="mt-2 text-slate-500 dark:text-slate-400">
+              ابدأ ببناء أسطول التوصيل الخاص بك.
+            </p>
+            <button
+              onClick={() => handleOpenModal()}
+              className="mt-6 flex items-center mx-auto bg-admin-primary text-white px-4 py-2 rounded-lg hover:bg-admin-primary-hover transition-colors shadow-sm"
+            >
+              <PlusIcon className="w-5 h-5 ml-2" />
+              إضافة سائق
+            </button>
+          </div>
         )}
       </div>
+      <Pagination
+        onNext={nextPage}
+        onPrev={prevPage}
+        hasNextPage={hasNextPage}
+        hasPrevPage={hasPrevPage}
+      />
+
+      {isModalOpen && (
+        <DriverFormModal
+          driver={editingDriver}
+          onClose={handleCloseModal}
+          onSave={handleSaveDriver}
+          isSaving={isSaving}
+        />
+      )}
     </div>
   );
 };
-export default AdminCustomersScreen;
+export default AdminDriversScreen;

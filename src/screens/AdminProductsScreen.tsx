@@ -23,7 +23,8 @@ import { BeakerIcon } from "../assets/adminIcons";
 import IdeaGeneratorModal from "../components/IdeaGeneratorModal";
 import { BundleIdea } from "../utils/gemini";
 import SortableHeader from "../components/SortableHeader";
-import { useSortableData } from "../hooks/useSortableData";
+import { usePaginatedFirestore } from "../hooks/usePaginatedFirestore";
+import Pagination from "../components/Pagination";
 
 const BundleFormModal: React.FC<{
   bundle?: Bundle | null;
@@ -368,10 +369,8 @@ const BundleFormModal: React.FC<{
 };
 
 const AdminBundlesScreen: React.FC = () => {
-  const [bundles, setBundles] = useState<Bundle[]>([]);
   const [items, setItems] = useState<Item[]>([]);
   const [categories, setCategories] = useState<Category[]>([]);
-  const [loading, setLoading] = useState(true);
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [isIdeaModalOpen, setIsIdeaModalOpen] = useState(false);
   const [editingBundle, setEditingBundle] = useState<Bundle | null>(null);
@@ -382,17 +381,6 @@ const AdminBundlesScreen: React.FC = () => {
 
   useEffect(() => {
     const unsubs: (() => void)[] = [];
-
-    const bundlesQuery = query(collection(db, "bundles"));
-    unsubs.push(
-      onSnapshot(bundlesQuery, (snapshot) => {
-        setBundles(
-          snapshot.docs.map((doc) => ({ id: doc.id, ...doc.data() } as Bundle))
-        );
-        setLoading(false);
-      })
-    );
-
     const categoriesQuery = query(
       collection(db, "categories"),
       orderBy("sortOrder")
@@ -406,7 +394,6 @@ const AdminBundlesScreen: React.FC = () => {
         );
       })
     );
-
     const itemsQuery = query(collection(db, "items"));
     unsubs.push(
       onSnapshot(itemsQuery, (snapshot) => {
@@ -415,33 +402,38 @@ const AdminBundlesScreen: React.FC = () => {
         );
       })
     );
-
     return () => unsubs.forEach((unsub) => unsub());
   }, []);
 
+  const {
+    documents: paginatedBundles,
+    loading,
+    nextPage,
+    prevPage,
+    hasNextPage,
+    hasPrevPage,
+    requestSort,
+    sortConfig,
+  } = usePaginatedFirestore<Bundle>("bundles", {
+    key: "arabicName",
+    direction: "ascending",
+  });
+
   const filteredBundles = useMemo(() => {
-    return bundles.filter(
+    if (!searchTerm) return paginatedBundles;
+    return paginatedBundles.filter(
       (bundle) =>
         bundle.arabicName.toLowerCase().includes(searchTerm.toLowerCase()) ||
         bundle.name.toLowerCase().includes(searchTerm.toLowerCase())
     );
-  }, [bundles, searchTerm]);
+  }, [paginatedBundles, searchTerm]);
 
-  const bundleWithPrices = useMemo(() => {
+  const bundlesWithPrices = useMemo(() => {
     return filteredBundles.map((bundle) => ({
       ...bundle,
       calculatedPrice: calculateBundlePrice(bundle, items),
     }));
   }, [filteredBundles, items]);
-
-  const {
-    items: sortedBundles,
-    requestSort,
-    sortConfig,
-  } = useSortableData(bundleWithPrices, {
-    key: "arabicName",
-    direction: "ascending",
-  });
 
   const itemsInStock = useMemo(
     () => items.filter((item) => item.stock > 0),
@@ -556,25 +548,22 @@ const AdminBundlesScreen: React.FC = () => {
                 <table className="w-full text-right">
                   <thead>
                     <tr className="border-b-2 border-slate-100 dark:border-slate-700">
-                      <SortableHeader<Bundle & { calculatedPrice: number }>
+                      <SortableHeader<Bundle>
                         label="اسم الحزمة"
                         sortKey="arabicName"
                         requestSort={requestSort}
                         sortConfig={sortConfig}
                       />
-                      <SortableHeader<Bundle & { calculatedPrice: number }>
+                      <SortableHeader<Bundle>
                         label="الفئة"
                         sortKey="category"
                         requestSort={requestSort}
                         sortConfig={sortConfig}
                       />
-                      <SortableHeader<Bundle & { calculatedPrice: number }>
-                        label="السعر المحسوب"
-                        sortKey="calculatedPrice"
-                        requestSort={requestSort}
-                        sortConfig={sortConfig}
-                      />
-                      <SortableHeader<Bundle & { calculatedPrice: number }>
+                      <th className="p-3 text-sm font-semibold text-slate-500 dark:text-slate-400">
+                        السعر المحسوب
+                      </th>
+                      <SortableHeader<Bundle>
                         label="المخزون"
                         sortKey="stock"
                         requestSort={requestSort}
@@ -586,7 +575,7 @@ const AdminBundlesScreen: React.FC = () => {
                     </tr>
                   </thead>
                   <tbody>
-                    {sortedBundles.map((bundle) => (
+                    {bundlesWithPrices.map((bundle) => (
                       <tr
                         key={bundle.id}
                         className="border-b dark:border-slate-700 hover:bg-sky-100/50 dark:hover:bg-sky-900/20 align-middle"
@@ -636,7 +625,7 @@ const AdminBundlesScreen: React.FC = () => {
               </div>
               {/* Mobile Card View */}
               <div className="space-y-4 md:hidden">
-                {sortedBundles.map((bundle) => (
+                {bundlesWithPrices.map((bundle) => (
                   <div
                     key={bundle.id}
                     className="bg-slate-50 dark:bg-slate-800/50 p-4 rounded-lg shadow-sm border dark:border-slate-700"
@@ -699,6 +688,12 @@ const AdminBundlesScreen: React.FC = () => {
             </>
           )}
         </div>
+        <Pagination
+          onNext={nextPage}
+          onPrev={prevPage}
+          hasNextPage={hasNextPage}
+          hasPrevPage={hasPrevPage}
+        />
       </div>
 
       {isModalOpen && (

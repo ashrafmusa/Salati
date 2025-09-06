@@ -14,6 +14,9 @@ import { getOptimizedImageUrl, uploadToCloudinary } from "../utils/helpers";
 import ConfirmationModal from "../components/ConfirmationModal";
 import { useToast } from "../contexts/ToastContext";
 import { SpinnerIcon, PackageIcon, PlusIcon } from "../assets/adminIcons";
+import SortableHeader from "../components/SortableHeader";
+import { usePaginatedFirestore } from "../hooks/usePaginatedFirestore";
+import Pagination from "../components/Pagination";
 
 const ItemFormModal: React.FC<{
   item?: Item | null;
@@ -202,9 +205,7 @@ const ItemFormModal: React.FC<{
 };
 
 const AdminItemsScreen: React.FC = () => {
-  const [items, setItems] = useState<Item[]>([]);
   const [categories, setCategories] = useState<Category[]>([]);
-  const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState("");
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [editingItem, setEditingItem] = useState<Item | null>(null);
@@ -213,12 +214,6 @@ const AdminItemsScreen: React.FC = () => {
   const { showToast } = useToast();
 
   useEffect(() => {
-    const unsubItems = onSnapshot(collection(db, "items"), (snapshot) => {
-      setItems(
-        snapshot.docs.map((doc) => ({ id: doc.id, ...doc.data() } as Item))
-      );
-      setLoading(false);
-    });
     const unsubCategories = onSnapshot(
       collection(db, "categories"),
       (snapshot) => {
@@ -229,17 +224,29 @@ const AdminItemsScreen: React.FC = () => {
         );
       }
     );
-    return () => {
-      unsubItems();
-      unsubCategories();
-    };
+    return () => unsubCategories();
   }, []);
 
+  const {
+    documents: paginatedItems,
+    loading,
+    nextPage,
+    prevPage,
+    hasNextPage,
+    hasPrevPage,
+    requestSort,
+    sortConfig,
+  } = usePaginatedFirestore<Item>("items", {
+    key: "arabicName",
+    direction: "ascending",
+  });
+
   const filteredItems = useMemo(() => {
-    return items.filter((item) =>
+    if (!searchTerm) return paginatedItems;
+    return paginatedItems.filter((item) =>
       item.arabicName.toLowerCase().includes(searchTerm.toLowerCase())
     );
-  }, [items, searchTerm]);
+  }, [paginatedItems, searchTerm]);
 
   const handleSaveItem = async (itemToSave: Item) => {
     setIsSaving(true);
@@ -296,18 +303,30 @@ const AdminItemsScreen: React.FC = () => {
                 <table className="w-full text-right">
                   <thead>
                     <tr className="border-b-2 border-slate-100 dark:border-slate-700">
-                      <th className="p-3 text-sm font-semibold text-slate-500">
-                        الصنف
-                      </th>
-                      <th className="p-3 text-sm font-semibold text-slate-500">
-                        الفئة
-                      </th>
-                      <th className="p-3 text-sm font-semibold text-slate-500">
-                        السعر
-                      </th>
-                      <th className="p-3 text-sm font-semibold text-slate-500">
-                        المخزون
-                      </th>
+                      <SortableHeader<Item>
+                        label="الصنف"
+                        sortKey="arabicName"
+                        requestSort={requestSort}
+                        sortConfig={sortConfig}
+                      />
+                      <SortableHeader<Item>
+                        label="الفئة"
+                        sortKey="category"
+                        requestSort={requestSort}
+                        sortConfig={sortConfig}
+                      />
+                      <SortableHeader<Item>
+                        label="السعر"
+                        sortKey="price"
+                        requestSort={requestSort}
+                        sortConfig={sortConfig}
+                      />
+                      <SortableHeader<Item>
+                        label="المخزون"
+                        sortKey="stock"
+                        requestSort={requestSort}
+                        sortConfig={sortConfig}
+                      />
                       <th className="p-3 text-sm font-semibold text-slate-500">
                         إجراءات
                       </th>
@@ -319,13 +338,17 @@ const AdminItemsScreen: React.FC = () => {
                         key={item.id}
                         className="border-b dark:border-slate-700 hover:bg-sky-100/50"
                       >
-                        <td className="p-3 flex items-center gap-3">
-                          <img
-                            src={getOptimizedImageUrl(item.imageUrl, 100)}
-                            alt={item.arabicName}
-                            className="w-12 h-12 rounded-md object-cover"
-                          />
-                          <span className="font-medium">{item.arabicName}</span>
+                        <td className="p-3">
+                          <div className="flex items-center gap-3">
+                            <img
+                              src={getOptimizedImageUrl(item.imageUrl, 100)}
+                              alt={item.arabicName}
+                              className="w-12 h-12 rounded-md object-cover"
+                            />
+                            <span className="font-medium">
+                              {item.arabicName}
+                            </span>
+                          </div>
                         </td>
                         <td className="p-3">{item.category}</td>
                         <td className="p-3">{item.price} ج.س</td>
@@ -441,6 +464,12 @@ const AdminItemsScreen: React.FC = () => {
             </div>
           )}
         </div>
+        <Pagination
+          onNext={nextPage}
+          onPrev={prevPage}
+          hasNextPage={hasNextPage}
+          hasPrevPage={hasPrevPage}
+        />
       </div>
       {isModalOpen && (
         <ItemFormModal

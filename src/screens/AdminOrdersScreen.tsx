@@ -7,16 +7,21 @@ import { db } from "../firebase/config";
 import {
   collection,
   query,
-  orderBy,
+  where,
   onSnapshot,
   doc,
   updateDoc,
   deleteDoc,
+  QueryConstraint,
 } from "firebase/firestore";
 import AdminScreenHeader from "../components/AdminScreenHeader";
 import { useToast } from "../contexts/ToastContext";
-import { useSortableData } from "../hooks/useSortableData";
 import SortableHeader from "../components/SortableHeader";
+import {
+  usePaginatedFirestore,
+  PaginatedSortConfig,
+} from "../hooks/usePaginatedFirestore";
+import Pagination from "../components/Pagination";
 
 const getStatusPillClasses = (status: OrderStatus) => {
   switch (status) {
@@ -68,9 +73,7 @@ interface ConfirmationState {
 }
 
 const AdminOrdersScreen: React.FC = () => {
-  const [orders, setOrders] = useState<AdminOrder[]>([]);
   const [drivers, setDrivers] = useState<Driver[]>([]);
-  const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState("");
   const [selectedOrder, setSelectedOrder] = useState<AdminOrder | null>(null);
   const [confirmationState, setConfirmationState] = useState<ConfirmationState>(
@@ -102,26 +105,6 @@ const AdminOrdersScreen: React.FC = () => {
   }, [statusFilterFromUrl]);
 
   useEffect(() => {
-    const ordersQuery = query(
-      collection(db, "orders"),
-      orderBy("date", "desc")
-    );
-    const unsubscribeOrders = onSnapshot(
-      ordersQuery,
-      (snapshot) => {
-        const fetchedOrders = snapshot.docs.map((doc) => ({
-          id: doc.id,
-          ...doc.data(),
-        })) as AdminOrder[];
-        setOrders(fetchedOrders);
-        setLoading(false);
-      },
-      (err) => {
-        console.error("Error fetching orders:", err);
-        setLoading(false);
-      }
-    );
-
     const unsubscribeDrivers = onSnapshot(
       collection(db, "drivers"),
       (snapshot) => {
@@ -132,12 +115,48 @@ const AdminOrdersScreen: React.FC = () => {
         setDrivers(fetchedDrivers);
       }
     );
-
-    return () => {
-      unsubscribeOrders();
-      unsubscribeDrivers();
-    };
+    return () => unsubscribeDrivers();
   }, []);
+
+  const queryConstraints = useMemo(() => {
+    const constraints: QueryConstraint[] = [];
+    if (statusFilter !== "all") {
+      constraints.push(where("status", "==", statusFilter));
+    }
+    if (deliveryMethodFilter !== "all") {
+      constraints.push(where("deliveryMethod", "==", deliveryMethodFilter));
+    }
+    if (paymentStatusFilter !== "all") {
+      constraints.push(where("paymentStatus", "==", paymentStatusFilter));
+    }
+    return constraints;
+  }, [statusFilter, deliveryMethodFilter, paymentStatusFilter]);
+
+  const {
+    documents: paginatedOrders,
+    loading,
+    nextPage,
+    prevPage,
+    hasNextPage,
+    hasPrevPage,
+    requestSort,
+    sortConfig,
+  } = usePaginatedFirestore<AdminOrder>(
+    "orders",
+    { key: "date", direction: "descending" },
+    queryConstraints
+  );
+
+  const filteredOrders = useMemo(() => {
+    if (!searchTerm) return paginatedOrders;
+    return paginatedOrders.filter(
+      (o) =>
+        o.id.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        (o.deliveryInfo?.name || "")
+          .toLowerCase()
+          .includes(searchTerm.toLowerCase())
+    );
+  }, [paginatedOrders, searchTerm]);
 
   const updateOrder = async (orderId: string, updates: Partial<AdminOrder>) => {
     try {
@@ -265,40 +284,6 @@ const AdminOrdersScreen: React.FC = () => {
     });
   };
 
-  const filteredOrders = useMemo(() => {
-    return orders
-      .filter((o) => statusFilter === "all" || o.status === statusFilter)
-      .filter(
-        (o) =>
-          deliveryMethodFilter === "all" ||
-          o.deliveryMethod === deliveryMethodFilter
-      )
-      .filter(
-        (o) =>
-          paymentStatusFilter === "all" ||
-          o.paymentStatus === paymentStatusFilter
-      )
-      .filter(
-        (o) =>
-          o.id.toLowerCase().includes(searchTerm.toLowerCase()) ||
-          (o.deliveryInfo?.name || "")
-            .toLowerCase()
-            .includes(searchTerm.toLowerCase())
-      );
-  }, [
-    orders,
-    statusFilter,
-    deliveryMethodFilter,
-    paymentStatusFilter,
-    searchTerm,
-  ]);
-
-  const {
-    items: sortedOrders,
-    requestSort,
-    sortConfig,
-  } = useSortableData(filteredOrders, { key: "date", direction: "descending" });
-
   const inputSelectClasses =
     "p-2 border border-slate-300 dark:border-slate-600 rounded-lg focus:ring-2 focus:ring-admin-primary focus:outline-none bg-white dark:bg-slate-700 text-slate-900 dark:text-slate-100 shadow-sm";
 
@@ -397,7 +382,7 @@ const AdminOrdersScreen: React.FC = () => {
                     </tr>
                   </thead>
                   <tbody>
-                    {sortedOrders.map((order, index) => {
+                    {filteredOrders.map((order, index) => {
                       const statusClasses = getStatusPillClasses(order.status);
                       return (
                         <tr
@@ -499,7 +484,7 @@ const AdminOrdersScreen: React.FC = () => {
               </div>
 
               <div className="space-y-4 md:hidden">
-                {sortedOrders.map((order) => {
+                {filteredOrders.map((order) => {
                   const statusClasses = getStatusPillClasses(order.status);
                   return (
                     <div
@@ -620,6 +605,12 @@ const AdminOrdersScreen: React.FC = () => {
             </>
           )}
         </div>
+        <Pagination
+          onNext={nextPage}
+          onPrev={prevPage}
+          hasNextPage={hasNextPage}
+          hasPrevPage={hasPrevPage}
+        />
       </div>
       {selectedOrder && (
         <OrderDetailsModal

@@ -1,5 +1,7 @@
 import React from "react";
-import { SortConfig } from "../hooks/useSortableData";
+// FIX: The 'useSortableData.ts' file is not a module.
+// The correct type definition is in 'usePaginatedFirestore.ts'.
+import { PaginatedSortConfig as SortConfig } from "../hooks/usePaginatedFirestore";
 import { ChevronUpIcon, ChevronDownIcon } from "../assets/adminIcons";
 
 interface SortableHeaderProps<T> {

@@ -15,8 +15,9 @@ import { uploadToCloudinary, getOptimizedImageUrl } from "../utils/helpers";
 import ConfirmationModal from "../components/ConfirmationModal";
 import AdminScreenHeader from "../components/AdminScreenHeader";
 import { useToast } from "../contexts/ToastContext";
-import { useSortableData } from "../hooks/useSortableData";
 import SortableHeader from "../components/SortableHeader";
+import { usePaginatedFirestore } from "../hooks/usePaginatedFirestore";
+import Pagination from "../components/Pagination";
 
 const OfferFormModal: React.FC<{
   offer?: Offer | null;
@@ -337,9 +338,7 @@ const DiscountDetails: React.FC<{
 };
 
 const AdminOffersScreen: React.FC = () => {
-  const [offers, setOffers] = useState<Offer[]>([]);
   const [products, setProducts] = useState<StoreProduct[]>([]);
-  const [loading, setLoading] = useState(true);
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [editingOffer, setEditingOffer] = useState<Offer | null>(null);
   const [isSaving, setIsSaving] = useState(false);
@@ -348,15 +347,6 @@ const AdminOffersScreen: React.FC = () => {
   const { showToast } = useToast();
 
   useEffect(() => {
-    const unsubscribeOffers = onSnapshot(
-      collection(db, "offers"),
-      (snapshot) => {
-        setOffers(
-          snapshot.docs.map((doc) => ({ id: doc.id, ...doc.data() } as Offer))
-        );
-        setLoading(false);
-      }
-    );
     const fetchAllProducts = async () => {
       const itemsSnapshot = await getDocs(collection(db, "items"));
       const bundlesSnapshot = await getDocs(collection(db, "bundles"));
@@ -369,24 +359,28 @@ const AdminOffersScreen: React.FC = () => {
       setProducts([...items, ...bundles]);
     };
     fetchAllProducts();
-
-    return () => unsubscribeOffers();
   }, []);
 
-  const filteredOffers = useMemo(() => {
-    return offers.filter((offer) =>
-      offer.title.toLowerCase().includes(searchTerm.toLowerCase())
-    );
-  }, [offers, searchTerm]);
-
   const {
-    items: sortedOffers,
+    documents: paginatedOffers,
+    loading,
+    nextPage,
+    prevPage,
+    hasNextPage,
+    hasPrevPage,
     requestSort,
     sortConfig,
-  } = useSortableData(filteredOffers, {
+  } = usePaginatedFirestore<Offer>("offers", {
     key: "expiryDate",
     direction: "descending",
   });
+
+  const filteredOffers = useMemo(() => {
+    if (!searchTerm) return paginatedOffers;
+    return paginatedOffers.filter((offer) =>
+      offer.title.toLowerCase().includes(searchTerm.toLowerCase())
+    );
+  }, [paginatedOffers, searchTerm]);
 
   const handleSaveOffer = async (offerToSave: Offer) => {
     setIsSaving(true);
@@ -439,7 +433,7 @@ const AdminOffersScreen: React.FC = () => {
         <div className="flex-grow overflow-y-auto">
           {loading ? (
             <p>Loading...</p>
-          ) : sortedOffers.length > 0 ? (
+          ) : filteredOffers.length > 0 ? (
             <>
               {/* Desktop Table View */}
               <div className="overflow-x-auto hidden md:block">
@@ -470,7 +464,7 @@ const AdminOffersScreen: React.FC = () => {
                     </tr>
                   </thead>
                   <tbody>
-                    {sortedOffers.map((offer) => {
+                    {filteredOffers.map((offer) => {
                       const isExpired = new Date(offer.expiryDate) < new Date();
                       return (
                         <tr
@@ -537,7 +531,7 @@ const AdminOffersScreen: React.FC = () => {
               </div>
               {/* Mobile Card View */}
               <div className="space-y-4 md:hidden">
-                {sortedOffers.map((offer) => {
+                {filteredOffers.map((offer) => {
                   const isExpired = new Date(offer.expiryDate) < new Date();
                   return (
                     <div
@@ -623,6 +617,12 @@ const AdminOffersScreen: React.FC = () => {
             </div>
           )}
         </div>
+        <Pagination
+          onNext={nextPage}
+          onPrev={prevPage}
+          hasNextPage={hasNextPage}
+          hasPrevPage={hasPrevPage}
+        />
       </div>
 
       <ConfirmationModal

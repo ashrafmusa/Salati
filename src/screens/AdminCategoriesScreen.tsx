@@ -1,10 +1,7 @@
-import React, { useState, useEffect, useMemo } from "react";
+import React, { useState, useMemo } from "react";
 import { db } from "../firebase/config";
 import {
   collection,
-  query,
-  orderBy,
-  onSnapshot,
   doc,
   setDoc,
   updateDoc,
@@ -17,10 +14,10 @@ import { getOptimizedImageUrl } from "../utils/helpers";
 import AdminScreenHeader from "../components/AdminScreenHeader";
 import { CategoryIcon, PlusIcon } from "../assets/adminIcons";
 import { useToast } from "../contexts/ToastContext";
+import { usePaginatedFirestore } from "../hooks/usePaginatedFirestore";
+import Pagination from "../components/Pagination";
 
 const AdminCategoriesScreen: React.FC = () => {
-  const [categories, setCategories] = useState<Category[]>([]);
-  const [loading, setLoading] = useState(true);
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [editingCategory, setEditingCategory] = useState<Category | null>(null);
   const [isSaving, setIsSaving] = useState(false);
@@ -30,23 +27,24 @@ const AdminCategoriesScreen: React.FC = () => {
   const [searchTerm, setSearchTerm] = useState("");
   const { showToast } = useToast();
 
-  useEffect(() => {
-    const q = query(collection(db, "categories"), orderBy("sortOrder"));
-    const unsubscribe = onSnapshot(q, (snapshot) => {
-      const fetchedCategories = snapshot.docs.map(
-        (doc) => ({ id: doc.id, ...doc.data() } as Category)
-      );
-      setCategories(fetchedCategories);
-      setLoading(false);
-    });
-    return () => unsubscribe();
-  }, []);
+  const {
+    documents: paginatedCategories,
+    loading,
+    nextPage,
+    prevPage,
+    hasNextPage,
+    hasPrevPage,
+  } = usePaginatedFirestore<Category>("categories", {
+    key: "sortOrder",
+    direction: "ascending",
+  });
 
   const filteredCategories = useMemo(() => {
-    return categories.filter((category) =>
+    if (!searchTerm) return paginatedCategories;
+    return paginatedCategories.filter((category) =>
       category.name.toLowerCase().includes(searchTerm.toLowerCase())
     );
-  }, [categories, searchTerm]);
+  }, [paginatedCategories, searchTerm]);
 
   const handleOpenModal = (category: Category | null = null) => {
     setEditingCategory(category);
@@ -169,6 +167,13 @@ const AdminCategoriesScreen: React.FC = () => {
             </div>
           )}
         </div>
+
+        <Pagination
+          onNext={nextPage}
+          onPrev={prevPage}
+          hasNextPage={hasNextPage}
+          hasPrevPage={hasPrevPage}
+        />
 
         {isModalOpen && (
           <CategoryFormModal

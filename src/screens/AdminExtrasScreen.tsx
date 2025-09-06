@@ -1,8 +1,7 @@
-import React, { useState, useEffect, useMemo } from "react";
+import React, { useState, useMemo } from "react";
 import { db } from "../firebase/config";
 import {
   collection,
-  onSnapshot,
   doc,
   setDoc,
   updateDoc,
@@ -15,10 +14,11 @@ import ExtraFormModal from "../components/ExtraFormModal";
 import ConfirmationModal from "../components/ConfirmationModal";
 import { useToast } from "../contexts/ToastContext";
 import { BeakerIcon, PlusIcon } from "../assets/adminIcons";
+import { usePaginatedFirestore } from "../hooks/usePaginatedFirestore";
+import Pagination from "../components/Pagination";
+import SortableHeader from "../components/SortableHeader";
 
 const AdminExtrasScreen: React.FC = () => {
-  const [extras, setExtras] = useState<ExtraItem[]>([]);
-  const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState("");
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [editingExtra, setEditingExtra] = useState<ExtraItem | null>(null);
@@ -26,22 +26,26 @@ const AdminExtrasScreen: React.FC = () => {
   const [extraToDelete, setExtraToDelete] = useState<ExtraItem | null>(null);
   const { showToast } = useToast();
 
-  useEffect(() => {
-    const unsubscribe = onSnapshot(collection(db, "extras"), (snapshot) => {
-      const fetchedExtras = snapshot.docs.map(
-        (doc) => ({ id: doc.id, ...doc.data() } as ExtraItem)
-      );
-      setExtras(fetchedExtras);
-      setLoading(false);
-    });
-    return () => unsubscribe();
-  }, []);
+  const {
+    documents: paginatedExtras,
+    loading,
+    nextPage,
+    prevPage,
+    hasNextPage,
+    hasPrevPage,
+    requestSort,
+    sortConfig,
+  } = usePaginatedFirestore<ExtraItem>("extras", {
+    key: "name",
+    direction: "ascending",
+  });
 
   const filteredExtras = useMemo(() => {
-    return extras.filter((extra) =>
+    if (!searchTerm) return paginatedExtras;
+    return paginatedExtras.filter((extra) =>
       extra.name.toLowerCase().includes(searchTerm.toLowerCase())
     );
-  }, [extras, searchTerm]);
+  }, [paginatedExtras, searchTerm]);
 
   const handleOpenModal = (extra: ExtraItem | null = null) => {
     setEditingExtra(extra);
@@ -108,12 +112,18 @@ const AdminExtrasScreen: React.FC = () => {
                 <table className="w-full text-right">
                   <thead className="border-b-2 border-slate-100 dark:border-slate-700">
                     <tr>
-                      <th className="p-3 text-sm font-semibold text-slate-500 dark:text-slate-400">
-                        العنصر
-                      </th>
-                      <th className="p-3 text-sm font-semibold text-slate-500 dark:text-slate-400">
-                        السعر
-                      </th>
+                      <SortableHeader<ExtraItem>
+                        label="العنصر"
+                        sortKey="name"
+                        requestSort={requestSort}
+                        sortConfig={sortConfig}
+                      />
+                      <SortableHeader<ExtraItem>
+                        label="السعر"
+                        sortKey="price"
+                        requestSort={requestSort}
+                        sortConfig={sortConfig}
+                      />
                       <th className="p-3 text-sm font-semibold text-slate-500 dark:text-slate-400">
                         إجراءات
                       </th>
@@ -226,6 +236,12 @@ const AdminExtrasScreen: React.FC = () => {
             </div>
           )}
         </div>
+        <Pagination
+          onNext={nextPage}
+          onPrev={prevPage}
+          hasNextPage={hasNextPage}
+          hasPrevPage={hasPrevPage}
+        />
       </div>
 
       {isModalOpen && (
