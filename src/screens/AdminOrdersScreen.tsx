@@ -15,8 +15,8 @@ import {
 } from "firebase/firestore";
 import AdminScreenHeader from "../components/AdminScreenHeader";
 import { useToast } from "../contexts/ToastContext";
-import { useSortableData, SortConfig } from "../hooks/useSortableData";
-import { ChevronUpIcon, ChevronDownIcon } from "../assets/adminIcons";
+import { useSortableData } from "../hooks/useSortableData";
+import SortableHeader from "../components/SortableHeader";
 
 const getStatusPillClasses = (status: OrderStatus) => {
   switch (status) {
@@ -66,34 +66,6 @@ interface ConfirmationState {
   onConfirm: () => void;
   isDestructive?: boolean;
 }
-
-const SortableHeader: React.FC<{
-  label: string;
-  sortKey: keyof AdminOrder;
-  requestSort: (key: keyof AdminOrder) => void;
-  sortConfig: SortConfig<AdminOrder> | null;
-}> = ({ label, sortKey, requestSort, sortConfig }) => {
-  const isSorted = sortConfig?.key === sortKey;
-  const directionIcon = isSorted ? (
-    sortConfig.direction === "ascending" ? (
-      <ChevronUpIcon className="w-4 h-4" />
-    ) : (
-      <ChevronDownIcon className="w-4 h-4" />
-    )
-  ) : null;
-
-  return (
-    <th className="p-3 text-sm font-semibold text-slate-500 dark:text-slate-400">
-      <button
-        onClick={() => requestSort(sortKey)}
-        className="flex items-center gap-1 hover:text-slate-700 dark:hover:text-slate-200"
-      >
-        {label}
-        {directionIcon}
-      </button>
-    </th>
-  );
-};
 
 const AdminOrdersScreen: React.FC = () => {
   const [orders, setOrders] = useState<AdminOrder[]>([]);
@@ -324,19 +296,16 @@ const AdminOrdersScreen: React.FC = () => {
               <table className="w-full text-right">
                 <thead className="border-b-2 border-slate-100 dark:border-slate-700">
                   <tr>
-                    <SortableHeader
+                    <SortableHeader<AdminOrder>
                       label="رقم الطلب"
                       sortKey="id"
                       requestSort={requestSort}
                       sortConfig={sortConfig}
                     />
-                    <SortableHeader
-                      label="العميل"
-                      sortKey="deliveryInfo"
-                      requestSort={requestSort}
-                      sortConfig={sortConfig}
-                    />
-                    <SortableHeader
+                    <th className="p-3 text-sm font-semibold text-slate-500 dark:text-slate-400">
+                      العميل
+                    </th>
+                    <SortableHeader<AdminOrder>
                       label="الإجمالي"
                       sortKey="total"
                       requestSort={requestSort}

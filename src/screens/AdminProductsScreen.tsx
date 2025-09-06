@@ -22,6 +22,8 @@ import ConfirmationModal from "../components/ConfirmationModal";
 import { BeakerIcon } from "../assets/adminIcons";
 import IdeaGeneratorModal from "../components/IdeaGeneratorModal";
 import { BundleIdea } from "../utils/gemini";
+import SortableHeader from "../components/SortableHeader";
+import { useSortableData } from "../hooks/useSortableData";
 
 const BundleFormModal: React.FC<{
   bundle?: Bundle | null;
@@ -150,114 +152,115 @@ const BundleFormModal: React.FC<{
           {bundle ? "تعديل الحزمة" : "إضافة حزمة جديدة"}
         </h2>
         <form onSubmit={handleSubmit} className="space-y-6">
-          {/* Basic Info */}
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <input
-              type="text"
-              name="arabicName"
-              placeholder="اسم الحزمة (عربي)"
-              value={formData.arabicName || ""}
-              onChange={handleChange}
-              className={inputClasses}
-              required
-            />
-            <input
-              type="number"
-              name="stock"
-              placeholder="المخزون"
-              value={formData.stock || ""}
-              onChange={handleChange}
-              className={inputClasses}
-              required
-            />
-            <select
-              name="category"
-              value={formData.category || ""}
-              onChange={handleChange}
-              className={inputClasses}
-              required
-            >
-              <option value="">اختر الفئة</option>
-              {categories.map((cat) => (
-                <option key={cat.id} value={cat.name}>
-                  {cat.name}
-                </option>
-              ))}
-            </select>
-            <input
-              type="text"
-              name="name"
-              placeholder="Bundle Name (English)"
-              value={formData.name || ""}
-              onChange={handleChange}
-              className={inputClasses}
-              required
-            />
-          </div>
-
-          <textarea
-            name="description"
-            placeholder="الوصف"
-            value={formData.description || ""}
-            onChange={handleChange}
-            rows={3}
-            className={inputClasses}
-          ></textarea>
-
-          {/* Image Upload */}
-          <div>
-            <label className="block text-sm font-medium text-slate-700 dark:text-slate-300">
-              صورة الحزمة
-            </label>
-            <div className="mt-2 flex items-center gap-4">
-              {imagePreview ? (
-                <img
-                  src={getOptimizedImageUrl(imagePreview, 200)}
-                  alt="Preview"
-                  className="w-24 h-24 rounded-md object-cover shadow-sm"
-                />
-              ) : (
-                <div className="w-24 h-24 rounded-md bg-slate-100 dark:bg-slate-700 flex items-center justify-center text-slate-400">
-                  <svg
-                    xmlns="http://www.w3.org/2000/svg"
-                    className="h-10 w-10"
-                    fill="none"
-                    viewBox="0 0 24 24"
-                    stroke="currentColor"
-                  >
-                    <path
-                      strokeLinecap="round"
-                      strokeLinejoin="round"
-                      strokeWidth={2}
-                      d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z"
-                    />
-                  </svg>
-                </div>
-              )}
-              <label
-                htmlFor="image-upload"
-                className="cursor-pointer bg-white dark:bg-slate-700 text-slate-700 dark:text-slate-200 font-semibold py-2 px-4 border border-slate-300 dark:border-slate-600 rounded-md hover:bg-slate-50 dark:hover:bg-slate-600 transition-colors flex items-center justify-center w-32 h-10"
-              >
-                {isUploading ? (
-                  <SpinnerIcon className="w-5 h-5 animate-spin" />
-                ) : (
-                  <span>{imagePreview ? "تغيير الصورة" : "تحميل صورة"}</span>
-                )}
-              </label>
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+            <div className="space-y-4">
               <input
-                id="image-upload"
-                type="file"
-                className="hidden"
-                onChange={handleImageChange}
-                accept="image/*"
-                disabled={isUploading}
+                type="text"
+                name="arabicName"
+                placeholder="اسم الحزمة (عربي)"
+                value={formData.arabicName || ""}
+                onChange={handleChange}
+                className={inputClasses}
+                required
               />
+              <select
+                name="category"
+                value={formData.category || ""}
+                onChange={handleChange}
+                className={inputClasses}
+                required
+              >
+                <option value="">اختر الفئة</option>
+                {categories.map((cat) => (
+                  <option key={cat.id} value={cat.name}>
+                    {cat.name}
+                  </option>
+                ))}
+              </select>
+              <input
+                type="number"
+                name="stock"
+                placeholder="المخزون"
+                value={formData.stock || ""}
+                onChange={handleChange}
+                className={inputClasses}
+                required
+              />
+              <input
+                type="text"
+                name="name"
+                placeholder="Bundle Name (English)"
+                value={formData.name || ""}
+                onChange={handleChange}
+                className={inputClasses}
+                required
+              />
+            </div>
+            <div className="space-y-4">
+              <textarea
+                name="description"
+                placeholder="الوصف"
+                value={formData.description || ""}
+                onChange={handleChange}
+                rows={3}
+                className={inputClasses}
+              ></textarea>
+              <div>
+                <label className="block text-sm font-medium text-slate-700 dark:text-slate-300">
+                  صورة الحزمة
+                </label>
+                <div className="mt-2 flex items-center gap-4">
+                  {imagePreview ? (
+                    <img
+                      src={getOptimizedImageUrl(imagePreview, 200)}
+                      alt="Preview"
+                      className="w-24 h-24 rounded-md object-cover shadow-sm"
+                    />
+                  ) : (
+                    <div className="w-24 h-24 rounded-md bg-slate-100 dark:bg-slate-700 flex items-center justify-center text-slate-400">
+                      <svg
+                        xmlns="http://www.w3.org/2000/svg"
+                        className="h-10 w-10"
+                        fill="none"
+                        viewBox="0 0 24 24"
+                        stroke="currentColor"
+                      >
+                        <path
+                          strokeLinecap="round"
+                          strokeLinejoin="round"
+                          strokeWidth={2}
+                          d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z"
+                        />
+                      </svg>
+                    </div>
+                  )}
+                  <label
+                    htmlFor="image-upload"
+                    className="cursor-pointer bg-white dark:bg-slate-700 text-slate-700 dark:text-slate-200 font-semibold py-2 px-4 border border-slate-300 dark:border-slate-600 rounded-md hover:bg-slate-50 dark:hover:bg-slate-600 transition-colors flex items-center justify-center w-32 h-10"
+                  >
+                    {isUploading ? (
+                      <SpinnerIcon className="w-5 h-5 animate-spin" />
+                    ) : (
+                      <span>
+                        {imagePreview ? "تغيير الصورة" : "تحميل صورة"}
+                      </span>
+                    )}
+                  </label>
+                  <input
+                    id="image-upload"
+                    type="file"
+                    className="hidden"
+                    onChange={handleImageChange}
+                    accept="image/*"
+                    disabled={isUploading}
+                  />
+                </div>
+              </div>
             </div>
           </div>
 
           {/* Contents Management */}
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-            {/* Item Selector */}
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6 pt-4 border-t dark:border-slate-700">
             <div>
               <h3 className="font-semibold text-slate-700 dark:text-slate-200 mb-2">
                 اختر الأصناف لإضافتها
@@ -285,12 +288,17 @@ const BundleFormModal: React.FC<{
                 ))}
               </div>
             </div>
-            {/* Selected Items */}
             <div>
               <h3 className="font-semibold text-slate-700 dark:text-slate-200 mb-2">
                 الأصناف في الحزمة
               </h3>
-              <div className="h-60 overflow-y-auto border dark:border-slate-700 rounded-md p-2 space-y-2">
+              <div
+                className={`h-60 overflow-y-auto border dark:border-slate-700 rounded-md p-2 ${
+                  (formData.contents || []).length > 0
+                    ? "space-y-2"
+                    : "flex items-center justify-center"
+                }`}
+              >
                 {(formData.contents || []).map((content, index) => {
                   const item = allItems.find((i) => i.id === content.itemId);
                   return (
@@ -327,9 +335,7 @@ const BundleFormModal: React.FC<{
                   );
                 })}
                 {(formData.contents || []).length === 0 && (
-                  <p className="text-center text-sm text-slate-400 p-4">
-                    لم يتم إضافة أصناف
-                  </p>
+                  <p className="text-sm text-slate-400">لم يتم إضافة أصناف</p>
                 )}
               </div>
             </div>
@@ -420,6 +426,22 @@ const AdminBundlesScreen: React.FC = () => {
         bundle.name.toLowerCase().includes(searchTerm.toLowerCase())
     );
   }, [bundles, searchTerm]);
+
+  const bundleWithPrices = useMemo(() => {
+    return filteredBundles.map((bundle) => ({
+      ...bundle,
+      calculatedPrice: calculateBundlePrice(bundle, items),
+    }));
+  }, [filteredBundles, items]);
+
+  const {
+    items: sortedBundles,
+    requestSort,
+    sortConfig,
+  } = useSortableData(bundleWithPrices, {
+    key: "arabicName",
+    direction: "ascending",
+  });
 
   const itemsInStock = useMemo(
     () => items.filter((item) => item.stock > 0),
@@ -533,25 +555,37 @@ const AdminBundlesScreen: React.FC = () => {
               <table className="w-full text-right">
                 <thead>
                   <tr className="border-b-2 border-slate-100 dark:border-slate-700">
-                    <th className="p-3 text-sm font-semibold text-slate-500 dark:text-slate-400">
-                      اسم الحزمة
-                    </th>
-                    <th className="p-3 text-sm font-semibold text-slate-500 dark:text-slate-400">
-                      الفئة
-                    </th>
-                    <th className="p-3 text-sm font-semibold text-slate-500 dark:text-slate-400">
-                      السعر المحسوب
-                    </th>
-                    <th className="p-3 text-sm font-semibold text-slate-500 dark:text-slate-400">
-                      المخزون
-                    </th>
+                    <SortableHeader<Bundle & { calculatedPrice: number }>
+                      label="اسم الحزمة"
+                      sortKey="arabicName"
+                      requestSort={requestSort}
+                      sortConfig={sortConfig}
+                    />
+                    <SortableHeader<Bundle & { calculatedPrice: number }>
+                      label="الفئة"
+                      sortKey="category"
+                      requestSort={requestSort}
+                      sortConfig={sortConfig}
+                    />
+                    <SortableHeader<Bundle & { calculatedPrice: number }>
+                      label="السعر المحسوب"
+                      sortKey="calculatedPrice"
+                      requestSort={requestSort}
+                      sortConfig={sortConfig}
+                    />
+                    <SortableHeader<Bundle & { calculatedPrice: number }>
+                      label="المخزون"
+                      sortKey="stock"
+                      requestSort={requestSort}
+                      sortConfig={sortConfig}
+                    />
                     <th className="p-3 text-sm font-semibold text-slate-500 dark:text-slate-400">
                       إجراءات
                     </th>
                   </tr>
                 </thead>
                 <tbody>
-                  {filteredBundles.map((bundle) => (
+                  {sortedBundles.map((bundle) => (
                     <tr
                       key={bundle.id}
                       className="border-b dark:border-slate-700 hover:bg-sky-100/50 dark:hover:bg-sky-900/20 align-middle"
@@ -572,7 +606,7 @@ const AdminBundlesScreen: React.FC = () => {
                         {bundle.category}
                       </td>
                       <td className="p-3 text-slate-600 dark:text-slate-300">
-                        {calculateBundlePrice(bundle, items)} ج.س
+                        {bundle.calculatedPrice} ج.س
                       </td>
                       <td className="p-3 text-slate-600 dark:text-slate-300">
                         {bundle.stock}
@@ -601,7 +635,7 @@ const AdminBundlesScreen: React.FC = () => {
             </div>
             {/* Mobile Card View */}
             <div className="space-y-4 md:hidden">
-              {filteredBundles.map((bundle) => (
+              {sortedBundles.map((bundle) => (
                 <div
                   key={bundle.id}
                   className="bg-slate-50 dark:bg-slate-800/50 p-4 rounded-lg shadow-sm border dark:border-slate-700"
@@ -628,7 +662,7 @@ const AdminBundlesScreen: React.FC = () => {
                           السعر
                         </p>
                         <p className="font-semibold text-slate-700 dark:text-slate-200">
-                          {calculateBundlePrice(bundle, items)} ج.س
+                          {bundle.calculatedPrice} ج.س
                         </p>
                       </div>
                       <div>

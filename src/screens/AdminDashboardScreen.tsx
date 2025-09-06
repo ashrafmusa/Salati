@@ -54,9 +54,9 @@ const RecentOrders: React.FC<{ orders: AdminOrder[]; loading: boolean }> = ({
   loading,
 }) => (
   <div className="bg-white dark:bg-slate-800 p-6 rounded-xl shadow-sm border border-slate-200 dark:border-slate-700">
-    <h2 className="text-xl font-bold text-slate-800 dark:text-slate-100 mb-4">
+    <h3 className="text-xl font-bold text-slate-800 dark:text-slate-100 mb-4">
       أحدث الطلبات
-    </h2>
+    </h3>
     <div className="overflow-x-auto hidden md:block">
       <table className="w-full text-right">
         <thead className="border-b-2 border-slate-100 dark:border-slate-700">
@@ -333,9 +333,9 @@ const AdminDashboardScreen: React.FC = () => {
       </div>
 
       <div className="bg-white dark:bg-slate-800 p-6 rounded-xl shadow-sm border border-slate-200 dark:border-slate-700">
-        <h2 className="text-xl font-bold text-slate-800 dark:text-slate-100 mb-4">
+        <h3 className="text-xl font-bold text-slate-800 dark:text-slate-100 mb-4">
           إيرادات آخر 7 أيام
-        </h2>
+        </h3>
         <div className="h-72">
           {loading ? (
             <p className="text-center pt-20">Loading chart data...</p>
