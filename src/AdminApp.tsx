@@ -58,7 +58,7 @@ const ProtectedAdminRoutes: React.FC = () => {
 
   return (
     <Routes>
-      {/* Routes accessible to all admin levels */}
+      {/* Routes accessible to all admin levels (sub-admin, admin, super-admin) */}
       <Route path="/" element={<AdminDashboardScreen />} />
       <Route path="/orders" element={<AdminOrdersScreen />} />
 
@@ -66,7 +66,6 @@ const ProtectedAdminRoutes: React.FC = () => {
       {(user.role === "admin" || user.role === "super-admin") && (
         <>
           <Route path="/bundles" element={<AdminBundlesScreen />} />
-          <Route path="/users" element={<AdminCustomersScreen />} />
           <Route path="/offers" element={<AdminOffersScreen />} />
           <Route path="/drivers" element={<AdminDriversScreen />} />
         </>
@@ -75,6 +74,7 @@ const ProtectedAdminRoutes: React.FC = () => {
       {/* Routes accessible only to 'super-admin' */}
       {user.role === "super-admin" && (
         <>
+          <Route path="/users" element={<AdminCustomersScreen />} />
           <Route path="/items" element={<AdminItemsScreen />} />
           <Route path="/categories" element={<AdminCategoriesScreen />} />
           <Route path="/extras" element={<AdminExtrasScreen />} />
@@ -82,6 +82,7 @@ const ProtectedAdminRoutes: React.FC = () => {
         </>
       )}
 
+      {/* Fallback route to redirect any unknown/unauthorized paths to the dashboard */}
       <Route path="*" element={<Navigate to="/" replace />} />
     </Routes>
   );
