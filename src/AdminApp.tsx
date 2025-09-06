@@ -6,7 +6,10 @@ import { useAuth } from "./hooks/useAuth";
 import FullScreenLoader from "./components/FullScreenLoader";
 import { ToastProvider } from "./contexts/ToastContext";
 import { initializeFirebase } from "./firebase/config";
-import ScrollToTop from "./components/ScrollToTop";
+import ScrollToTop from "./components/ScrollToTop.tsx";
+import { SettingsProvider } from "./contexts/SettingsContext";
+import { CartProvider } from "./contexts/CartContext";
+import { WishlistProvider } from "./contexts/WishlistContext";
 
 // --- Lazy-loaded Admin Components ---
 const AdminLayout = lazy(() => import("./components/AdminLayout"));
@@ -102,16 +105,22 @@ const AdminApp: React.FC = () => {
   return (
     <ThemeProvider>
       <AuthProvider>
-        <ToastProvider>
-          <HashRouter>
-            <ScrollToTop />
-            <Suspense fallback={<FullScreenLoader />}>
-              <AdminLayout>
-                <ProtectedAdminRoutes />
-              </AdminLayout>
-            </Suspense>
-          </HashRouter>
-        </ToastProvider>
+        <SettingsProvider>
+          <CartProvider>
+            <WishlistProvider>
+              <ToastProvider>
+                <HashRouter>
+                  <ScrollToTop />
+                  <Suspense fallback={<FullScreenLoader />}>
+                    <AdminLayout>
+                      <ProtectedAdminRoutes />
+                    </AdminLayout>
+                  </Suspense>
+                </HashRouter>
+              </ToastProvider>
+            </WishlistProvider>
+          </CartProvider>
+        </SettingsProvider>
       </AuthProvider>
     </ThemeProvider>
   );
