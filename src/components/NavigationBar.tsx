@@ -1,11 +1,16 @@
 import React from "react";
-import { NavLink } from "react-router-dom";
+import { NavLink, useLocation } from "react-router-dom";
 import { HomeIcon, CartIcon, UserIcon, HeartIcon } from "../assets/icons";
 import { useCart } from "../hooks/useCart";
 
-const NavigationBar: React.FC = () => {
+interface NavigationBarProps {
+  isVisible: boolean;
+}
+
+const NavigationBar: React.FC<NavigationBarProps> = ({ isVisible }) => {
   const { getCartCount } = useCart();
   const cartCount = getCartCount();
+  const location = useLocation();
 
   const navItems = [
     { path: "/", icon: HomeIcon, label: "الرئيسية" },
@@ -15,7 +20,11 @@ const NavigationBar: React.FC = () => {
   ];
 
   return (
-    <nav className="md:hidden fixed bottom-0 left-0 right-0 bg-white/70 dark:bg-slate-900/70 backdrop-blur-lg border-t border-slate-200 dark:border-slate-800 shadow-lg-up z-20">
+    <nav
+      className={`md:hidden fixed bottom-0 left-0 right-0 bg-white/70 dark:bg-slate-900/70 backdrop-blur-lg border-t border-slate-200 dark:border-slate-800 shadow-lg-up z-20 transition-transform duration-300 ease-in-out ${
+        isVisible ? "translate-y-0" : "translate-y-full"
+      }`}
+    >
       <div className="flex justify-around max-w-md mx-auto p-1">
         {navItems.map((item) => (
           <NavLink

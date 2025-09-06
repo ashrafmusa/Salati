@@ -2,10 +2,10 @@ import React, { useState, useEffect } from "react";
 import { WhatsAppIcon } from "../assets/icons";
 
 interface WhatsAppButtonProps {
-  showNavBar: boolean;
+  isNavVisible: boolean;
 }
 
-const WhatsAppButton: React.FC<WhatsAppButtonProps> = ({ showNavBar }) => {
+const WhatsAppButton: React.FC<WhatsAppButtonProps> = ({ isNavVisible }) => {
   const phoneNumber = import.meta.env.VITE_WHATSAPP_PHONE_NUMBER;
   const whatsappUrl = `https://wa.me/${phoneNumber}`;
   const [nudge, setNudge] = useState(false);
@@ -33,8 +33,8 @@ const WhatsAppButton: React.FC<WhatsAppButtonProps> = ({ showNavBar }) => {
       target="_blank"
       rel="noopener noreferrer"
       className={`fixed ${
-        showNavBar ? "bottom-24" : "bottom-5"
-      } right-5 z-30 flex items-center group`}
+        isNavVisible ? "bottom-24" : "bottom-5"
+      } right-5 z-30 flex items-center group transition-all duration-300`}
       aria-label="Contact us on WhatsApp"
     >
       {/* Text Label */}
@@ -43,19 +43,12 @@ const WhatsAppButton: React.FC<WhatsAppButtonProps> = ({ showNavBar }) => {
           nudge ? "animate-nudge-reveal" : "scale-x-0 group-hover:scale-x-100"
         }`}
       >
-        {/* CRITICAL FIX: Removed the .split('').map(...) logic that breaks Arabic character rendering. The text is now rendered as a single unit. */}
-        {text}
+        <span>{text}</span>
       </div>
 
       {/* Icon Button */}
-      <div className="relative w-14 h-14">
-        {/* Pulse effect */}
-        <div className="absolute inset-0 bg-green-500 rounded-full animate-whatsapp-pulse"></div>
-
-        {/* Main button */}
-        <div className="relative bg-green-500 text-white w-14 h-14 rounded-full flex items-center justify-center shadow-lg transition-transform transform group-hover:scale-110 group-hover:bg-green-600">
-          <WhatsAppIcon className="w-8 h-8 transition-transform duration-300 group-hover:-rotate-12" />
-        </div>
+      <div className="bg-green-500 text-white w-16 h-16 rounded-full flex items-center justify-center shadow-lg transform transition-transform duration-300 group-hover:scale-110 animate-whatsapp-pulse">
+        <WhatsAppIcon className="w-8 h-8" />
       </div>
     </a>
   );
