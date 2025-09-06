@@ -179,6 +179,9 @@ const HomeScreen: React.FC = () => {
       />
 
       <main className="px-4 sm:px-6 py-6 max-w-7xl mx-auto">
+        <h1 className="sr-only">
+          منصة سـلـتـي: تسوق البقالة والمزيد عبر الإنترنت
+        </h1>
         <PromotionalBanner />
 
         <section>
@@ -242,7 +245,7 @@ const HomeScreen: React.FC = () => {
               onResetFilters={handleResetFilters}
             />
           ) : (
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
+            <div className="grid grid-cols-2 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4 sm:gap-6">
               {filteredProducts.map((product, index) => (
                 <div
                   key={product.id}
@@ -272,5 +275,4 @@ const HomeScreen: React.FC = () => {
   );
 };
 
-// FIX: Added default export to fix lazy loading issue.
 export default HomeScreen;

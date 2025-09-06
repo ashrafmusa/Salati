@@ -1,7 +1,15 @@
 import React, { useState, useEffect } from "react";
-import { useNavigate, useSearchParams } from "react-router-dom";
+import { useNavigate, useSearchParams, NavLink } from "react-router-dom";
 import Logo from "./Logo";
-import { SearchIcon, FilterIcon } from "../assets/icons";
+import {
+  SearchIcon,
+  FilterIcon,
+  HomeIcon,
+  HeartIcon,
+  CartIcon,
+  UserIcon,
+} from "../assets/icons";
+import { useCart } from "../hooks/useCart";
 
 interface SiteHeaderProps {
   onFilterClick: () => void;
@@ -15,8 +23,16 @@ const SiteHeader: React.FC<SiteHeaderProps> = ({
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
   const [searchTerm, setSearchTerm] = useState(searchParams.get("q") || "");
+  const { getCartCount } = useCart();
+  const cartCount = getCartCount();
 
-  // Sync search term with URL query parameter
+  const navItems = [
+    { path: "/", icon: HomeIcon, label: "الرئيسية" },
+    { path: "/wishlist", icon: HeartIcon, label: "المفضلة" },
+    { path: "/cart", icon: CartIcon, label: "السلة" },
+    { path: "/profile", icon: UserIcon, label: "حسابي" },
+  ];
+
   useEffect(() => {
     setSearchTerm(searchParams.get("q") || "");
   }, [searchParams]);
@@ -39,7 +55,35 @@ const SiteHeader: React.FC<SiteHeaderProps> = ({
           imgClassName="w-10 sm:w-12"
           textClassName="hidden sm:block text-2xl"
         />
-        <form onSubmit={handleSearchSubmit} className="relative flex-grow">
+
+        <nav className="hidden md:flex items-center gap-2 ml-auto">
+          {navItems.map((item) => (
+            <NavLink
+              key={item.path}
+              to={item.path}
+              className={({ isActive }) =>
+                `relative flex items-center gap-2 px-4 py-2 rounded-full text-sm font-semibold transition-colors duration-200 group ${
+                  isActive
+                    ? "bg-primary/10 text-primary"
+                    : "text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800"
+                }`
+              }
+            >
+              <item.icon className="w-5 h-5" />
+              <span>{item.label}</span>
+              {item.path === "/cart" && cartCount > 0 && (
+                <span className="absolute -top-1 -right-1 bg-accent text-white text-xs font-bold rounded-full h-5 w-5 flex items-center justify-center border-2 border-warmBeige dark:border-slate-950">
+                  {cartCount}
+                </span>
+              )}
+            </NavLink>
+          ))}
+        </nav>
+
+        <form
+          onSubmit={handleSearchSubmit}
+          className="relative flex-grow md:flex-grow-0 md:w-64"
+        >
           <input
             type="text"
             placeholder="ابحث عن منتج..."

@@ -18,7 +18,11 @@ const MainLayout: React.FC = () => {
 
   return (
     <div className="bg-warmBeige dark:bg-slate-950 text-charcoal dark:text-slate-200 min-h-screen font-sans flex flex-col max-w-full overflow-x-hidden">
-      <div className={`flex-grow flex flex-col ${showNavBar ? "pb-28" : ""}`}>
+      <div
+        className={`flex-grow flex flex-col ${
+          showNavBar ? "pb-24 md:pb-0" : ""
+        }`}
+      >
         <main className="flex-grow">
           <div key={location.pathname} className="animate-fade-in">
             <Outlet />

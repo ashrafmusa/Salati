@@ -15,7 +15,7 @@ const NavigationBar: React.FC = () => {
   ];
 
   return (
-    <nav className="fixed bottom-0 left-0 right-0 bg-white/70 dark:bg-slate-900/70 backdrop-blur-lg border-t border-slate-200 dark:border-slate-800 shadow-lg-up z-20">
+    <nav className="md:hidden fixed bottom-0 left-0 right-0 bg-white/70 dark:bg-slate-900/70 backdrop-blur-lg border-t border-slate-200 dark:border-slate-800 shadow-lg-up z-20">
       <div className="flex justify-around max-w-md mx-auto p-1">
         {navItems.map((item) => (
           <NavLink
