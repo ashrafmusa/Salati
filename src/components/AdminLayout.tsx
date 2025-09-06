@@ -16,6 +16,7 @@ import {
   BeakerIcon,
   CogIcon,
   PackageIcon,
+  UserCircleIcon,
 } from "../assets/adminIcons";
 import AdminNotifications from "./AdminNotifications";
 import ThemeToggle from "./ThemeToggle";
@@ -286,9 +287,22 @@ const Header: React.FC<{ onMenuClick: () => void }> = ({ onMenuClick }) => {
           {title}
         </h1>
       </div>
-      <div className="flex items-center space-x-4">
+      <div className="flex items-center space-x-2 sm:space-x-4">
         {user?.role !== "driver" && <AdminNotifications />}
         <ThemeToggle />
+        {user && (
+          <div className="flex items-center gap-2 border-r border-slate-200 dark:border-slate-700 pr-2 sm:pr-4">
+            <div className="hidden sm:block text-right">
+              <p className="font-bold text-sm text-slate-800 dark:text-slate-100 truncate max-w-24">
+                {user.name}
+              </p>
+              <p className="text-xs text-slate-500 dark:text-slate-400 capitalize">
+                {user.role.replace("-", " ")}
+              </p>
+            </div>
+            <UserCircleIcon className="w-8 h-8 sm:w-10 sm:h-10 text-slate-500 dark:text-slate-400" />
+          </div>
+        )}
       </div>
     </header>
   );
@@ -308,6 +322,10 @@ const AdminLayout: React.FC<{ children: React.ReactNode }> = ({ children }) => {
             {children}
           </div>
         </main>
+        <footer className="text-center text-sm text-slate-500 dark:text-slate-400 p-4 border-t border-slate-200 dark:border-slate-700">
+          &copy; {new Date().getFullYear()} Salati Admin Panel. All Rights
+          Reserved.
+        </footer>
       </div>
     </div>
   );
