@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef } from "react";
+import React from "react";
 import { Outlet, useLocation } from "react-router-dom";
 import NavigationBar from "./NavigationBar";
 import WhatsAppButton from "./WhatsAppButton";
@@ -6,34 +6,13 @@ import Footer from "./Footer";
 
 const MainLayout: React.FC = () => {
   const location = useLocation();
-  const [isNavVisible, setIsNavVisible] = useState(true);
-  const lastScrollY = useRef(0);
 
+  // Determine if the bottom navigation should be shown on the current page.
   const showNavBarOnPage =
     !location.pathname.startsWith("/checkout") &&
     !location.pathname.startsWith("/order-success");
 
-  useEffect(() => {
-    const handleScroll = () => {
-      const currentScrollY = window.scrollY;
-      // A threshold to prevent hiding on small scrolls
-      if (Math.abs(currentScrollY - lastScrollY.current) < 50) {
-        return;
-      }
-
-      // Hide on scroll down, show on scroll up
-      if (currentScrollY > lastScrollY.current && currentScrollY > 100) {
-        setIsNavVisible(false);
-      } else {
-        setIsNavVisible(true);
-      }
-      lastScrollY.current = currentScrollY;
-    };
-
-    window.addEventListener("scroll", handleScroll, { passive: true });
-    return () => window.removeEventListener("scroll", handleScroll);
-  }, []);
-
+  // Determine if the WhatsApp button should be shown on the current page.
   const pathsToHideWhatsApp = ["/cart", "/checkout", "/product/"];
   const showWhatsAppButtonOnPage = !pathsToHideWhatsApp.some((path) =>
     location.pathname.startsWith(path)
@@ -54,9 +33,9 @@ const MainLayout: React.FC = () => {
         <Footer />
       </div>
 
-      {showNavBarOnPage && <NavigationBar isVisible={isNavVisible} />}
+      {showNavBarOnPage && <NavigationBar />}
       {showWhatsAppButtonOnPage && (
-        <WhatsAppButton isNavVisible={showNavBarOnPage && isNavVisible} />
+        <WhatsAppButton isNavBarVisible={showNavBarOnPage} />
       )}
     </div>
   );

@@ -2,10 +2,10 @@ import React, { useState, useEffect } from "react";
 import { WhatsAppIcon } from "../assets/icons";
 
 interface WhatsAppButtonProps {
-  isNavVisible: boolean;
+  isNavBarVisible: boolean;
 }
 
-const WhatsAppButton: React.FC<WhatsAppButtonProps> = ({ isNavVisible }) => {
+const WhatsAppButton: React.FC<WhatsAppButtonProps> = ({ isNavBarVisible }) => {
   const phoneNumber = import.meta.env.VITE_WHATSAPP_PHONE_NUMBER;
   const whatsappUrl = `https://wa.me/${phoneNumber}`;
   const [nudge, setNudge] = useState(false);
@@ -33,7 +33,7 @@ const WhatsAppButton: React.FC<WhatsAppButtonProps> = ({ isNavVisible }) => {
       target="_blank"
       rel="noopener noreferrer"
       className={`fixed ${
-        isNavVisible ? "bottom-24" : "bottom-5"
+        isNavBarVisible ? "bottom-24" : "bottom-5"
       } right-5 z-30 flex items-center group transition-all duration-300`}
       aria-label="Contact us on WhatsApp"
     >

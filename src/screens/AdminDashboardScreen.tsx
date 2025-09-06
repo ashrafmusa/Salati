@@ -95,21 +95,24 @@ const RecentOrders: React.FC<{ orders: AdminOrder[]; loading: boolean }> = ({
                   {order.id.slice(0, 7).toUpperCase()}
                 </td>
                 <td className="p-3 text-slate-600 dark:text-slate-300">
-                  {order.deliveryInfo.name}
+                  {order.deliveryInfo?.name || "غير معروف"}
                 </td>
                 <td className="p-3 text-slate-500 dark:text-slate-400 text-xs">
-                  {new Date(order.date).toLocaleDateString("ar-EG")}
+                  {order.date
+                    ? new Date(order.date).toLocaleDateString("ar-EG")
+                    : "N/A"}
                 </td>
                 <td className="p-3 text-slate-600 dark:text-slate-300">
-                  {order.total.toLocaleString()} ج.س
+                  {(order.total || 0).toLocaleString()} ج.س
                 </td>
                 <td className="p-3">
                   <span
                     className={`px-3 py-1 text-xs font-semibold rounded-full ${
-                      getStatusConfig(order.status).pill
+                      getStatusConfig(order.status || OrderStatus.Preparing)
+                        .pill
                     }`}
                   >
-                    {order.status}
+                    {order.status || OrderStatus.Preparing}
                   </span>
                 </td>
               </tr>
@@ -130,26 +133,28 @@ const RecentOrders: React.FC<{ orders: AdminOrder[]; loading: boolean }> = ({
             <div className="flex justify-between items-center">
               <div>
                 <p className="font-bold text-slate-800 dark:text-slate-100">
-                  {order.deliveryInfo.name}
+                  {order.deliveryInfo?.name || "غير معروف"}
                 </p>
                 <p className="text-sm text-slate-500 dark:text-slate-400">
                   #{order.id.slice(0, 7).toUpperCase()}
                 </p>
               </div>
               <p className="font-bold text-primary">
-                {order.total.toLocaleString()} ج.س
+                {(order.total || 0).toLocaleString()} ج.س
               </p>
             </div>
             <div className="mt-2 pt-2 border-t dark:border-slate-600 flex justify-between items-center">
               <span
                 className={`px-2 py-1 text-xs font-semibold rounded-full ${
-                  getStatusConfig(order.status).pill
+                  getStatusConfig(order.status || OrderStatus.Preparing).pill
                 }`}
               >
-                {order.status}
+                {order.status || OrderStatus.Preparing}
               </span>
               <span className="text-xs text-slate-500">
-                {new Date(order.date).toLocaleDateString("ar-EG")}
+                {order.date
+                  ? new Date(order.date).toLocaleDateString("ar-EG")
+                  : "N/A"}
               </span>
             </div>
           </div>
@@ -187,14 +192,15 @@ const AdminDashboardScreen: React.FC = () => {
 
         const totalRevenue = orders
           .filter((o) => o.paymentStatus === "paid")
-          .reduce((sum, order) => sum + order.total, 0);
+          .reduce((sum, order) => sum + (order.total || 0), 0);
         const newOrders = orders.filter(
           (o) => o.status === OrderStatus.Preparing
         ).length;
 
         const sortedRecent = [...orders]
           .sort(
-            (a, b) => new Date(b.date).getTime() - new Date(a.date).getTime()
+            (a, b) =>
+              new Date(b.date || 0).getTime() - new Date(a.date || 0).getTime()
           )
           .slice(0, 5);
 
@@ -251,10 +257,14 @@ const AdminDashboardScreen: React.FC = () => {
         }
 
         paidOrders.forEach((order) => {
+          if (!order.date) return;
           const orderDate = new Date(order.date);
           const key = orderDate.toLocaleDateString("en-CA");
           if (dailyRevenue.has(key)) {
-            dailyRevenue.set(key, (dailyRevenue.get(key) || 0) + order.total);
+            dailyRevenue.set(
+              key,
+              (dailyRevenue.get(key) || 0) + (order.total || 0)
+            );
           }
         });
 
@@ -279,7 +289,8 @@ const AdminDashboardScreen: React.FC = () => {
 
   const chartData = useMemo(() => {
     const counts = allOrders.reduce((acc, order) => {
-      acc[order.status] = (acc[order.status] || 0) + 1;
+      const status = order.status || OrderStatus.Preparing;
+      acc[status] = (acc[status] || 0) + 1;
       return acc;
     }, {} as Record<OrderStatus, number>);
 
