@@ -1,3 +1,4 @@
+<<<<<<< HEAD
 import React, { lazy, Suspense, useState, useEffect } from "react";
 import { HashRouter, Routes, Route, Navigate } from "react-router-dom";
 import { AuthProvider } from "./contexts/AuthContext";
@@ -10,81 +11,91 @@ import ScrollToTop from "./components/ScrollToTop.tsx";
 import { SettingsProvider } from "./contexts/SettingsContext";
 import { CartProvider } from "./contexts/CartContext";
 import { WishlistProvider } from "./contexts/WishlistContext";
+=======
+
+
+import React, { lazy, Suspense, useState, useEffect } from 'react';
+import { HashRouter, Routes, Route, Navigate } from 'react-router-dom';
+import { AuthProvider } from './contexts/AuthContext';
+import { ThemeProvider } from './contexts/ThemeContext';
+import { useAuth } from './hooks/useAuth';
+import FullScreenLoader from './components/FullScreenLoader';
+import { ToastProvider } from './contexts/ToastContext';
+import { initializeFirebase } from './firebase/config';
+import ScrollToTop from './components/ScrollToTop.tsx';
+import { SettingsProvider } from './contexts/SettingsContext';
+import { CartProvider } from './contexts/CartContext';
+import { WishlistProvider } from './contexts/WishlistContext';
+>>>>>>> 5ab5384cfa5f875d3bf79260bf8a7493670833f6
 
 // --- Lazy-loaded Admin Components ---
-const AdminLayout = lazy(() => import("./components/AdminLayout"));
-const AdminDashboardScreen = lazy(
-  () => import("./screens/AdminDashboardScreen")
-);
-const AdminOrdersScreen = lazy(() => import("./screens/AdminOrdersScreen"));
-const AdminBundlesScreen = lazy(() => import("./screens/AdminProductsScreen")); // Renamed for clarity
-const AdminItemsScreen = lazy(() => import("./screens/AdminItemsScreen"));
-const AdminCustomersScreen = lazy(
-  () => import("./screens/AdminCustomersScreen")
-);
-const AdminOffersScreen = lazy(() => import("./screens/AdminOffersScreen"));
-const AdminDriversScreen = lazy(() => import("./screens/AdminDriversScreen"));
-const AdminCategoriesScreen = lazy(
-  () => import("./screens/AdminCategoriesScreen")
-);
-const AdminExtrasScreen = lazy(() => import("./screens/AdminExtrasScreen"));
-const AdminSettingsScreen = lazy(() => import("./screens/AdminSettingsScreen"));
-const DriverDashboardScreen = lazy(
-  () => import("./screens/DriverDashboardScreen")
-);
+const AdminLayout = lazy(() => import('./components/AdminLayout'));
+const AdminDashboardScreen = lazy(() => import('./screens/AdminDashboardScreen'));
+const AdminOrdersScreen = lazy(() => import('./screens/AdminOrdersScreen'));
+const AdminBundlesScreen = lazy(() => import('./screens/AdminProductsScreen')); // Renamed for clarity
+const AdminItemsScreen = lazy(() => import('./screens/AdminItemsScreen'));
+const AdminCustomersScreen = lazy(() => import('./screens/AdminCustomersScreen'));
+const AdminOffersScreen = lazy(() => import('./screens/AdminOffersScreen'));
+const AdminDriversScreen = lazy(() => import('./screens/AdminDriversScreen'));
+const AdminCategoriesScreen = lazy(() => import('./screens/AdminCategoriesScreen'));
+const AdminExtrasScreen = lazy(() => import('./screens/AdminExtrasScreen'));
+const AdminSettingsScreen = lazy(() => import('./screens/AdminSettingsScreen'));
+const DriverDashboardScreen = lazy(() => import('./screens/DriverDashboardScreen'));
+
 
 const ProtectedAdminRoutes: React.FC = () => {
-  const { user, loading } = useAuth();
+    const { user, loading } = useAuth();
 
-  if (loading) {
-    return <FullScreenLoader />;
-  }
+    if (loading) {
+        return <FullScreenLoader />;
+    }
 
-  if (!user || user.role === "customer") {
-    // Redirect to customer app's login page if not any type of admin
-    window.location.href = "./index.html#/login";
-    return null; // Render nothing while redirecting
-  }
+    if (!user || user.role === 'customer') {
+        // Redirect to customer app's login page if not any type of admin
+        window.location.href = './index.html#/login';
+        return null; // Render nothing while redirecting
+    }
 
-  // Specific routes for the 'driver' role
-  if (user.role === "driver") {
+    // Specific routes for the 'driver' role
+    if (user.role === 'driver') {
+        return (
+            <Routes>
+                <Route path="/" element={<DriverDashboardScreen />} />
+                <Route path="*" element={<Navigate to="/" replace />} />
+            </Routes>
+        );
+    }
+
+
     return (
-      <Routes>
-        <Route path="/" element={<DriverDashboardScreen />} />
-        <Route path="*" element={<Navigate to="/" replace />} />
-      </Routes>
+        <Routes>
+            {/* Routes accessible to all admin levels */}
+            <Route path="/" element={<AdminDashboardScreen />} />
+            <Route path="/orders" element={<AdminOrdersScreen />} />
+
+            {/* Routes accessible only to 'admin' and 'super-admin' */}
+            {(user.role === 'admin' || user.role === 'super-admin') && (
+                <>
+                    <Route path="/bundles" element={<AdminBundlesScreen />} />
+                    <Route path="/users" element={<AdminCustomersScreen />} />
+                    <Route path="/offers" element={<AdminOffersScreen />} />
+                    <Route path="/drivers" element={<AdminDriversScreen />} />
+                </>
+            )}
+
+            {/* Routes accessible only to 'super-admin' */}
+            {user.role === 'super-admin' && (
+                <>
+                    <Route path="/items" element={<AdminItemsScreen />} />
+                    <Route path="/categories" element={<AdminCategoriesScreen />} />
+                    <Route path="/extras" element={<AdminExtrasScreen />} />
+                    <Route path="/settings" element={<AdminSettingsScreen />} />
+                </>
+            )}
+
+            <Route path="*" element={<Navigate to="/" replace />} />
+        </Routes>
     );
-  }
-
-  return (
-    <Routes>
-      {/* Routes accessible to all admin levels */}
-      <Route path="/" element={<AdminDashboardScreen />} />
-      <Route path="/orders" element={<AdminOrdersScreen />} />
-
-      {/* Routes accessible only to 'admin' and 'super-admin' */}
-      {(user.role === "admin" || user.role === "super-admin") && (
-        <>
-          <Route path="/bundles" element={<AdminBundlesScreen />} />
-          <Route path="/users" element={<AdminCustomersScreen />} />
-          <Route path="/offers" element={<AdminOffersScreen />} />
-          <Route path="/drivers" element={<AdminDriversScreen />} />
-        </>
-      )}
-
-      {/* Routes accessible only to 'super-admin' */}
-      {user.role === "super-admin" && (
-        <>
-          <Route path="/items" element={<AdminItemsScreen />} />
-          <Route path="/categories" element={<AdminCategoriesScreen />} />
-          <Route path="/extras" element={<AdminExtrasScreen />} />
-          <Route path="/settings" element={<AdminSettingsScreen />} />
-        </>
-      )}
-
-      <Route path="*" element={<Navigate to="/" replace />} />
-    </Routes>
-  );
 };
 
 const AdminApp: React.FC = () => {
@@ -101,7 +112,7 @@ const AdminApp: React.FC = () => {
   if (!isFirebaseReady) {
     return <FullScreenLoader />;
   }
-
+  
   return (
     <ThemeProvider>
       <AuthProvider>
