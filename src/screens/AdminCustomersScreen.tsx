@@ -58,6 +58,11 @@ const AdminCustomersScreen: React.FC = () => {
   const [editingUser, setEditingUser] = useState<PaginatedUser | null>(null);
   const [isSaving, setIsSaving] = useState(false);
 
+  const initialSort = useMemo(
+    () => ({ key: "name" as const, direction: "ascending" as const }),
+    []
+  );
+
   const {
     documents: paginatedUsers,
     loading,
@@ -67,10 +72,7 @@ const AdminCustomersScreen: React.FC = () => {
     hasPrevPage,
     requestSort,
     sortConfig,
-  } = usePaginatedFirestore<PaginatedUser>("users", {
-    key: "name",
-    direction: "ascending",
-  });
+  } = usePaginatedFirestore<PaginatedUser>("users", initialSort);
 
   const filteredUsers = useMemo(() => {
     if (!searchTerm) return paginatedUsers;
@@ -155,7 +157,7 @@ const AdminCustomersScreen: React.FC = () => {
 
       <div className="flex-grow overflow-y-auto">
         {loading ? (
-          <p>Loading users...</p>
+          <p>جار تحميل المستخدمين...</p>
         ) : (
           <>
             {/* Desktop Table View */}

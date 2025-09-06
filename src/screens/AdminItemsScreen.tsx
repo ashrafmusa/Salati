@@ -227,6 +227,11 @@ const AdminItemsScreen: React.FC = () => {
     return () => unsubCategories();
   }, []);
 
+  const initialSort = useMemo(
+    () => ({ key: "arabicName" as const, direction: "ascending" as const }),
+    []
+  );
+
   const {
     documents: paginatedItems,
     loading,
@@ -236,10 +241,7 @@ const AdminItemsScreen: React.FC = () => {
     hasPrevPage,
     requestSort,
     sortConfig,
-  } = usePaginatedFirestore<Item>("items", {
-    key: "arabicName",
-    direction: "ascending",
-  });
+  } = usePaginatedFirestore<Item>("items", initialSort);
 
   const filteredItems = useMemo(() => {
     if (!searchTerm) return paginatedItems;
@@ -295,7 +297,7 @@ const AdminItemsScreen: React.FC = () => {
 
         <div className="flex-grow overflow-y-auto">
           {loading ? (
-            <p>Loading...</p>
+            <p>جار تحميل الأصناف...</p>
           ) : filteredItems.length > 0 ? (
             <>
               {/* Desktop Table View */}

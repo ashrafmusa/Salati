@@ -27,6 +27,11 @@ const AdminCategoriesScreen: React.FC = () => {
   const [searchTerm, setSearchTerm] = useState("");
   const { showToast } = useToast();
 
+  const initialSort = useMemo(
+    () => ({ key: "sortOrder" as const, direction: "ascending" as const }),
+    []
+  );
+
   const {
     documents: paginatedCategories,
     loading,
@@ -34,10 +39,7 @@ const AdminCategoriesScreen: React.FC = () => {
     prevPage,
     hasNextPage,
     hasPrevPage,
-  } = usePaginatedFirestore<Category>("categories", {
-    key: "sortOrder",
-    direction: "ascending",
-  });
+  } = usePaginatedFirestore<Category>("categories", initialSort);
 
   const filteredCategories = useMemo(() => {
     if (!searchTerm) return paginatedCategories;
@@ -106,7 +108,7 @@ const AdminCategoriesScreen: React.FC = () => {
 
         <div className="flex-grow overflow-y-auto">
           {loading ? (
-            <p>Loading categories...</p>
+            <p>جار تحميل الفئات...</p>
           ) : filteredCategories.length > 0 ? (
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
               {filteredCategories.map((category) => (

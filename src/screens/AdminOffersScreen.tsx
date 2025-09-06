@@ -361,6 +361,11 @@ const AdminOffersScreen: React.FC = () => {
     fetchAllProducts();
   }, []);
 
+  const initialSort = useMemo(
+    () => ({ key: "expiryDate" as const, direction: "descending" as const }),
+    []
+  );
+
   const {
     documents: paginatedOffers,
     loading,
@@ -370,10 +375,7 @@ const AdminOffersScreen: React.FC = () => {
     hasPrevPage,
     requestSort,
     sortConfig,
-  } = usePaginatedFirestore<Offer>("offers", {
-    key: "expiryDate",
-    direction: "descending",
-  });
+  } = usePaginatedFirestore<Offer>("offers", initialSort);
 
   const filteredOffers = useMemo(() => {
     if (!searchTerm) return paginatedOffers;
@@ -432,7 +434,7 @@ const AdminOffersScreen: React.FC = () => {
 
         <div className="flex-grow overflow-y-auto">
           {loading ? (
-            <p>Loading...</p>
+            <p>جار تحميل العروض...</p>
           ) : filteredOffers.length > 0 ? (
             <>
               {/* Desktop Table View */}

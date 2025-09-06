@@ -132,6 +132,11 @@ const AdminOrdersScreen: React.FC = () => {
     return constraints;
   }, [statusFilter, deliveryMethodFilter, paymentStatusFilter]);
 
+  const initialSort = useMemo(
+    () => ({ key: "date" as const, direction: "descending" as const }),
+    []
+  );
+
   const {
     documents: paginatedOrders,
     loading,
@@ -143,7 +148,7 @@ const AdminOrdersScreen: React.FC = () => {
     sortConfig,
   } = usePaginatedFirestore<AdminOrder>(
     "orders",
-    { key: "date", direction: "descending" },
+    initialSort,
     queryConstraints
   );
 
@@ -402,7 +407,7 @@ const AdminOrdersScreen: React.FC = () => {
 
         <div className="flex-grow overflow-y-auto">
           {loading ? (
-            <p>Loading orders...</p>
+            <p>جار تحميل الطلبات...</p>
           ) : (
             <>
               <div className="overflow-x-auto hidden md:block">

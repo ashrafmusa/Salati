@@ -405,6 +405,11 @@ const AdminBundlesScreen: React.FC = () => {
     return () => unsubs.forEach((unsub) => unsub());
   }, []);
 
+  const initialSort = useMemo(
+    () => ({ key: "arabicName" as const, direction: "ascending" as const }),
+    []
+  );
+
   const {
     documents: paginatedBundles,
     loading,
@@ -414,10 +419,7 @@ const AdminBundlesScreen: React.FC = () => {
     hasPrevPage,
     requestSort,
     sortConfig,
-  } = usePaginatedFirestore<Bundle>("bundles", {
-    key: "arabicName",
-    direction: "ascending",
-  });
+  } = usePaginatedFirestore<Bundle>("bundles", initialSort);
 
   const filteredBundles = useMemo(() => {
     if (!searchTerm) return paginatedBundles;
@@ -540,7 +542,7 @@ const AdminBundlesScreen: React.FC = () => {
 
         <div className="flex-grow overflow-y-auto">
           {loading ? (
-            <p>Loading...</p>
+            <p>جار تحميل الحزم...</p>
           ) : (
             <>
               {/* Desktop Table View */}

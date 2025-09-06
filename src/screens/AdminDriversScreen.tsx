@@ -21,6 +21,11 @@ const AdminDriversScreen: React.FC = () => {
   const [isSaving, setIsSaving] = useState(false);
   const { showToast } = useToast();
 
+  const initialSort = useMemo(
+    () => ({ key: "name" as const, direction: "ascending" as const }),
+    []
+  );
+
   const {
     documents: drivers,
     loading,
@@ -30,10 +35,7 @@ const AdminDriversScreen: React.FC = () => {
     hasPrevPage,
     requestSort,
     sortConfig,
-  } = usePaginatedFirestore<Driver>("drivers", {
-    key: "name",
-    direction: "ascending",
-  });
+  } = usePaginatedFirestore<Driver>("drivers", initialSort);
 
   const handleOpenModal = (driver?: Driver) => {
     setEditingDriver(driver || null);
@@ -95,7 +97,7 @@ const AdminDriversScreen: React.FC = () => {
 
       <div className="flex-grow overflow-y-auto">
         {loading ? (
-          <p>Loading...</p>
+          <p>جار تحميل السائقين...</p>
         ) : drivers.length > 0 ? (
           <>
             {/* Desktop Table View */}
