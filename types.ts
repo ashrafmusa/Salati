@@ -6,6 +6,7 @@ export interface User {
   address?: string;
   role: 'customer' | 'sub-admin' | 'admin' | 'super-admin' | 'driver';
   email?: string | null;
+  customDeliveryFee?: number;
 }
 
 export interface Item {
@@ -88,6 +89,7 @@ export interface Order {
   paymentStatus: 'unpaid' | 'paid';
   deliveryInfo: DeliveryInfo;
   driverId?: string | null;
+  deliveryMethod: 'delivery' | 'pickup';
 }
 
 export interface DeliveryInfo {
@@ -132,6 +134,7 @@ export interface Category {
 export interface StoreSettings {
   deliveryFee: number;
   logoUrl: string;
+  storeAddress: string;
 }
 
 // Admin Panel Specific Types

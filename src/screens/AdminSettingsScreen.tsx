@@ -1,4 +1,3 @@
-// FIX: Imported `useMemo` from React to resolve reference error.
 import React, { useState, useEffect, useMemo } from "react";
 import { db } from "../firebase/config";
 import { doc, onSnapshot, setDoc } from "firebase/firestore";
@@ -14,7 +13,6 @@ const AdminSettingsScreen: React.FC = () => {
   const [isUploading, setIsUploading] = useState(false);
   const { showToast } = useToast();
 
-  // Memoize the doc reference to prevent re-creation on every render
   const settingsRef = useMemo(() => doc(db, "settings", "store"), []);
 
   useEffect(() => {
@@ -24,7 +22,7 @@ const AdminSettingsScreen: React.FC = () => {
         if (docSnap.exists()) {
           setSettings(docSnap.data() as StoreSettings);
         } else {
-          setSettings({ deliveryFee: 0, logoUrl: "" });
+          setSettings({ deliveryFee: 0, logoUrl: "", storeAddress: "" });
         }
         setLoading(false);
       },
@@ -37,9 +35,14 @@ const AdminSettingsScreen: React.FC = () => {
     return () => unsubscribe();
   }, [settingsRef]);
 
-  const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+  const handleInputChange = (
+    e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>
+  ) => {
     const { name, value } = e.target;
-    setSettings((prev) => ({ ...prev, [name]: Number(value) }));
+    setSettings((prev) => ({
+      ...prev,
+      [name]: name === "deliveryFee" ? Number(value) : value,
+    }));
   };
 
   const handleLogoChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -95,27 +98,37 @@ const AdminSettingsScreen: React.FC = () => {
               htmlFor="deliveryFee"
               className="block text-sm font-medium text-slate-700 dark:text-slate-300"
             >
-              رسوم التوصيل (بالجنيه السوداني)
+              رسوم التوصيل الافتراضية (بالجنيه السوداني)
             </label>
-            <div className="relative mt-1">
-              <div className="pointer-events-none absolute inset-y-0 right-0 flex items-center pr-3">
-                <span className="text-slate-500 dark:text-slate-400 sm:text-sm">
-                  ج.س
-                </span>
-              </div>
-              <input
-                type="number"
-                id="deliveryFee"
-                name="deliveryFee"
-                value={settings.deliveryFee ?? ""}
-                onChange={handleInputChange}
-                className={`${inputClasses} pr-12 text-left`}
-                placeholder="e.g., 500"
-                dir="ltr"
-              />
-            </div>
+            <input
+              type="number"
+              id="deliveryFee"
+              name="deliveryFee"
+              value={settings.deliveryFee ?? ""}
+              onChange={handleInputChange}
+              className={`${inputClasses} mt-1`}
+              placeholder="e.g., 500"
+            />
+          </div>
+
+          <div>
+            <label
+              htmlFor="storeAddress"
+              className="block text-sm font-medium text-slate-700 dark:text-slate-300"
+            >
+              عنوان المتجر (للاستلام)
+            </label>
+            <textarea
+              id="storeAddress"
+              name="storeAddress"
+              value={settings.storeAddress || ""}
+              onChange={handleInputChange}
+              rows={3}
+              className={`${inputClasses} mt-1`}
+              placeholder="e.g., Khartoum, Al-Amarat, Street 15"
+            />
             <p className="text-xs text-slate-500 dark:text-slate-400 mt-1">
-              هذه هي رسوم التوصيل الافتراضية التي ستطبق على جميع الطلبات.
+              سيظهر هذا العنوان للعملاء الذين يختارون استلام طلباتهم من المتجر.
             </p>
           </div>
 

@@ -153,8 +153,24 @@ const AdminOrdersScreen: React.FC = () => {
       updateOrder(order.id, { status, driverId });
     };
 
-    // When an order is marked as ready for pickup, it should be unassigned from any driver.
-    if (newStatus === OrderStatus.ReadyForPickup) {
+    if (
+      order.deliveryMethod === "pickup" &&
+      newStatus === OrderStatus.OutForDelivery
+    ) {
+      showToast("Cannot set 'Out for Delivery' for a pickup order.", "error");
+      setTimeout(() => {
+        const select = document.getElementById(
+          `status-${order.id}`
+        ) as HTMLSelectElement;
+        if (select) select.value = order.status;
+      }, 0);
+      return;
+    }
+
+    if (
+      newStatus === OrderStatus.ReadyForPickup &&
+      order.deliveryMethod === "delivery"
+    ) {
       performUpdate(newStatus, null);
       return;
     }
@@ -306,15 +322,15 @@ const AdminOrdersScreen: React.FC = () => {
                       <th className="p-3 text-sm font-semibold text-slate-500 dark:text-slate-400">
                         العميل
                       </th>
+                      <th className="p-3 text-sm font-semibold text-slate-500 dark:text-slate-400">
+                        طريقة الاستلام
+                      </th>
                       <SortableHeader<AdminOrder>
                         label="الإجمالي"
                         sortKey="total"
                         requestSort={requestSort}
                         sortConfig={sortConfig}
                       />
-                      <th className="p-3 text-sm font-semibold text-slate-500 dark:text-slate-400">
-                        حالة الدفع
-                      </th>
                       <th className="p-3 text-sm font-semibold text-slate-500 dark:text-slate-400">
                         حالة الطلب
                       </th>
@@ -344,21 +360,13 @@ const AdminOrdersScreen: React.FC = () => {
                           <td className="p-3 text-slate-600 dark:text-slate-300">
                             {order.deliveryInfo.name}
                           </td>
-                          <td className="p-3 text-slate-600 dark:text-slate-300">
-                            {order.total} ج.س
+                          <td className="p-3 text-slate-600 dark:text-slate-300 font-semibold">
+                            {order.deliveryMethod === "pickup"
+                              ? "استلام"
+                              : "توصيل"}
                           </td>
-                          <td className="p-3">
-                            <span
-                              className={`px-2 py-1 text-xs font-semibold rounded-full ${
-                                order.paymentStatus === "paid"
-                                  ? "bg-green-100 text-green-800 dark:bg-green-900/50 dark:text-green-300"
-                                  : "bg-amber-100 text-amber-800 dark:bg-amber-900/50 dark:text-amber-300"
-                              }`}
-                            >
-                              {order.paymentStatus === "paid"
-                                ? "مدفوع"
-                                : "غير مدفوع"}
-                            </span>
+                          <td className="p-3 text-slate-600 dark:text-slate-300">
+                            {order.total.toLocaleString()} ج.س
                           </td>
                           <td className="p-3 w-48">
                             <div className="flex items-center gap-2">
@@ -396,8 +404,13 @@ const AdminOrdersScreen: React.FC = () => {
                               }
                               className="p-2 w-full rounded text-sm border-slate-300 dark:border-slate-600 focus:ring-admin-primary focus:border-admin-primary bg-white dark:bg-slate-700 text-slate-900 dark:text-slate-100"
                               onClick={(e) => e.stopPropagation()}
+                              disabled={order.deliveryMethod === "pickup"}
                             >
-                              <option value="">اختر سائق</option>
+                              <option value="">
+                                {order.deliveryMethod === "pickup"
+                                  ? "لا يوجد"
+                                  : "اختر سائق"}
+                              </option>
                               {drivers.map((d) => (
                                 <option key={d.id} value={d.id}>
                                   {d.name}
@@ -452,25 +465,21 @@ const AdminOrdersScreen: React.FC = () => {
                           </p>
                         </div>
                         <p className="text-xl font-bold text-primary dark:text-green-400">
-                          {order.total} ج.س
+                          {order.total.toLocaleString()} ج.س
                         </p>
                       </div>
 
                       <div className="pt-3 border-t dark:border-slate-700">
                         <div className="mb-3">
                           <label className="text-xs text-slate-500 dark:text-slate-400 block mb-1">
-                            حالة الدفع:
+                            طريقة الاستلام:
                           </label>
                           <span
-                            className={`px-2 py-1 text-xs font-semibold rounded-full ${
-                              order.paymentStatus === "paid"
-                                ? "bg-green-100 text-green-800 dark:bg-green-900/50 dark:text-green-300"
-                                : "bg-amber-100 text-amber-800 dark:bg-amber-900/50 dark:text-amber-300"
-                            }`}
+                            className={`font-semibold text-slate-700 dark:text-slate-200`}
                           >
-                            {order.paymentStatus === "paid"
-                              ? "مدفوع"
-                              : "غير مدفوع"}
+                            {order.deliveryMethod === "pickup"
+                              ? "استلام من المتجر"
+                              : "توصيل للمنزل"}
                           </span>
                         </div>
                         <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
@@ -509,8 +518,13 @@ const AdminOrdersScreen: React.FC = () => {
                                 )
                               }
                               className={`p-2 w-full rounded text-sm ${inputSelectClasses}`}
+                              disabled={order.deliveryMethod === "pickup"}
                             >
-                              <option value="">اختر سائق</option>
+                              <option value="">
+                                {order.deliveryMethod === "pickup"
+                                  ? "لا يوجد"
+                                  : "اختر سائق"}
+                              </option>
                               {drivers.map((d) => (
                                 <option key={d.id} value={d.id}>
                                   {d.name}
@@ -576,5 +590,4 @@ const AdminOrdersScreen: React.FC = () => {
   );
 };
 
-// FIX: Added default export to fix lazy loading issue.
 export default AdminOrdersScreen;

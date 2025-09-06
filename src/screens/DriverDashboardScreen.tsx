@@ -63,7 +63,8 @@ const DriverDashboardScreen: React.FC = () => {
     setLoading((prev) => ({ ...prev, available: true }));
     const q = query(
       collection(db, "orders"),
-      where("status", "==", OrderStatus.ReadyForPickup)
+      where("status", "==", OrderStatus.ReadyForPickup),
+      where("deliveryMethod", "==", "delivery")
     );
     const unsubscribe = onSnapshot(
       q,
@@ -289,5 +290,4 @@ const DriverDashboardScreen: React.FC = () => {
   );
 };
 
-// FIX: Added default export to fix lazy loading issue.
 export default DriverDashboardScreen;

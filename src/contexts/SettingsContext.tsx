@@ -46,7 +46,12 @@ export const SettingsProvider: React.FC<{ children: ReactNode }> = ({
           const data = docSnap.data() as StoreSettings;
           setSettings({ ...data, logoUrl: data.logoUrl || DEFAULT_LOGO_URL });
         } else {
-          setSettings({ deliveryFee: 500, logoUrl: DEFAULT_LOGO_URL }); // Default value
+          // FIX: Added missing 'storeAddress' property to match the StoreSettings type.
+          setSettings({
+            deliveryFee: 500,
+            logoUrl: DEFAULT_LOGO_URL,
+            storeAddress: "",
+          }); // Default value
           console.warn(
             "Store settings not found in Firestore, using default values."
           );
@@ -55,7 +60,12 @@ export const SettingsProvider: React.FC<{ children: ReactNode }> = ({
       },
       (err) => {
         console.error("Error fetching store settings:", err);
-        setSettings({ deliveryFee: 500, logoUrl: DEFAULT_LOGO_URL }); // Fallback on error
+        // FIX: Added missing 'storeAddress' property to match the StoreSettings type.
+        setSettings({
+          deliveryFee: 500,
+          logoUrl: DEFAULT_LOGO_URL,
+          storeAddress: "",
+        }); // Fallback on error
         setLoading(false);
       }
     );
