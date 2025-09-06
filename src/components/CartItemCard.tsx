@@ -55,6 +55,7 @@ const CartItemCard: React.FC<CartItemCardProps> = ({ item }) => {
             quantity={item.quantity}
             onIncrease={() => updateQuantity(item.cartId, item.quantity + 1)}
             onDecrease={() => updateQuantity(item.cartId, item.quantity - 1)}
+            isIncreaseDisabled={item.quantity >= item.stock}
           />
           <p className="font-bold text-lg text-secondary dark:text-green-400">
             {totalItemPrice.toLocaleString()} ج.س

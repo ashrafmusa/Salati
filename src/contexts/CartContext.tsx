@@ -201,26 +201,32 @@ export const CartProvider: React.FC<{ children: ReactNode }> = ({
         const index = newItems.findIndex((item) => item.cartId === cartId);
 
         if (index > -1) {
-          newItems[index].quantity += 1;
+          // Item exists, check stock before incrementing
+          if (newItems[index].quantity < newItems[index].stock) {
+            newItems[index].quantity += 1;
+          }
         } else {
-          const unitPrice =
-            product.type === "item"
-              ? product.price
-              : calculateBundlePrice(product, allItems);
+          // New item, check stock before adding
+          if (product.stock > 0) {
+            const unitPrice =
+              product.type === "item"
+                ? product.price
+                : calculateBundlePrice(product, allItems);
 
-          newItems.push({
-            cartId,
-            productId: product.id,
-            productType: product.type,
-            name: product.name,
-            arabicName: product.arabicName,
-            imageUrl: product.imageUrl,
-            quantity: 1,
-            unitPrice: unitPrice,
-            selectedExtras: product.type === "bundle" ? selectedExtras : [],
-            category: product.category,
-            stock: product.stock,
-          });
+            newItems.push({
+              cartId,
+              productId: product.id,
+              productType: product.type,
+              name: product.name,
+              arabicName: product.arabicName,
+              imageUrl: product.imageUrl,
+              quantity: 1,
+              unitPrice: unitPrice,
+              selectedExtras: product.type === "bundle" ? selectedExtras : [],
+              category: product.category,
+              stock: product.stock,
+            });
+          }
         }
         return newItems;
       };
@@ -289,9 +295,13 @@ export const CartProvider: React.FC<{ children: ReactNode }> = ({
       }
 
       const action = (prevItems: CartItem[]) => {
-        return prevItems.map((item) =>
-          item.cartId === cartId ? { ...item, quantity } : item
-        );
+        return prevItems.map((item) => {
+          if (item.cartId === cartId) {
+            const newQuantity = Math.min(quantity, item.stock); // Cap quantity at available stock
+            return { ...item, quantity: newQuantity };
+          }
+          return item;
+        });
       };
 
       if (user) {

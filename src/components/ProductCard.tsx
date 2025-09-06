@@ -22,9 +22,13 @@ const StoreProductCard: React.FC<StoreProductCardProps> = ({
   const isBundle = product.type === "bundle";
   const linkPath = isBundle ? `/bundle/${product.id}` : `/item/${product.id}`;
 
+  const isOutOfStock = product.stock <= 0;
+  const isLowStock = product.stock > 0 && product.stock < 10;
+
   const handleAddToCart = (e: React.MouseEvent<HTMLButtonElement>) => {
     e.preventDefault();
     e.stopPropagation();
+    if (isOutOfStock) return;
     addToCart(product, []);
   };
 
@@ -48,9 +52,22 @@ const StoreProductCard: React.FC<StoreProductCardProps> = ({
           src={getOptimizedImageUrl(product.imageUrl, 400)}
           alt={product.name}
           className="w-full h-40 object-cover transition-transform duration-500 ease-in-out group-hover:scale-110"
-          loading="lazy"
         />
         <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-black/20 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
+
+        {isOutOfStock && (
+          <div className="absolute inset-0 bg-black/60 flex items-center justify-center">
+            <span className="text-white font-bold px-3 py-1 bg-red-600 rounded-full text-sm">
+              نفدت الكمية
+            </span>
+          </div>
+        )}
+        {isLowStock && (
+          <div className="absolute bottom-3 left-3 bg-amber-500 text-white px-2 py-1 rounded-full text-xs font-bold backdrop-blur-sm">
+            تبقى {product.stock} فقط!
+          </div>
+        )}
+
         <button
           onClick={handleToggleWishlist}
           className="absolute top-3 right-3 bg-white/80 dark:bg-slate-950/70 p-2 rounded-full backdrop-blur-sm transition-all duration-200 transform hover:scale-110 active:scale-95 opacity-80 group-hover:opacity-100"
@@ -91,8 +108,11 @@ const StoreProductCard: React.FC<StoreProductCardProps> = ({
           </span>
           <button
             onClick={handleAddToCart}
-            className="bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300 rounded-full p-2.5 shadow-sm transition-all duration-300 ease-in-out transform group-hover:bg-primary group-hover:text-white group-hover:scale-110 group-hover:rotate-90 active:scale-95"
-            aria-label={`Add ${product.name} to cart`}
+            disabled={isOutOfStock}
+            className="bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300 rounded-full p-2.5 shadow-sm transition-all duration-300 ease-in-out transform group-hover:bg-primary group-hover:text-white group-hover:scale-110 group-hover:rotate-90 active:scale-95 disabled:bg-slate-200 dark:disabled:bg-slate-700 disabled:cursor-not-allowed group-hover:disabled:transform-none group-hover:disabled:rotate-0"
+            aria-label={
+              isOutOfStock ? "Out of stock" : `Add ${product.name} to cart`
+            }
           >
             <PlusIcon className="w-6 h-6" />
           </button>
