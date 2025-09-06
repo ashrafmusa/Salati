@@ -85,13 +85,19 @@ const AdminOrdersScreen: React.FC = () => {
 
   const [searchParams] = useSearchParams();
   const statusFilterFromUrl = searchParams.get("status") as OrderStatus | null;
-  const [filter, setFilter] = useState<OrderStatus | "all">(
+  const [statusFilter, setStatusFilter] = useState<OrderStatus | "all">(
     statusFilterFromUrl || "all"
   );
+  const [deliveryMethodFilter, setDeliveryMethodFilter] = useState<
+    "all" | "delivery" | "pickup"
+  >("all");
+  const [paymentStatusFilter, setPaymentStatusFilter] = useState<
+    "all" | "paid" | "unpaid"
+  >("all");
 
   useEffect(() => {
     if (statusFilterFromUrl) {
-      setFilter(statusFilterFromUrl);
+      setStatusFilter(statusFilterFromUrl);
     }
   }, [statusFilterFromUrl]);
 
@@ -261,13 +267,31 @@ const AdminOrdersScreen: React.FC = () => {
 
   const filteredOrders = useMemo(() => {
     return orders
-      .filter((o) => filter === "all" || o.status === filter)
+      .filter((o) => statusFilter === "all" || o.status === statusFilter)
+      .filter(
+        (o) =>
+          deliveryMethodFilter === "all" ||
+          o.deliveryMethod === deliveryMethodFilter
+      )
+      .filter(
+        (o) =>
+          paymentStatusFilter === "all" ||
+          o.paymentStatus === paymentStatusFilter
+      )
       .filter(
         (o) =>
           o.id.toLowerCase().includes(searchTerm.toLowerCase()) ||
-          o.deliveryInfo.name.toLowerCase().includes(searchTerm.toLowerCase())
+          (o.deliveryInfo?.name || "")
+            .toLowerCase()
+            .includes(searchTerm.toLowerCase())
       );
-  }, [orders, filter, searchTerm]);
+  }, [
+    orders,
+    statusFilter,
+    deliveryMethodFilter,
+    paymentStatusFilter,
+    searchTerm,
+  ]);
 
   const {
     items: sortedOrders,
@@ -282,17 +306,21 @@ const AdminOrdersScreen: React.FC = () => {
     <>
       <div className="h-full flex flex-col bg-white dark:bg-slate-800 p-4 md:p-6 rounded-lg shadow-md">
         <div className="flex flex-col sm:flex-row justify-between items-center mb-6 gap-4">
-          <AdminScreenHeader
-            title="قائمة الطلبات"
-            searchTerm={searchTerm}
-            onSearchChange={setSearchTerm}
-            searchPlaceholder="ابحث بالرقم أو اسم العميل..."
-          />
           <div className="w-full sm:w-auto">
+            <AdminScreenHeader
+              title="قائمة الطلبات"
+              searchTerm={searchTerm}
+              onSearchChange={setSearchTerm}
+              searchPlaceholder="ابحث بالرقم أو اسم العميل..."
+            />
+          </div>
+          <div className="w-full sm:w-auto flex flex-col sm:flex-row gap-2">
             <select
-              value={filter}
-              onChange={(e) => setFilter(e.target.value as OrderStatus | "all")}
-              className={`w-full ${inputSelectClasses}`}
+              value={statusFilter}
+              onChange={(e) =>
+                setStatusFilter(e.target.value as OrderStatus | "all")
+              }
+              className={`w-full sm:w-36 ${inputSelectClasses}`}
             >
               <option value="all">كل الحالات</option>
               {Object.values(OrderStatus).map((s) => (
@@ -300,6 +328,32 @@ const AdminOrdersScreen: React.FC = () => {
                   {s}
                 </option>
               ))}
+            </select>
+            <select
+              value={deliveryMethodFilter}
+              onChange={(e) =>
+                setDeliveryMethodFilter(
+                  e.target.value as "all" | "delivery" | "pickup"
+                )
+              }
+              className={`w-full sm:w-36 ${inputSelectClasses}`}
+            >
+              <option value="all">كل طرق الاستلام</option>
+              <option value="delivery">توصيل</option>
+              <option value="pickup">استلام</option>
+            </select>
+            <select
+              value={paymentStatusFilter}
+              onChange={(e) =>
+                setPaymentStatusFilter(
+                  e.target.value as "all" | "paid" | "unpaid"
+                )
+              }
+              className={`w-full sm:w-36 ${inputSelectClasses}`}
+            >
+              <option value="all">كل حالات الدفع</option>
+              <option value="paid">مدفوع</option>
+              <option value="unpaid">غير مدفوع</option>
             </select>
           </div>
         </div>

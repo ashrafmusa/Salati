@@ -1,18 +1,24 @@
 import React, { useState, useEffect, useMemo } from "react";
 import StatCard from "../components/StatCard";
-// FIX: `BasketsIcon` does not exist. Replaced with `PackageIcon`.
 import {
   OrdersIcon,
   PackageIcon,
   CustomersIcon,
   CurrencyDollarIcon,
 } from "../assets/adminIcons";
-// FIX: The `Product` type is obsolete. Switched to `Item` for fetching low stock items.
 import { AdminOrder, OrderStatus, Item } from "../types";
 import { db } from "../firebase/config";
-import { collection, query, where, onSnapshot } from "firebase/firestore";
+import {
+  collection,
+  query,
+  where,
+  onSnapshot,
+  orderBy,
+} from "firebase/firestore";
 import DonutChart from "../components/DonutChart";
 import LineChart from "../components/LineChart";
+
+type DateRange = "today" | "7d" | "30d";
 
 const getStatusConfig = (status: OrderStatus) => {
   switch (status) {
@@ -165,130 +171,132 @@ const RecentOrders: React.FC<{ orders: AdminOrder[]; loading: boolean }> = ({
 );
 
 const AdminDashboardScreen: React.FC = () => {
-  const [stats, setStats] = useState({
-    totalRevenue: 0,
-    newOrders: 0,
-    customerCount: 0,
-    lowStockItems: 0,
-  });
   const [allOrders, setAllOrders] = useState<AdminOrder[]>([]);
-  const [revenueData, setRevenueData] = useState<
-    { label: string; value: number }[]
-  >([]);
-  const [recentOrders, setRecentOrders] = useState<AdminOrder[]>([]);
+  const [allUsersCount, setAllUsersCount] = useState(0);
+  const [allLowStockItems, setAllLowStockItems] = useState(0);
   const [loading, setLoading] = useState(true);
+  const [dateRange, setDateRange] = useState<DateRange>("7d");
 
   useEffect(() => {
     const unsubs: (() => void)[] = [];
+    const thirtyDaysAgo = new Date();
+    thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
+    thirtyDaysAgo.setHours(0, 0, 0, 0);
 
-    // Orders listener
-    const ordersQuery = query(collection(db, "orders"));
+    const ordersQuery = query(
+      collection(db, "orders"),
+      where("date", ">=", thirtyDaysAgo.toISOString()),
+      orderBy("date", "desc")
+    );
     unsubs.push(
       onSnapshot(ordersQuery, (snapshot) => {
         const orders = snapshot.docs.map(
           (doc) => ({ id: doc.id, ...doc.data() } as AdminOrder)
         );
         setAllOrders(orders);
-
-        const totalRevenue = orders
-          .filter((o) => o.paymentStatus === "paid")
-          .reduce((sum, order) => sum + (order.total || 0), 0);
-        const newOrders = orders.filter(
-          (o) => o.status === OrderStatus.Preparing
-        ).length;
-
-        const sortedRecent = [...orders]
-          .sort(
-            (a, b) =>
-              new Date(b.date || 0).getTime() - new Date(a.date || 0).getTime()
-          )
-          .slice(0, 5);
-
-        setStats((prev) => ({ ...prev, totalRevenue, newOrders }));
-        setRecentOrders(sortedRecent);
-        setLoading(false); // Set loading to false after the main data is fetched
+        setLoading(false);
       })
     );
 
-    // Users listener
     const usersQuery = query(
       collection(db, "users"),
       where("role", "==", "customer")
     );
     unsubs.push(
       onSnapshot(usersQuery, (snapshot) => {
-        setStats((prev) => ({ ...prev, customerCount: snapshot.size }));
+        setAllUsersCount(snapshot.size);
       })
     );
 
-    // Items listener for low stock count
     const itemsQuery = query(collection(db, "items"));
     unsubs.push(
       onSnapshot(itemsQuery, (snapshot) => {
         const products = snapshot.docs.map(
           (doc) => ({ id: doc.id, ...doc.data() } as Item)
         );
-        const lowStockItems = products.filter(
-          (p) => (p.stock || 0) < 20
-        ).length;
-        setStats((prev) => ({ ...prev, lowStockItems }));
-      })
-    );
-
-    // Revenue listener (last 7 days)
-    const sevenDaysAgo = new Date();
-    sevenDaysAgo.setDate(sevenDaysAgo.getDate() - 7);
-    sevenDaysAgo.setHours(0, 0, 0, 0);
-    const revenueQuery = query(
-      collection(db, "orders"),
-      where("date", ">=", sevenDaysAgo.toISOString()),
-      where("paymentStatus", "==", "paid")
-    );
-    unsubs.push(
-      onSnapshot(revenueQuery, (snapshot) => {
-        const paidOrders = snapshot.docs.map((doc) => doc.data() as AdminOrder);
-
-        const dailyRevenue = new Map<string, number>();
-        for (let i = 0; i < 7; i++) {
-          const d = new Date();
-          d.setDate(d.getDate() - i);
-          const key = d.toLocaleDateString("en-CA");
-          dailyRevenue.set(key, 0);
-        }
-
-        paidOrders.forEach((order) => {
-          if (!order.date) return;
-          const orderDate = new Date(order.date);
-          const key = orderDate.toLocaleDateString("en-CA");
-          if (dailyRevenue.has(key)) {
-            dailyRevenue.set(
-              key,
-              (dailyRevenue.get(key) || 0) + (order.total || 0)
-            );
-          }
-        });
-
-        const chartData = Array.from(dailyRevenue.entries())
-          .map(([date, revenue]) => {
-            const d = new Date(date);
-            const label = d.toLocaleDateString("ar-EG", {
-              month: "short",
-              day: "numeric",
-            });
-            return { label, value: revenue, date: d };
-          })
-          .sort((a, b) => a.date.getTime() - b.date.getTime())
-          .map(({ label, value }) => ({ label, value }));
-
-        setRevenueData(chartData);
+        setAllLowStockItems(products.filter((p) => (p.stock || 0) < 20).length);
       })
     );
 
     return () => unsubs.forEach((unsub) => unsub());
   }, []);
 
+  const filteredOrders = useMemo(() => {
+    const now = new Date();
+    const startOfDay = new Date(
+      now.getFullYear(),
+      now.getMonth(),
+      now.getDate()
+    );
+
+    return allOrders.filter((order) => {
+      const orderDate = new Date(order.date);
+      if (dateRange === "today") {
+        return orderDate >= startOfDay;
+      }
+      if (dateRange === "7d") {
+        const sevenDaysAgo = new Date(startOfDay);
+        sevenDaysAgo.setDate(startOfDay.getDate() - 6);
+        return orderDate >= sevenDaysAgo;
+      }
+      if (dateRange === "30d") {
+        const thirtyDaysAgo = new Date(startOfDay);
+        thirtyDaysAgo.setDate(startOfDay.getDate() - 29);
+        return orderDate >= thirtyDaysAgo;
+      }
+      return true;
+    });
+  }, [allOrders, dateRange]);
+
+  const stats = useMemo(() => {
+    const totalRevenue = filteredOrders
+      .filter((o) => o.paymentStatus === "paid")
+      .reduce((sum, order) => sum + (order.total || 0), 0);
+
+    const newOrders = filteredOrders.filter(
+      (o) => o.status === OrderStatus.Preparing
+    ).length;
+
+    return { totalRevenue, newOrders };
+  }, [filteredOrders]);
+
+  const revenueData = useMemo(() => {
+    const days = dateRange === "today" ? 1 : dateRange === "7d" ? 7 : 30;
+    const dailyRevenue = new Map<string, number>();
+
+    for (let i = 0; i < days; i++) {
+      const d = new Date();
+      d.setDate(d.getDate() - i);
+      const key = d.toLocaleDateString("en-CA");
+      dailyRevenue.set(key, 0);
+    }
+
+    filteredOrders.forEach((order) => {
+      if (!order.date || order.paymentStatus !== "paid") return;
+      const key = new Date(order.date).toLocaleDateString("en-CA");
+      if (dailyRevenue.has(key)) {
+        dailyRevenue.set(
+          key,
+          (dailyRevenue.get(key) || 0) + (order.total || 0)
+        );
+      }
+    });
+
+    return Array.from(dailyRevenue.entries())
+      .map(([date, revenue]) => ({
+        label: new Date(date).toLocaleDateString("ar-EG", {
+          month: "short",
+          day: "numeric",
+        }),
+        value: revenue,
+        date: new Date(date),
+      }))
+      .sort((a, b) => a.date.getTime() - b.date.getTime())
+      .map(({ label, value }) => ({ label, value }));
+  }, [filteredOrders, dateRange]);
+
   const chartData = useMemo(() => {
-    const counts = allOrders.reduce((acc, order) => {
+    const counts = filteredOrders.reduce((acc, order) => {
       const status = order.status || OrderStatus.Preparing;
       acc[status] = (acc[status] || 0) + 1;
       return acc;
@@ -299,17 +307,42 @@ const AdminDashboardScreen: React.FC = () => {
       value,
       color: getStatusConfig(status as OrderStatus).color,
     }));
-  }, [allOrders]);
+  }, [filteredOrders]);
+
+  const DateRangeFilter = () => (
+    <div className="flex items-center bg-slate-100 dark:bg-slate-700/50 p-1 rounded-lg">
+      {(["today", "7d", "30d"] as DateRange[]).map((range) => (
+        <button
+          key={range}
+          onClick={() => setDateRange(range)}
+          className={`px-4 py-1.5 text-sm font-semibold rounded-md transition-colors ${
+            dateRange === range
+              ? "bg-white dark:bg-slate-800 text-admin-primary shadow-sm"
+              : "text-slate-500 dark:text-slate-300 hover:text-slate-700 dark:hover:text-slate-100"
+          }`}
+        >
+          {range === "today"
+            ? "اليوم"
+            : range === "7d"
+            ? "آخر 7 أيام"
+            : "آخر 30 يومًا"}
+        </button>
+      ))}
+    </div>
+  );
 
   return (
     <div className="space-y-8">
-      <div>
-        <h2 className="text-2xl font-bold text-slate-800 dark:text-slate-100">
-          نظرة عامة على لوحة التحكم
-        </h2>
-        <p className="text-slate-500 dark:text-slate-400 mt-1">
-          أهلاً بعودتك! إليك آخر المستجدات.
-        </p>
+      <div className="flex flex-col sm:flex-row justify-between sm:items-center gap-4">
+        <div>
+          <h2 className="text-2xl font-bold text-slate-800 dark:text-slate-100">
+            نظرة عامة على لوحة التحكم
+          </h2>
+          <p className="text-slate-500 dark:text-slate-400 mt-1">
+            أهلاً بعودتك! إليك آخر المستجدات.
+          </p>
+        </div>
+        <DateRangeFilter />
       </div>
 
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
@@ -330,14 +363,14 @@ const AdminDashboardScreen: React.FC = () => {
         <StatCard
           to="/users"
           title="العملاء"
-          value={loading ? "..." : stats.customerCount}
+          value={loading ? "..." : allUsersCount}
           icon={<CustomersIcon />}
           colorClass="bg-status-delivering"
         />
         <StatCard
           to="/items"
           title="منتجات تحتاج إعادة تخزين"
-          value={loading ? "..." : stats.lowStockItems}
+          value={loading ? "..." : allLowStockItems}
           icon={<PackageIcon />}
           colorClass="bg-status-cancelled"
         />
@@ -345,7 +378,12 @@ const AdminDashboardScreen: React.FC = () => {
 
       <div className="bg-white dark:bg-slate-800 p-6 rounded-xl shadow-sm border border-slate-200 dark:border-slate-700">
         <h3 className="text-xl font-bold text-slate-800 dark:text-slate-100 mb-4">
-          إيرادات آخر 7 أيام
+          الإيرادات لـ{" "}
+          {dateRange === "today"
+            ? "اليوم"
+            : dateRange === "7d"
+            ? "آخر 7 أيام"
+            : "آخر 30 يومًا"}
         </h3>
         <div className="h-72">
           {loading ? (
@@ -358,7 +396,7 @@ const AdminDashboardScreen: React.FC = () => {
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
         <div className="lg:col-span-2">
-          <RecentOrders orders={recentOrders} loading={loading} />
+          <RecentOrders orders={allOrders.slice(0, 5)} loading={loading} />
         </div>
         <div className="bg-white dark:bg-slate-800 p-6 rounded-xl shadow-sm border border-slate-200 dark:border-slate-700 flex flex-col items-center justify-center">
           <h3 className="text-lg font-bold text-slate-800 dark:text-slate-100 mb-4">
