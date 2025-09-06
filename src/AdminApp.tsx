@@ -6,7 +6,7 @@ import { useAuth } from "./hooks/useAuth";
 import FullScreenLoader from "./components/FullScreenLoader";
 import { ToastProvider } from "./contexts/ToastContext";
 import { initializeFirebase } from "./firebase/config";
-import ScrollToTop from "./components/ScrollToTop";
+import ScrollToTop from "/src/components/ScrollToTop.tsx";
 import { SettingsProvider } from "./contexts/SettingsContext";
 import { CartProvider } from "./contexts/CartContext";
 import { WishlistProvider } from "./contexts/WishlistContext";

@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useMemo } from "react";
+import React, { useState, useMemo } from "react";
 import { db } from "../firebase/config";
 import { collection, doc, updateDoc, deleteDoc } from "firebase/firestore";
 import { User } from "../types";
@@ -9,6 +9,8 @@ import SortableHeader from "../components/SortableHeader";
 import UserEditModal from "../components/UserEditModal";
 import { usePaginatedFirestore } from "../hooks/usePaginatedFirestore";
 import Pagination from "../components/Pagination";
+
+type PaginatedUser = User & { id: string };
 
 const RoleBadge: React.FC<{ role: User["role"] }> = ({ role }) => {
   const roleConfig = {
@@ -53,7 +55,7 @@ const AdminCustomersScreen: React.FC = () => {
   const { showToast } = useToast();
   const [searchTerm, setSearchTerm] = useState("");
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
-  const [editingUser, setEditingUser] = useState<User | null>(null);
+  const [editingUser, setEditingUser] = useState<PaginatedUser | null>(null);
   const [isSaving, setIsSaving] = useState(false);
 
   const {
@@ -65,9 +67,7 @@ const AdminCustomersScreen: React.FC = () => {
     hasPrevPage,
     requestSort,
     sortConfig,
-    // FIX: The User type does not satisfy the constraint '{ id: string; }'.
-    // Intersecting User with { id: string } to satisfy the hook's constraint.
-  } = usePaginatedFirestore<User & { id: string }>("users", {
+  } = usePaginatedFirestore<PaginatedUser>("users", {
     key: "name",
     direction: "ascending",
   });
@@ -75,23 +75,24 @@ const AdminCustomersScreen: React.FC = () => {
   const filteredUsers = useMemo(() => {
     if (!searchTerm) return paginatedUsers;
     return paginatedUsers.filter(
-      (user) =>
+      (user: PaginatedUser) =>
         user.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
         (user.email || "").toLowerCase().includes(searchTerm.toLowerCase()) ||
         (user.phone || "").includes(searchTerm)
     );
   }, [paginatedUsers, searchTerm]);
 
-  const handleOpenEditModal = (user: User) => {
+  const handleOpenEditModal = (user: PaginatedUser) => {
     setEditingUser(user);
     setIsEditModalOpen(true);
   };
 
-  const handleSaveUser = async (updatedUser: User) => {
+  const handleSaveUser = async (updatedUser: PaginatedUser) => {
     if (!editingUser) return;
     setIsSaving(true);
     try {
-      await updateDoc(doc(db, "users", editingUser.uid), updatedUser);
+      const { id, ...userData } = updatedUser;
+      await updateDoc(doc(db, "users", editingUser.uid), userData);
       showToast("User details updated successfully!", "success");
       setIsEditModalOpen(false);
       setEditingUser(null);
@@ -162,8 +163,7 @@ const AdminCustomersScreen: React.FC = () => {
               <table className="w-full text-right">
                 <thead className="border-b-2 border-slate-100 dark:border-slate-700">
                   <tr>
-                    {/* FIX: Updating generic type to match the data from usePaginatedFirestore */}
-                    <SortableHeader<User & { id: string }>
+                    <SortableHeader<PaginatedUser>
                       label="المستخدم"
                       sortKey="name"
                       requestSort={requestSort}
@@ -178,7 +178,7 @@ const AdminCustomersScreen: React.FC = () => {
                   </tr>
                 </thead>
                 <tbody>
-                  {filteredUsers.map((user, index) => {
+                  {filteredUsers.map((user: PaginatedUser, index: number) => {
                     const permissions = getManagementPermissions(user);
                     return (
                       <tr
@@ -260,7 +260,7 @@ const AdminCustomersScreen: React.FC = () => {
 
             {/* Mobile Card View */}
             <div className="space-y-4 md:hidden">
-              {filteredUsers.map((user) => {
+              {filteredUsers.map((user: PaginatedUser) => {
                 const permissions = getManagementPermissions(user);
                 return (
                   <div
