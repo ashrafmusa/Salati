@@ -3,7 +3,6 @@ import { NavLink, useLocation } from "react-router-dom";
 import {
   DashboardIcon,
   OrdersIcon,
-  BundlesIcon,
   CustomersIcon,
   LogoutIcon,
   MenuIcon,
@@ -46,9 +45,9 @@ const navLinks: NavLinkItem[] = [
     roles: ["sub-admin", "admin", "super-admin"],
   },
   {
-    to: "/bundles",
-    label: "إدارة الحزم",
-    icon: BundlesIcon,
+    to: "/products",
+    label: "إدارة المنتجات",
+    icon: PackageIcon,
     roles: ["admin", "super-admin"],
   },
   {
@@ -67,12 +66,6 @@ const navLinks: NavLinkItem[] = [
     to: "/users",
     label: "إدارة المستخدمين",
     icon: CustomersIcon,
-    roles: ["super-admin"],
-  },
-  {
-    to: "/items",
-    label: "إدارة الأصناف",
-    icon: PackageIcon,
     roles: ["super-admin"],
   },
   {
@@ -120,7 +113,6 @@ const Sidebar: React.FC<{
     "/categories",
     "/extras",
     "/settings",
-    "/items",
     "/reports",
     "/audit-log",
   ];

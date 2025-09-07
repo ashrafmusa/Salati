@@ -17,8 +17,7 @@ const AdminDashboardScreen = lazy(
   () => import("./screens/AdminDashboardScreen")
 );
 const AdminOrdersScreen = lazy(() => import("./screens/AdminOrdersScreen"));
-const AdminBundlesScreen = lazy(() => import("./screens/AdminProductsScreen"));
-const AdminItemsScreen = lazy(() => import("./screens/AdminItemsScreen"));
+const AdminProductsScreen = lazy(() => import("./screens/AdminProductsScreen")); // Unified products screen
 const AdminCustomersScreen = lazy(
   () => import("./screens/AdminCustomersScreen")
 );
@@ -68,7 +67,7 @@ const ProtectedAdminRoutes: React.FC = () => {
         {/* Routes for admin and super-admin */}
         {(user.role === "admin" || user.role === "super-admin") && (
           <>
-            <Route path="/bundles" element={<AdminBundlesScreen />} />
+            <Route path="/products" element={<AdminProductsScreen />} />
             <Route path="/offers" element={<AdminOffersScreen />} />
             <Route path="/drivers" element={<AdminDriversScreen />} />
           </>
@@ -78,7 +77,6 @@ const ProtectedAdminRoutes: React.FC = () => {
         {user.role === "super-admin" && (
           <>
             <Route path="/users" element={<AdminCustomersScreen />} />
-            <Route path="/items" element={<AdminItemsScreen />} />
             <Route path="/categories" element={<AdminCategoriesScreen />} />
             <Route path="/extras" element={<AdminExtrasScreen />} />
             <Route path="/settings" element={<AdminSettingsScreen />} />

@@ -8,12 +8,64 @@ import { getOptimizedImageUrl, uploadToCloudinary } from "../utils/helpers";
 import { useAuth } from "../hooks/useAuth";
 import { logAdminAction } from "../utils/auditLogger";
 
+type SettingsTab = "general" | "theme" | "announcement";
+
+const ThemePreview: React.FC<{ theme: Partial<ThemeSettings> }> = ({
+  theme,
+}) => {
+  const previewStyle = {
+    "--preview-primary": theme.primaryColor || "#007A33",
+    "--preview-secondary": theme.secondaryColor || "#D21034",
+    fontFamily: theme.sansFont || "Almarai",
+  } as React.CSSProperties;
+
+  return (
+    <div
+      style={previewStyle}
+      className="bg-slate-100 dark:bg-slate-900 p-4 rounded-lg border dark:border-slate-700"
+    >
+      <h4 className="font-bold text-slate-700 dark:text-slate-200 mb-4">
+        معاينة حية
+      </h4>
+      <div className="bg-white dark:bg-slate-800 p-4 rounded-md shadow-sm">
+        <h5
+          style={{
+            fontFamily: theme.displayFont || "Montserrat",
+            color: "var(--preview-primary)",
+          }}
+          className="text-lg font-bold"
+        >
+          عنوان المنتج
+        </h5>
+        <p className="text-sm text-slate-600 dark:text-slate-300 mt-1">
+          هذا النص يظهر بالخط المختار للنصوص العامة.
+        </p>
+        <div className="flex justify-between items-center mt-3">
+          <span
+            style={{ color: "var(--preview-secondary)" }}
+            className="text-xl font-bold"
+          >
+            1,234 ج.س
+          </span>
+          <button
+            style={{ backgroundColor: "var(--preview-primary)" }}
+            className="text-white font-semibold px-4 py-2 rounded-md text-sm"
+          >
+            أضف للسلة
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+};
+
 const AdminSettingsScreen: React.FC = () => {
   const { user: adminUser } = useAuth();
   const [settings, setSettings] = useState<Partial<StoreSettings>>({});
   const [loading, setLoading] = useState(true);
   const [isSaving, setIsSaving] = useState(false);
   const [isUploading, setIsUploading] = useState(false);
+  const [activeTab, setActiveTab] = useState<SettingsTab>("general");
   const { showToast } = useToast();
 
   const settingsRef = useMemo(() => doc(db, "settings", "store"), []);
@@ -32,23 +84,11 @@ const AdminSettingsScreen: React.FC = () => {
       (docSnap) => {
         if (docSnap.exists()) {
           setSettings(docSnap.data() as StoreSettings);
-        } else {
-          setSettings({
-            deliveryFee: 0,
-            logoUrl: "",
-            storeAddress: "",
-            announcementText: "",
-            isAnnouncementActive: false,
-          });
         }
         setLoading(false);
       },
-      (err) => {
-        console.error("Error fetching settings:", err);
-        setLoading(false);
-      }
+      () => setLoading(false)
     );
-
     return () => unsubscribe();
   }, [settingsRef]);
 
@@ -58,7 +98,6 @@ const AdminSettingsScreen: React.FC = () => {
     >
   ) => {
     const { name, value, type } = e.target;
-
     const themeProperties = [
       "primaryColor",
       "secondaryColor",
@@ -68,14 +107,13 @@ const AdminSettingsScreen: React.FC = () => {
     if (themeProperties.includes(name)) {
       setSettings((prev) => ({
         ...prev,
-        theme: {
-          ...(prev.theme as ThemeSettings),
-          [name]: value,
-        },
+        theme: { ...(prev.theme as ThemeSettings), [name]: value },
       }));
     } else if (type === "checkbox") {
-      const { checked } = e.target as HTMLInputElement;
-      setSettings((prev) => ({ ...prev, [name]: checked }));
+      setSettings((prev) => ({
+        ...prev,
+        [name]: (e.target as HTMLInputElement).checked,
+      }));
     } else {
       setSettings((prev) => ({
         ...prev,
@@ -87,7 +125,6 @@ const AdminSettingsScreen: React.FC = () => {
   const handleLogoChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file) return;
-
     setIsUploading(true);
     try {
       const url = await uploadToCloudinary(file);
@@ -108,7 +145,6 @@ const AdminSettingsScreen: React.FC = () => {
       logAdminAction(adminUser, "Updated Store Settings");
       showToast("Settings saved successfully!", "success");
     } catch (error) {
-      console.error("Error saving settings:", error);
       showToast("Failed to save settings.", "error");
     } finally {
       setIsSaving(false);
@@ -118,46 +154,81 @@ const AdminSettingsScreen: React.FC = () => {
   const inputClasses =
     "w-full p-2 border rounded-md bg-white dark:bg-slate-700 text-slate-900 dark:text-slate-100 border-slate-300 dark:border-slate-600 focus:ring-admin-primary focus:border-admin-primary";
 
-  if (loading) {
+  if (loading)
     return (
       <div className="flex justify-center items-center h-64">
-        <SpinnerIcon className="w-8 h-8 text-admin-primary animate-spin" />
+        <SpinnerIcon className="w-8 h-8 animate-spin" />
       </div>
     );
-  }
+
+  const TabButton: React.FC<{
+    tab: SettingsTab;
+    children: React.ReactNode;
+  }> = ({ tab, children }) => (
+    <button
+      type="button"
+      onClick={() => setActiveTab(tab)}
+      className={`px-4 py-2 text-sm font-semibold rounded-md ${
+        activeTab === tab
+          ? "bg-admin-primary text-white"
+          : "hover:bg-slate-100 dark:hover:bg-slate-700"
+      }`}
+    >
+      {children}
+    </button>
+  );
 
   return (
-    <div className="max-w-2xl mx-auto">
-      <form onSubmit={handleSave} className="space-y-6">
-        <div className="bg-white dark:bg-slate-800 p-6 rounded-lg shadow-md">
-          <h2 className="text-2xl font-bold text-slate-800 dark:text-slate-100 mb-6">
-            إعدادات المتجر العامة
-          </h2>
-          <div className="space-y-6">
+    <form
+      onSubmit={handleSave}
+      className="bg-white dark:bg-slate-800 rounded-lg shadow-md"
+    >
+      <div className="p-4 border-b dark:border-slate-700">
+        <div className="flex items-center justify-between">
+          <h2 className="text-xl font-bold">إعدادات المتجر</h2>
+          <button
+            type="submit"
+            disabled={isSaving || isUploading}
+            className="px-6 py-2 bg-admin-primary text-white rounded-md w-28"
+          >
+            {isSaving ? (
+              <SpinnerIcon className="w-5 h-5 animate-spin mx-auto" />
+            ) : (
+              "حفظ"
+            )}
+          </button>
+        </div>
+        <div className="mt-4 flex items-center gap-2 border-b border-slate-200 dark:border-slate-700">
+          <TabButton tab="general">عام</TabButton>
+          <TabButton tab="theme">المظهر</TabButton>
+          <TabButton tab="announcement">الإعلان</TabButton>
+        </div>
+      </div>
+
+      <div className="p-6">
+        {activeTab === "general" && (
+          <div className="space-y-6 animate-fade-in">
             <div>
               <label
                 htmlFor="deliveryFee"
-                className="block text-sm font-medium text-slate-700 dark:text-slate-300"
+                className="block text-sm font-medium"
               >
-                رسوم التوصيل الافتراضية (بالجنيه السوداني)
+                رسوم التوصيل
               </label>
               <input
-                type="number"
                 id="deliveryFee"
                 name="deliveryFee"
                 value={settings.deliveryFee ?? ""}
                 onChange={handleInputChange}
                 className={`${inputClasses} mt-1`}
-                placeholder="e.g., 500"
               />
             </div>
-
             <div>
               <label
                 htmlFor="storeAddress"
-                className="block text-sm font-medium text-slate-700 dark:text-slate-300"
+                className="block text-sm font-medium"
               >
-                عنوان المتجر (للاستلام)
+                عنوان المتجر
               </label>
               <textarea
                 id="storeAddress"
@@ -166,35 +237,24 @@ const AdminSettingsScreen: React.FC = () => {
                 onChange={handleInputChange}
                 rows={3}
                 className={`${inputClasses} mt-1`}
-                placeholder="e.g., Khartoum, Al-Amarat, Street 15"
               />
-              <p className="text-xs text-slate-500 dark:text-slate-400 mt-1">
-                سيظهر هذا العنوان للعملاء الذين يختارون استلام طلباتهم من
-                المتجر.
-              </p>
             </div>
-
             <div>
-              <label className="block text-sm font-medium text-slate-700 dark:text-slate-300">
-                شعار التطبيق
-              </label>
+              <label className="block text-sm font-medium">شعار التطبيق</label>
               <div className="mt-2 flex items-center gap-4">
                 <img
-                  src={getOptimizedImageUrl(
-                    settings.logoUrl || "https://via.placeholder.com/150",
-                    200
-                  )}
+                  src={getOptimizedImageUrl(settings.logoUrl || "", 200)}
                   alt="Logo Preview"
-                  className="w-24 h-24 rounded-full object-contain shadow-sm bg-slate-100 dark:bg-slate-700"
+                  className="w-24 h-24 rounded-full object-contain"
                 />
                 <label
                   htmlFor="logo-upload"
-                  className="cursor-pointer bg-white dark:bg-slate-700 text-slate-700 dark:text-slate-200 font-semibold py-2 px-4 border border-slate-300 dark:border-slate-600 rounded-md hover:bg-slate-50 dark:hover:bg-slate-600 transition-colors flex items-center justify-center w-32 h-10"
+                  className="cursor-pointer py-2 px-4 border rounded-md"
                 >
                   {isUploading ? (
                     <SpinnerIcon className="w-5 h-5 animate-spin" />
                   ) : (
-                    <span>تغيير الشعار</span>
+                    "تغيير الشعار"
                   )}
                 </label>
                 <input
@@ -202,72 +262,51 @@ const AdminSettingsScreen: React.FC = () => {
                   type="file"
                   className="hidden"
                   onChange={handleLogoChange}
-                  accept="image/png, image/jpeg, image/svg+xml"
                   disabled={isUploading}
                 />
               </div>
-              <p className="text-xs text-slate-500 dark:text-slate-400 mt-1">
-                سيظهر هذا الشعار في رأس الموقع.
-              </p>
             </div>
           </div>
-        </div>
-
-        <div className="bg-white dark:bg-slate-800 p-6 rounded-lg shadow-md">
-          <h2 className="text-2xl font-bold text-slate-800 dark:text-slate-100 mb-6">
-            تخصيص المظهر
-          </h2>
-          <div className="space-y-6">
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-              <div>
-                <label
-                  htmlFor="primaryColor"
-                  className="block text-sm font-medium text-slate-700 dark:text-slate-300"
-                >
-                  اللون الأساسي
-                </label>
-                <div className="relative mt-1 flex items-center gap-3">
+        )}
+        {activeTab === "theme" && (
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6 animate-fade-in">
+            <div className="space-y-6">
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <label
+                    htmlFor="primaryColor"
+                    className="block text-sm font-medium"
+                  >
+                    اللون الأساسي
+                  </label>
                   <input
-                    type="color"
                     id="primaryColor"
                     name="primaryColor"
                     value={settings.theme?.primaryColor || "#000000"}
                     onChange={handleInputChange}
-                    className="p-0 h-10 w-12 block bg-white dark:bg-slate-700 border-none rounded-md cursor-pointer"
-                  />
-                  <span className="font-mono text-slate-500">
-                    {settings.theme?.primaryColor}
-                  </span>
-                </div>
-              </div>
-              <div>
-                <label
-                  htmlFor="secondaryColor"
-                  className="block text-sm font-medium text-slate-700 dark:text-slate-300"
-                >
-                  اللون الثانوي
-                </label>
-                <div className="relative mt-1 flex items-center gap-3">
-                  <input
                     type="color"
+                    className="w-full h-10 mt-1"
+                  />
+                </div>
+                <div>
+                  <label
+                    htmlFor="secondaryColor"
+                    className="block text-sm font-medium"
+                  >
+                    اللون الثانوي
+                  </label>
+                  <input
                     id="secondaryColor"
                     name="secondaryColor"
                     value={settings.theme?.secondaryColor || "#000000"}
                     onChange={handleInputChange}
-                    className="p-0 h-10 w-12 block bg-white dark:bg-slate-700 border-none rounded-md cursor-pointer"
+                    type="color"
+                    className="w-full h-10 mt-1"
                   />
-                  <span className="font-mono text-slate-500">
-                    {settings.theme?.secondaryColor}
-                  </span>
                 </div>
               </div>
-            </div>
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
               <div>
-                <label
-                  htmlFor="sansFont"
-                  className="block text-sm font-medium text-slate-700 dark:text-slate-300"
-                >
+                <label htmlFor="sansFont" className="block text-sm font-medium">
                   خط النصوص
                 </label>
                 <select
@@ -287,7 +326,7 @@ const AdminSettingsScreen: React.FC = () => {
               <div>
                 <label
                   htmlFor="displayFont"
-                  className="block text-sm font-medium text-slate-700 dark:text-slate-300"
+                  className="block text-sm font-medium"
                 >
                   خط العناوين
                 </label>
@@ -306,64 +345,47 @@ const AdminSettingsScreen: React.FC = () => {
                 </select>
               </div>
             </div>
+            <ThemePreview theme={settings.theme || {}} />
           </div>
-        </div>
-
-        <div className="bg-white dark:bg-slate-800 p-6 rounded-lg shadow-md">
-          <h2 className="text-2xl font-bold text-slate-800 dark:text-slate-100 mb-6">
-            إعلان الموقع
-          </h2>
-          <div className="space-y-6">
+        )}
+        {activeTab === "announcement" && (
+          <div className="space-y-6 animate-fade-in">
             <div>
               <label
                 htmlFor="announcementText"
-                className="block text-sm font-medium text-slate-700 dark:text-slate-300"
+                className="block text-sm font-medium"
               >
                 نص الإعلان
               </label>
               <input
-                type="text"
                 id="announcementText"
                 name="announcementText"
                 value={settings.announcementText || ""}
                 onChange={handleInputChange}
                 className={`${inputClasses} mt-1`}
-                placeholder="e.g., توصيل مجاني للطلبات فوق 10,000 ج.س!"
               />
             </div>
-            <div className="flex items-center gap-3">
-              <label className="relative inline-flex items-center cursor-pointer">
-                <input
-                  type="checkbox"
-                  name="isAnnouncementActive"
-                  checked={settings.isAnnouncementActive || false}
-                  onChange={handleInputChange}
-                  className="sr-only peer"
-                />
-                <div className="w-11 h-6 bg-gray-200 peer-focus:outline-none rounded-full peer dark:bg-gray-700 peer-checked:after:translate-x-full after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-admin-primary"></div>
-              </label>
-              <span className="text-sm font-medium text-slate-700 dark:text-slate-300">
+            <div className="flex items-center gap-2">
+              <input
+                id="isAnnouncementActive"
+                name="isAnnouncementActive"
+                type="checkbox"
+                checked={settings.isAnnouncementActive || false}
+                onChange={handleInputChange}
+                className="h-4 w-4 rounded"
+              />
+              <label
+                htmlFor="isAnnouncementActive"
+                className="text-sm font-medium"
+              >
                 تفعيل شريط الإعلان
-              </span>
+              </label>
             </div>
           </div>
-        </div>
-
-        <div className="flex justify-end pt-4">
-          <button
-            type="submit"
-            disabled={isSaving || isUploading}
-            className="px-6 py-2 bg-admin-primary text-white font-semibold rounded-lg hover:bg-admin-primary-hover transition-colors disabled:bg-slate-400 flex items-center justify-center w-32"
-          >
-            {isSaving ? (
-              <SpinnerIcon className="w-5 h-5 animate-spin" />
-            ) : (
-              "حفظ التغييرات"
-            )}
-          </button>
-        </div>
-      </form>
-    </div>
+        )}
+      </div>
+    </form>
   );
 };
+
 export default AdminSettingsScreen;
