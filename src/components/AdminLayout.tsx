@@ -18,6 +18,7 @@ import {
   UserCircleIcon,
   ChartBarIcon,
   ClipboardListIcon,
+  ChevronDoubleLeftIcon,
 } from "../assets/adminIcons";
 import AdminNotifications from "./AdminNotifications";
 import ThemeToggle from "./ThemeToggle";
@@ -101,9 +102,16 @@ const navLinks: NavLinkItem[] = [
 ];
 
 const Sidebar: React.FC<{
-  isOpen: boolean;
-  setIsOpen: (isOpen: boolean) => void;
-}> = ({ isOpen, setIsOpen }) => {
+  isMobileOpen: boolean;
+  setMobileOpen: (isOpen: boolean) => void;
+  isDesktopCollapsed: boolean;
+  setDesktopCollapsed: (isCollapsed: boolean) => void;
+}> = ({
+  isMobileOpen,
+  setMobileOpen,
+  isDesktopCollapsed,
+  setDesktopCollapsed,
+}) => {
   const { user, logout } = useAuth();
   const location = useLocation();
 
@@ -117,60 +125,93 @@ const Sidebar: React.FC<{
     "/audit-log",
   ];
 
-  // Regular links visible to all admins based on their role
-  const mainNavLinks = navLinks.filter((link) => {
-    if (!user || !link.roles.find((r) => r === user.role)) return false;
-    if (isSuperAdmin && superAdminPaths.includes(link.to)) return false;
-    return true;
-  });
-
-  // Links that only appear in the "Super Admin" section
-  const superAdminNavLinks = navLinks.filter((link) => {
-    if (!isSuperAdmin) return false;
-    return superAdminPaths.includes(link.to);
-  });
+  // FIX: Added a check for `user.role !== 'customer'` to satisfy TypeScript's type narrowing.
+  // The `user.role` from `useAuth` includes 'customer', which is not a valid role for admin navigation links.
+  // This check ensures type safety before calling `link.roles.includes()`.
+  const mainNavLinks = navLinks.filter(
+    (link) =>
+      user &&
+      user.role !== "customer" &&
+      link.roles.includes(user.role) &&
+      !superAdminPaths.includes(link.to)
+  );
+  const superAdminNavLinks = navLinks.filter(
+    (link) => isSuperAdmin && superAdminPaths.includes(link.to)
+  );
 
   useEffect(() => {
-    if (isOpen) {
-      setIsOpen(false);
+    if (isMobileOpen) {
+      setMobileOpen(false);
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [location]);
+  }, [location.pathname]);
 
-  const handleLogout = () => {
-    logout();
-  };
-
-  const linkBaseClasses =
-    "relative flex items-center px-4 py-3 my-1 rounded-md transition-all duration-200 group overflow-hidden";
-  const inactiveLinkClasses =
-    "text-gray-300 hover:bg-admin-sidebar-hover hover:text-white";
+  const NavItem: React.FC<{ link: NavLinkItem }> = ({ link }) => (
+    <NavLink
+      to={link.to}
+      end={link.to === "/"}
+      className={({ isActive }) =>
+        `relative flex items-center p-3 my-1 rounded-md transition-colors duration-200 group
+        ${
+          isActive
+            ? "bg-admin-primary/20 text-white font-bold"
+            : "text-gray-300 hover:bg-admin-sidebar-hover hover:text-white"
+        }`
+      }
+    >
+      <link.icon className="w-6 h-6 flex-shrink-0" />
+      <span
+        className={`mr-4 transition-opacity duration-200 ${
+          isDesktopCollapsed ? "opacity-0" : "opacity-100"
+        }`}
+      >
+        {link.label}
+      </span>
+      {isDesktopCollapsed && (
+        <span className="absolute left-full ml-4 w-auto p-2 min-w-max rounded-md shadow-md bg-slate-800 text-white text-xs font-bold transition-all duration-100 scale-0 origin-left group-hover:scale-100 z-50">
+          {link.label}
+        </span>
+      )}
+    </NavLink>
+  );
 
   return (
     <>
       <div
         className={`fixed inset-0 bg-black/60 z-30 md:hidden transition-opacity duration-300 ${
-          isOpen ? "opacity-100" : "opacity-0 pointer-events-none"
+          isMobileOpen ? "opacity-100" : "opacity-0 pointer-events-none"
         }`}
-        onClick={() => setIsOpen(false)}
-      ></div>
+        onClick={() => setMobileOpen(false)}
+      />
 
       <aside
-        className={`w-60 sm:w-64 bg-admin-sidebar text-admin-sidebar-text flex flex-col fixed h-full z-40 transition-transform duration-300 ease-in-out md:translate-x-0 ${
-          isOpen ? "translate-x-0" : "translate-x-full"
-        }`}
+        className={`bg-admin-sidebar text-admin-sidebar-text flex flex-col fixed h-full z-40 transition-all duration-300 ease-in-out
+        md:translate-x-0 ${isMobileOpen ? "translate-x-0" : "translate-x-full"}
+        ${isDesktopCollapsed ? "md:w-20" : "md:w-64"}`}
       >
-        <div className="h-16 flex items-center justify-between px-4 text-2xl font-bold text-white border-b border-white/10">
-          <a href="./admin.html#/">Salati Admin</a>
+        <div
+          className={`h-16 flex items-center border-b border-white/10 ${
+            isDesktopCollapsed ? "justify-center" : "justify-between px-4"
+          }`}
+        >
+          <a
+            href="./admin.html#/"
+            className={`text-2xl font-bold text-white whitespace-nowrap overflow-hidden transition-opacity duration-200 ${
+              isDesktopCollapsed ? "opacity-0" : "opacity-100"
+            }`}
+          >
+            Salati Admin
+          </a>
           <button
             className="md:hidden text-slate-400 hover:text-white"
-            onClick={() => setIsOpen(false)}
+            onClick={() => setMobileOpen(false)}
             aria-label="Close sidebar"
           >
             <CloseIcon className="w-6 h-6" />
           </button>
         </div>
-        <nav className="flex-grow p-4 overflow-y-auto">
+
+        <nav className="flex-grow p-3 overflow-y-auto overflow-x-hidden">
           <ul>
             {user?.role !== "driver" && (
               <li>
@@ -178,91 +219,97 @@ const Sidebar: React.FC<{
                   href="./index.html#/"
                   target="_blank"
                   rel="noopener noreferrer"
-                  className={`${linkBaseClasses} ${inactiveLinkClasses}`}
+                  className="relative flex items-center p-3 my-1 rounded-md transition-colors duration-200 group text-gray-300 hover:bg-admin-sidebar-hover hover:text-white"
                 >
-                  <EyeIcon className="w-6 h-6 ml-3 transition-transform group-hover:scale-110" />
-                  <span>عرض الموقع</span>
-                  <div className="absolute right-0 top-0 h-full w-1 bg-admin-primary transition-transform duration-300 ease-in-out scale-y-0 group-hover:scale-y-75"></div>
+                  <EyeIcon className="w-6 h-6 flex-shrink-0" />
+                  <span
+                    className={`mr-4 transition-opacity duration-200 ${
+                      isDesktopCollapsed ? "opacity-0" : "opacity-100"
+                    }`}
+                  >
+                    عرض الموقع
+                  </span>
+                  {isDesktopCollapsed && (
+                    <span className="absolute left-full ml-4 w-auto p-2 min-w-max rounded-md shadow-md bg-slate-800 text-white text-xs font-bold transition-all duration-100 scale-0 origin-left group-hover:scale-100 z-50">
+                      عرض الموقع
+                    </span>
+                  )}
                 </a>
               </li>
             )}
             {mainNavLinks.map((link) => (
               <li key={link.to}>
-                <NavLink
-                  to={link.to}
-                  end={link.to === "/"}
-                  className={({ isActive }) =>
-                    `${linkBaseClasses} ${
-                      isActive
-                        ? "bg-admin-primary/20 text-white font-bold"
-                        : inactiveLinkClasses
-                    }`
-                  }
-                >
-                  {({ isActive }) => (
-                    <>
-                      <link.icon className="w-6 h-6 ml-3 transition-transform group-hover:scale-110" />
-                      <span>{link.label}</span>
-                      <div
-                        className={`absolute right-0 top-0 h-full w-1 bg-admin-primary transition-transform duration-300 ease-in-out ${
-                          isActive
-                            ? "scale-y-100"
-                            : "scale-y-0 group-hover:scale-y-75"
-                        }`}
-                      ></div>
-                    </>
-                  )}
-                </NavLink>
+                <NavItem link={link} />
               </li>
             ))}
           </ul>
 
           {isSuperAdmin && (
             <div className="mt-4 pt-4 border-t border-white/10">
-              <h3 className="px-4 text-xs font-semibold uppercase text-slate-400 mb-2 flex items-center gap-2">
-                <ShieldCheckIcon className="w-5 h-5" />
-                <span>Super Admin Controls</span>
+              <h3
+                className={`px-2 text-xs font-semibold uppercase text-slate-400 mb-2 flex items-center gap-2 whitespace-nowrap transition-opacity duration-200 ${
+                  isDesktopCollapsed ? "opacity-0" : "opacity-100"
+                }`}
+              >
+                <ShieldCheckIcon className="w-5 h-5 flex-shrink-0" />
+                <span>Super Admin</span>
               </h3>
               <ul>
                 {superAdminNavLinks.map((link) => (
                   <li key={link.to}>
-                    <NavLink
-                      to={link.to}
-                      className={({ isActive }) =>
-                        `${linkBaseClasses} ${
-                          isActive
-                            ? "bg-admin-primary/20 text-white font-bold"
-                            : inactiveLinkClasses
-                        }`
-                      }
-                    >
-                      {({ isActive }) => (
-                        <>
-                          <link.icon className="w-6 h-6 ml-3 transition-transform group-hover:scale-110" />
-                          <span>{link.label}</span>
-                          <div
-                            className={`absolute right-0 top-0 h-full w-1 bg-admin-primary transition-transform duration-300 ease-in-out ${
-                              isActive
-                                ? "scale-y-100"
-                                : "scale-y-0 group-hover:scale-y-75"
-                            }`}
-                          ></div>
-                        </>
-                      )}
-                    </NavLink>
+                    <NavItem link={link} />
                   </li>
                 ))}
               </ul>
             </div>
           )}
         </nav>
-        <div className="p-4 border-t border-white/10">
+
+        <div className="p-3 border-t border-white/10">
+          <div className="flex items-center">
+            <UserCircleIcon
+              className={`w-10 h-10 text-slate-400 flex-shrink-0`}
+            />
+            <div
+              className={`mr-3 overflow-hidden whitespace-nowrap transition-opacity duration-200 ${
+                isDesktopCollapsed ? "opacity-0" : "opacity-100"
+              }`}
+            >
+              <p className="font-bold text-sm text-white truncate">
+                {user?.name}
+              </p>
+              <p className="text-xs text-slate-400 capitalize">
+                {user?.role.replace("-", " ")}
+              </p>
+            </div>
+          </div>
           <button
-            onClick={handleLogout}
-            className="flex items-center w-full text-right px-4 py-3 rounded-md text-slate-300 hover:bg-admin-sidebar-hover hover:text-white transition-colors duration-200"
+            onClick={logout}
+            className="relative flex items-center w-full mt-3 p-3 rounded-md text-slate-300 hover:bg-admin-sidebar-hover hover:text-white transition-colors duration-200 group"
           >
-            <LogoutIcon className="w-6 h-6 ml-3" />
-            <span>تسجيل الخروج</span>
+            <LogoutIcon className="w-6 h-6 flex-shrink-0" />
+            <span
+              className={`mr-4 transition-opacity duration-200 ${
+                isDesktopCollapsed ? "opacity-0" : "opacity-100"
+              }`}
+            >
+              تسجيل الخروج
+            </span>
+            {isDesktopCollapsed && (
+              <span className="absolute left-full ml-4 w-auto p-2 min-w-max rounded-md shadow-md bg-slate-800 text-white text-xs font-bold transition-all duration-100 scale-0 origin-left group-hover:scale-100 z-50">
+                تسجيل الخروج
+              </span>
+            )}
+          </button>
+          <button
+            onClick={() => setDesktopCollapsed(!isDesktopCollapsed)}
+            className="hidden md:flex items-center w-full mt-2 p-3 rounded-md text-slate-400 hover:bg-admin-sidebar-hover hover:text-white"
+          >
+            <ChevronDoubleLeftIcon
+              className={`w-6 h-6 transition-transform duration-300 ${
+                isDesktopCollapsed ? "rotate-180" : ""
+              }`}
+            />
           </button>
         </div>
       </aside>
@@ -270,7 +317,10 @@ const Sidebar: React.FC<{
   );
 };
 
-const Header: React.FC<{ onMenuClick: () => void }> = ({ onMenuClick }) => {
+const Header: React.FC<{
+  onMenuClick: () => void;
+  isDesktopCollapsed: boolean;
+}> = ({ onMenuClick, isDesktopCollapsed }) => {
   const location = useLocation();
   const { user } = useAuth();
 
@@ -291,10 +341,11 @@ const Header: React.FC<{ onMenuClick: () => void }> = ({ onMenuClick }) => {
   }
 
   return (
-    <header className="bg-white dark:bg-slate-800 shadow-md h-16 flex items-center justify-between px-4 md:px-8 sticky top-0 z-20 border-b dark:border-slate-700">
+    <header className="bg-white dark:bg-slate-800 shadow-sm h-16 flex items-center justify-between px-4 md:px-8 sticky top-0 z-20 border-b dark:border-slate-700">
       <div className="flex items-center gap-3">
         <button
-          className="md:hidden text-slate-500 dark:text-slate-300 hover:text-slate-800 dark:hover:text-white mr-1"
+          className={`text-slate-500 dark:text-slate-300 hover:text-slate-800 dark:hover:text-white mr-1
+                    ${isDesktopCollapsed ? "md:hidden" : "md:hidden"}`}
           onClick={onMenuClick}
         >
           <MenuIcon className="w-6 h-6" />
@@ -309,32 +360,32 @@ const Header: React.FC<{ onMenuClick: () => void }> = ({ onMenuClick }) => {
       <div className="flex items-center space-x-2 sm:space-x-4">
         {user?.role !== "driver" && <AdminNotifications />}
         <ThemeToggle />
-        {user && (
-          <div className="flex items-center gap-2 border-r border-slate-200 dark:border-slate-700 pr-2 sm:pr-4">
-            <div className="hidden sm:block text-right">
-              <p className="font-bold text-sm text-slate-800 dark:text-slate-100 truncate max-w-24">
-                {user.name}
-              </p>
-              <p className="text-xs text-slate-500 dark:text-slate-400 capitalize">
-                {user.role.replace("-", " ")}
-              </p>
-            </div>
-            <UserCircleIcon className="w-8 h-8 sm:w-10 sm:h-10 text-slate-500 dark:text-slate-400" />
-          </div>
-        )}
       </div>
     </header>
   );
 };
 
 const AdminLayout: React.FC<{ children: React.ReactNode }> = ({ children }) => {
-  const [isSidebarOpen, setIsSidebarOpen] = useState(false);
+  const [isMobileOpen, setMobileOpen] = useState(false);
+  const [isDesktopCollapsed, setDesktopCollapsed] = useState(false);
 
   return (
     <div className="flex h-screen bg-slate-100 dark:bg-slate-900 text-charcoal dark:text-slate-200">
-      <Sidebar isOpen={isSidebarOpen} setIsOpen={setIsSidebarOpen} />
-      <div className="flex-1 flex flex-col transition-all duration-300 md:mr-64">
-        <Header onMenuClick={() => setIsSidebarOpen(true)} />
+      <Sidebar
+        isMobileOpen={isMobileOpen}
+        setMobileOpen={setMobileOpen}
+        isDesktopCollapsed={isDesktopCollapsed}
+        setDesktopCollapsed={setDesktopCollapsed}
+      />
+      <div
+        className={`flex-1 flex flex-col transition-all duration-300 ${
+          isDesktopCollapsed ? "md:mr-20" : "md:mr-64"
+        }`}
+      >
+        <Header
+          onMenuClick={() => setMobileOpen(true)}
+          isDesktopCollapsed={isDesktopCollapsed}
+        />
         <main className="flex-1 flex flex-col p-4 md:p-8 overflow-hidden">
           <div
             key={useLocation().pathname}
@@ -348,7 +399,7 @@ const AdminLayout: React.FC<{ children: React.ReactNode }> = ({ children }) => {
           Reserved.
         </footer>
       </div>
-      <AdminNavigationBar onMenuClick={() => setIsSidebarOpen(true)} />
+      <AdminNavigationBar onMenuClick={() => setMobileOpen(true)} />
     </div>
   );
 };
