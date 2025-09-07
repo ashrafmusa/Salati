@@ -1,7 +1,7 @@
 
 import React, { useState, useMemo } from 'react';
 import { db } from '../firebase/config';
-import { collection, doc, updateDoc, deleteDoc } from "firebase/firestore";
+import { collection, doc, updateDoc, deleteDoc, writeBatch } from "firebase/firestore";
 import { User } from '../types';
 import { useAuth } from '../hooks/useAuth';
 import AdminScreenHeader from '../components/AdminScreenHeader';
@@ -11,6 +11,7 @@ import UserEditModal from '../components/UserEditModal';
 import { usePaginatedFirestore } from '../hooks/usePaginatedFirestore';
 import Pagination from '../components/Pagination';
 import TableSkeleton from '../components/TableSkeleton';
+import { logAdminAction } from '../utils/auditLogger';
 
 type PaginatedUser = User & { id: string };
 
@@ -37,6 +38,7 @@ const AdminCustomersScreen: React.FC = () => {
     const [isEditModalOpen, setIsEditModalOpen] = useState(false);
     const [editingUser, setEditingUser] = useState<PaginatedUser | null>(null);
     const [isSaving, setIsSaving] = useState(false);
+    const [selectedUserIds, setSelectedUserIds] = useState<Set<string>>(new Set());
 
     const initialSort = useMemo(() => ({ key: 'name' as const, direction: 'ascending' as const }), []);
 
@@ -71,6 +73,7 @@ const AdminCustomersScreen: React.FC = () => {
         try {
             const { id, ...userData } = updatedUser;
             await updateDoc(doc(db, 'users', editingUser.uid), userData);
+            logAdminAction(adminUser, 'Updated User Details', `User: ${userData.name}`);
             showToast('User details updated successfully!', 'success');
             setIsEditModalOpen(false);
             setEditingUser(null);
@@ -85,6 +88,7 @@ const AdminCustomersScreen: React.FC = () => {
     const handleRoleChange = async (uid: string, newRole: User['role']) => {
         try {
             await updateDoc(doc(db, 'users', uid), { role: newRole });
+            logAdminAction(adminUser, 'Changed User Role', `User ID: ${uid.slice(0, 5)}, New Role: ${newRole}`);
             showToast('User role updated successfully!', 'success');
         } catch (error) {
             console.error("Error updating user role:", error);
@@ -92,10 +96,32 @@ const AdminCustomersScreen: React.FC = () => {
         }
     };
 
+    const handleBulkRoleChange = async (newRole: User['role']) => {
+        if (selectedUserIds.size === 0) {
+            showToast("Please select users to update.", "info");
+            return;
+        }
+        const batch = writeBatch(db);
+        selectedUserIds.forEach(userId => {
+            const userRef = doc(db, 'users', userId);
+            batch.update(userRef, { role: newRole });
+        });
+        try {
+            await batch.commit();
+            logAdminAction(adminUser, 'Bulk Changed User Roles', `${selectedUserIds.size} users -> ${newRole}`);
+            showToast(`Updated ${selectedUserIds.size} users to role "${newRole}".`, 'success');
+            setSelectedUserIds(new Set());
+        } catch (error) {
+            console.error("Error updating users in bulk:", error);
+            showToast("Failed to update user roles.", 'error');
+        }
+    };
+
     const handleDeleteUser = async (uid: string, name: string) => {
         if (window.confirm(`Are you sure you want to delete the user "${name}"? This action is permanent and cannot be undone.`)) {
             try {
                 await deleteDoc(doc(db, 'users', uid));
+                logAdminAction(adminUser, 'Deleted User', `Name: ${name}`);
                 showToast(`User "${name}" deleted successfully.`, 'success');
             } catch (error) {
                 console.error("Error deleting user:", error);
@@ -103,6 +129,24 @@ const AdminCustomersScreen: React.FC = () => {
             }
         }
     };
+
+    const handleSelectUser = (userId: string, isSelected: boolean) => {
+        setSelectedUserIds(prev => {
+            const newSet = new Set(prev);
+            if (isSelected) newSet.add(userId);
+            else newSet.delete(userId);
+            return newSet;
+        });
+    };
+    
+    const handleSelectAll = (e: React.ChangeEvent<HTMLInputElement>) => {
+        if (e.target.checked) {
+            setSelectedUserIds(new Set(filteredUsers.map(u => u.uid)));
+        } else {
+            setSelectedUserIds(new Set());
+        }
+    };
+
 
     const getManagementPermissions = (targetUser: User): { canChangeRole: boolean; canDelete: boolean; canEdit: boolean } => {
         if (adminUser?.role !== 'super-admin') {
@@ -116,7 +160,6 @@ const AdminCustomersScreen: React.FC = () => {
         };
     };
 
-
     return (
         <div className="h-full flex flex-col bg-white dark:bg-slate-800 p-4 md:p-6 rounded-lg shadow-md">
             <AdminScreenHeader
@@ -126,120 +169,79 @@ const AdminCustomersScreen: React.FC = () => {
                 searchPlaceholder="ابحث بالاسم، الإيميل، أو الهاتف..."
             />
             
+            <div className="flex justify-end items-center mb-4">
+                 <select onChange={e => handleBulkRoleChange(e.target.value as User['role'])} disabled={selectedUserIds.size === 0} className="p-2 border rounded-lg bg-white dark:bg-slate-700 disabled:opacity-50 text-sm">
+                    <option>تغيير دور المحدد</option>
+                    <option value="customer">Customer</option>
+                    <option value="driver">Driver</option>
+                    <option value="sub-admin">Sub-Admin</option>
+                    <option value="admin">Admin</option>
+                </select>
+            </div>
+
             <div className="flex-grow overflow-y-auto">
                 {loading ? <TableSkeleton /> : (
-                <>
-                    {/* Desktop Table View */}
-                    <div className="overflow-x-auto hidden md:block">
-                        <table className="w-full text-right">
-                            <thead className="border-b-2 border-slate-100 dark:border-slate-700">
-                                <tr>
-                                    <SortableHeader<PaginatedUser> label="المستخدم" sortKey="name" requestSort={requestSort} sortConfig={sortConfig} />
-                                    <th className="p-3 text-sm font-semibold text-slate-500 dark:text-slate-400">رقم الهاتف / الإيميل</th>
-                                    <th className="p-3 text-sm font-semibold text-slate-500 dark:text-slate-400">إجراءات</th>
-                                </tr>
-                            </thead>
-                            <tbody>
-                                {filteredUsers.map((user: PaginatedUser, index: number) => {
-                                    const permissions = getManagementPermissions(user);
-                                    return (
-                                    <tr key={user.uid} className={`border-b dark:border-slate-700 transition-colors ${index % 2 === 0 ? 'bg-white dark:bg-slate-800' : 'bg-slate-50 dark:bg-slate-800/50'} hover:bg-sky-100/50 dark:hover:bg-sky-900/20`}>
-                                        <td className="p-3">
-                                            <div className="flex items-center gap-3">
-                                                <div className="w-10 h-10 bg-slate-200 dark:bg-slate-700 rounded-full flex items-center justify-center font-bold text-slate-500">{user.name.charAt(0).toUpperCase()}</div>
-                                                <div>
-                                                    <p className="font-medium text-slate-800 dark:text-slate-100">{user.name}</p>
+                <div className="overflow-x-auto">
+                    <table className="w-full text-right">
+                        <thead className="border-b-2 border-slate-100 dark:border-slate-700">
+                            <tr>
+                                <th className="p-3"><input type="checkbox" onChange={handleSelectAll} checked={selectedUserIds.size === filteredUsers.length && filteredUsers.length > 0} /></th>
+                                <SortableHeader<PaginatedUser> label="المستخدم" sortKey="name" requestSort={requestSort} sortConfig={sortConfig} />
+                                <th className="p-3 text-sm font-semibold text-slate-500 dark:text-slate-400">رقم الهاتف / الإيميل</th>
+                                <th className="p-3 text-sm font-semibold text-slate-500 dark:text-slate-400">إجراءات</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {filteredUsers.map((user: PaginatedUser, index: number) => {
+                                const permissions = getManagementPermissions(user);
+                                return (
+                                <tr key={user.uid} className={`border-b dark:border-slate-700 transition-colors ${selectedUserIds.has(user.uid) ? 'bg-sky-100/50 dark:bg-sky-900/20' : 'hover:bg-slate-50 dark:hover:bg-slate-700/50'}`}>
+                                    <td className="p-3"><input type="checkbox" checked={selectedUserIds.has(user.uid)} onChange={e => handleSelectUser(user.uid, e.target.checked)}/></td>
+                                    <td className="p-3">
+                                        <div className="flex items-center gap-3">
+                                            <div className="w-10 h-10 bg-slate-200 dark:bg-slate-700 rounded-full flex items-center justify-center font-bold text-slate-500">{user.name.charAt(0).toUpperCase()}</div>
+                                            <div>
+                                                <p className="font-medium text-slate-800 dark:text-slate-100">{user.name}</p>
+                                                <RoleBadge role={user.role} />
+                                            </div>
+                                        </div>
+                                    </td>
+                                    <td className="p-3 text-slate-600 dark:text-slate-300" dir="ltr">{user.phone || user.email}</td>
+                                    <td className="p-3">
+                                        <div className="flex items-center gap-4">
+                                            {permissions.canChangeRole ? (
+                                                <select
+                                                    value={user.role}
+                                                    onChange={(e) => handleRoleChange(user.uid, e.target.value as User['role'])}
+                                                    className={`p-1.5 w-32 rounded text-sm border-slate-300 dark:border-slate-600 focus:ring-admin-primary focus:border-admin-primary bg-white dark:bg-slate-700 text-slate-900 dark:text-slate-100`}
+                                                >
+                                                    <option value="customer">Customer</option>
+                                                    <option value="driver">Driver</option>
+                                                    <option value="sub-admin">Sub-Admin</option>
+                                                    <option value="admin">Admin</option>
+                                                </select>
+                                            ) : (
+                                                <div className="w-32">
                                                     <RoleBadge role={user.role} />
                                                 </div>
-                                            </div>
-                                        </td>
-                                        <td className="p-3 text-slate-600 dark:text-slate-300" dir="ltr">{user.phone || user.email}</td>
-                                        <td className="p-3">
-                                            <div className="flex items-center gap-4">
-                                                {permissions.canChangeRole ? (
-                                                    <select
-                                                        value={user.role}
-                                                        onChange={(e) => handleRoleChange(user.uid, e.target.value as User['role'])}
-                                                        className={`p-1.5 w-32 rounded text-sm border-slate-300 dark:border-slate-600 focus:ring-admin-primary focus:border-admin-primary bg-white dark:bg-slate-700 text-slate-900 dark:text-slate-100`}
-                                                    >
-                                                        <option value="customer">Customer</option>
-                                                        <option value="driver">Driver</option>
-                                                        <option value="sub-admin">Sub-Admin</option>
-                                                        <option value="admin">Admin</option>
-                                                        <option value="super-admin">Super Admin</option>
-                                                    </select>
-                                                ) : (
-                                                    <div className="w-32">
-                                                        <RoleBadge role={user.role} />
-                                                    </div>
-                                                )}
-                                                {permissions.canEdit && (
-                                                    <button onClick={() => handleOpenEditModal(user)} className="text-admin-primary hover:underline text-sm font-semibold">تعديل</button>
-                                                )}
-                                                <button
-                                                    onClick={() => handleDeleteUser(user.uid, user.name)}
-                                                    disabled={!permissions.canDelete}
-                                                    className="text-red-500 hover:underline text-sm font-semibold disabled:opacity-50 disabled:cursor-not-allowed"
-                                                >
-                                                    حذف
-                                                </button>
-                                            </div>
-                                        </td>
-                                    </tr>
-                                )})}
-                            </tbody>
-                        </table>
-                    </div>
-                    
-                    {/* Mobile Card View */}
-                    <div className="space-y-4 md:hidden">
-                        {filteredUsers.map((user: PaginatedUser) => {
-                            const permissions = getManagementPermissions(user);
-                            return (
-                            <div key={user.uid} className="bg-slate-50 dark:bg-slate-800/50 p-4 rounded-lg shadow-sm border dark:border-slate-700 space-y-3">
-                                <div>
-                                    <div className="flex justify-between items-start">
-                                        <p className="font-bold text-lg text-slate-800 dark:text-slate-100">{user.name}</p>
-                                        <RoleBadge role={user.role} />
-                                    </div>
-                                    <p className="text-sm text-slate-600 dark:text-slate-300 mt-1" dir="ltr">{user.phone || user.email}</p>
-                                </div>
-                                <div className="pt-3 border-t dark:border-slate-700 space-y-2">
-                                    <div className="flex items-center justify-between">
-                                        <label className="text-sm font-medium text-slate-600 dark:text-slate-300">الدور:</label>
-                                        {permissions.canChangeRole ? (
-                                            <select
-                                                value={user.role}
-                                                onChange={(e) => handleRoleChange(user.uid, e.target.value as User['role'])}
-                                                className={`p-1 w-36 rounded text-xs border-slate-300 dark:border-slate-600 focus:ring-admin-primary focus:border-admin-primary bg-white dark:bg-slate-700 text-slate-900 dark:text-slate-100`}
+                                            )}
+                                            {permissions.canEdit && (
+                                                <button onClick={() => handleOpenEditModal(user)} className="text-admin-primary hover:underline text-sm font-semibold">تعديل</button>
+                                            )}
+                                            <button
+                                                onClick={() => handleDeleteUser(user.uid, user.name)}
+                                                disabled={!permissions.canDelete}
+                                                className="text-red-500 hover:underline text-sm font-semibold disabled:opacity-50 disabled:cursor-not-allowed"
                                             >
-                                                <option value="customer">Customer</option>
-                                                <option value="driver">Driver</option>
-                                                <option value="sub-admin">Sub-Admin</option>
-                                                <option value="admin">Admin</option>
-                                                <option value="super-admin">Super Admin</option>
-                                            </select>
-                                        ) : (
-                                            <span className="text-sm font-semibold">{user.role}</span>
-                                        )}
-                                    </div>
-                                    <div className="flex justify-end gap-4 pt-2">
-                                        {permissions.canEdit && (
-                                            <button onClick={() => handleOpenEditModal(user)} className="text-admin-primary font-semibold">تعديل</button>
-                                        )}
-                                        <button
-                                            onClick={() => handleDeleteUser(user.uid, user.name)}
-                                            disabled={!permissions.canDelete}
-                                            className="text-red-500 font-semibold disabled:opacity-50 disabled:cursor-not-allowed"
-                                        >
-                                            حذف المستخدم
-                                        </button>
-                                    </div>
-                                </div>
-                            </div>
-                        )})}
-                    </div>
-                </>
+                                                حذف
+                                            </button>
+                                        </div>
+                                    </td>
+                                </tr>
+                            )})}
+                        </tbody>
+                    </table>
+                </div>
                 )}
             </div>
              <Pagination

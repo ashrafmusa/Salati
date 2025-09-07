@@ -1,6 +1,7 @@
+
 import React, { useState, useEffect } from 'react';
 import { NavLink, useLocation } from 'react-router-dom';
-import { DashboardIcon, OrdersIcon, BundlesIcon, CustomersIcon, LogoutIcon, MenuIcon, CloseIcon, GiftIcon, TruckIcon, EyeIcon, CategoryIcon, ShieldCheckIcon, BeakerIcon, CogIcon, PackageIcon, UserCircleIcon } from '../assets/adminIcons';
+import { DashboardIcon, OrdersIcon, BundlesIcon, CustomersIcon, LogoutIcon, MenuIcon, CloseIcon, GiftIcon, TruckIcon, EyeIcon, CategoryIcon, ShieldCheckIcon, BeakerIcon, CogIcon, PackageIcon, UserCircleIcon, ChartBarIcon, ClipboardListIcon } from '../assets/adminIcons';
 import AdminNotifications from './AdminNotifications';
 import ThemeToggle from './ThemeToggle';
 import { useAuth } from '../hooks/useAuth';
@@ -24,6 +25,8 @@ const navLinks: NavLinkItem[] = [
   { to: '/categories', label: 'إدارة الفئات', icon: CategoryIcon, roles: ['super-admin'] },
   { to: '/extras', label: 'إدارة الإضافات', icon: BeakerIcon, roles: ['super-admin'] },
   { to: '/settings', label: 'إعدادات المتجر', icon: CogIcon, roles: ['super-admin'] },
+  { to: '/reports', label: 'التقارير', icon: ChartBarIcon, roles: ['super-admin'] },
+  { to: '/audit-log', label: 'سجل التدقيق', icon: ClipboardListIcon, roles: ['super-admin'] },
 ];
 
 const Sidebar: React.FC<{ isOpen: boolean, setIsOpen: (isOpen: boolean) => void }> = ({ isOpen, setIsOpen }) => {
@@ -31,7 +34,7 @@ const Sidebar: React.FC<{ isOpen: boolean, setIsOpen: (isOpen: boolean) => void 
   const location = useLocation();
 
   const isSuperAdmin = user?.role === 'super-admin';
-  const superAdminPaths = ['/users', '/categories', '/extras', '/settings', '/items'];
+  const superAdminPaths = ['/users', '/categories', '/extras', '/settings', '/items', '/reports', '/audit-log'];
 
   // Regular links visible to all admins based on their role
   const mainNavLinks = navLinks.filter(link => {

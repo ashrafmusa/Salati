@@ -5,6 +5,7 @@ import { Outlet, useLocation } from 'react-router-dom';
 import NavigationBar from './NavigationBar';
 import WhatsAppButton from './WhatsAppButton';
 import Footer from './Footer';
+import AnnouncementBanner from './AnnouncementBanner';
 
 const MainLayout: React.FC = () => {
     const location = useLocation();
@@ -18,7 +19,7 @@ const MainLayout: React.FC = () => {
 
     return (
         <div className="bg-slate-50 dark:bg-slate-950 text-charcoal dark:text-slate-200 min-h-screen font-sans flex flex-col max-w-full overflow-x-hidden">
-            
+            <AnnouncementBanner />
             <div className={`flex-grow flex flex-col ${showNavBarOnPage ? 'pb-24 md:pb-0' : ''}`}>
                 <main className="flex-grow">
                     <div key={location.pathname} className="animate-fade-in">

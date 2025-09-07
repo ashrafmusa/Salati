@@ -33,6 +33,8 @@ const DEFAULT_SETTINGS: StoreSettings = {
   deliveryFee: 500,
   logoUrl: DEFAULT_LOGO_URL,
   storeAddress: "Please configure your store address in the admin panel.",
+  announcementText: "",
+  isAnnouncementActive: false,
 };
 
 export const SettingsProvider: React.FC<{ children: ReactNode }> = ({
@@ -54,6 +56,11 @@ export const SettingsProvider: React.FC<{ children: ReactNode }> = ({
             deliveryFee: data.deliveryFee ?? DEFAULT_SETTINGS.deliveryFee,
             logoUrl: data.logoUrl || DEFAULT_SETTINGS.logoUrl,
             storeAddress: data.storeAddress || DEFAULT_SETTINGS.storeAddress,
+            announcementText:
+              data.announcementText || DEFAULT_SETTINGS.announcementText,
+            isAnnouncementActive:
+              data.isAnnouncementActive ||
+              DEFAULT_SETTINGS.isAnnouncementActive,
           });
         } else {
           setSettings(DEFAULT_SETTINGS);

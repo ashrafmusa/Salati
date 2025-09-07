@@ -4,7 +4,7 @@ import { db } from '../firebase/config';
 import { collection, onSnapshot, doc, setDoc, updateDoc, deleteDoc } from "firebase/firestore";
 import { Item, Category } from '../types';
 import AdminScreenHeader from '../components/AdminScreenHeader';
-import { getOptimizedImageUrl, uploadToCloudinary } from '../utils/helpers';
+import { getOptimizedImageUrl, uploadToCloudinary, exportToCsv } from '../utils/helpers';
 import ConfirmationModal from '../components/ConfirmationModal';
 import { useToast } from '../contexts/ToastContext';
 import { SpinnerIcon, PackageIcon, PlusIcon } from '../assets/adminIcons';
@@ -12,6 +12,8 @@ import SortableHeader from '../components/SortableHeader';
 import { usePaginatedFirestore } from '../hooks/usePaginatedFirestore';
 import Pagination from '../components/Pagination';
 import TableSkeleton from '../components/TableSkeleton';
+import { logAdminAction } from '../utils/auditLogger';
+import { useAuth } from '../hooks/useAuth';
 
 const ItemFormModal: React.FC<{
     item?: Item | null;
@@ -38,6 +40,7 @@ const ItemFormModal: React.FC<{
                 price: 0,
                 stock: 0,
                 imageUrl: '',
+                isFeatured: false,
             });
         }
     }, [item]);
@@ -45,8 +48,13 @@ const ItemFormModal: React.FC<{
     const inputClasses = "w-full p-2 border rounded-md bg-white dark:bg-slate-700 text-slate-900 dark:text-slate-100 border-slate-300 dark:border-slate-600 focus:ring-admin-primary focus:border-admin-primary";
 
     const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) => {
-        const { name, value } = e.target;
-        setFormData(prev => ({ ...prev, [name]: (name === 'price' || name === 'stock') ? Number(value) : value }));
+        const { name, value, type } = e.target;
+        if (type === 'checkbox') {
+            const { checked } = e.target as HTMLInputElement;
+            setFormData(prev => ({...prev, [name]: checked }));
+        } else {
+            setFormData(prev => ({ ...prev, [name]: (name === 'price' || name === 'stock') ? Number(value) : value }));
+        }
     };
 
     const handleImageChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -100,6 +108,10 @@ const ItemFormModal: React.FC<{
                             <input id="image-upload" type="file" className="hidden" onChange={handleImageChange} accept="image/*" disabled={isUploading}/>
                         </div>
                     </div>
+                     <div className="flex items-center gap-2">
+                        <input type="checkbox" id="isFeatured" name="isFeatured" checked={formData.isFeatured || false} onChange={handleChange} className="h-4 w-4 rounded border-gray-300 text-admin-primary focus:ring-admin-primary"/>
+                        <label htmlFor="isFeatured" className="text-sm font-medium text-slate-700 dark:text-slate-300">عرض في الصفحة الرئيسية</label>
+                    </div>
                     <div className="flex justify-end gap-4 pt-4">
                         <button type="button" onClick={onClose} className="px-6 py-2 bg-slate-200 rounded-md">إلغاء</button>
                         <button type="submit" className="px-6 py-2 bg-admin-primary text-white rounded-md" disabled={isSaving || isUploading}>
@@ -114,6 +126,7 @@ const ItemFormModal: React.FC<{
 
 
 const AdminItemsScreen: React.FC = () => {
+    const { user: adminUser } = useAuth();
     const [categories, setCategories] = useState<Category[]>([]);
     const [searchTerm, setSearchTerm] = useState('');
     const [isModalOpen, setIsModalOpen] = useState(false);
@@ -152,6 +165,7 @@ const AdminItemsScreen: React.FC = () => {
     const handleSaveItem = async (itemToSave: Item) => {
         setIsSaving(true);
         const { id, ...itemData } = itemToSave;
+        const actionType = editingItem ? 'Updated Item' : 'Created Item';
         try {
             if (editingItem) {
                 await updateDoc(doc(db, 'items', id), itemData);
@@ -160,6 +174,7 @@ const AdminItemsScreen: React.FC = () => {
                 await setDoc(doc(db, 'items', id), itemData);
                 showToast('Item added!', 'success');
             }
+            logAdminAction(adminUser, actionType, `Name: ${itemData.arabicName}`);
         } catch (error) {
             showToast('Failed to save item.', 'error');
         }
@@ -167,10 +182,26 @@ const AdminItemsScreen: React.FC = () => {
         setIsModalOpen(false);
     };
 
+    const handleToggleFeatured = async (item: Item) => {
+        try {
+            const newStatus = !item.isFeatured;
+            await updateDoc(doc(db, 'items', item.id), { isFeatured: newStatus });
+            logAdminAction(adminUser, 'Toggled Featured Item', `Item: ${item.arabicName}, Status: ${newStatus ? 'Featured' : 'Not Featured'}`);
+            showToast(`Item is now ${newStatus ? 'featured' : 'not featured'}.`, 'success');
+        } catch (error) {
+             showToast('Failed to update item.', 'error');
+        }
+    };
+    
+    const handleExport = () => {
+        exportToCsv(paginatedItems, `items_catalog_${new Date().toISOString().split('T')[0]}.csv`);
+    };
+
     const confirmDelete = async () => {
         if (!itemToDelete) return;
         try {
             await deleteDoc(doc(db, 'items', itemToDelete.id));
+            logAdminAction(adminUser, 'Deleted Item', `Name: ${itemToDelete.arabicName}`);
             showToast('Item deleted.', 'success');
         } catch (error) {
             showToast('Failed to delete item.', 'error');
@@ -182,99 +213,71 @@ const AdminItemsScreen: React.FC = () => {
     return (
         <>
             <div className="h-full flex flex-col bg-white dark:bg-slate-800 p-6 rounded-lg shadow-md">
-                <AdminScreenHeader
-                    title="إدارة الأصناف"
-                    buttonText="إضافة صنف"
-                    onButtonClick={() => { setEditingItem(null); setIsModalOpen(true); }}
-                    searchTerm={searchTerm}
-                    onSearchChange={setSearchTerm}
-                    searchPlaceholder="ابحث عن صنف..."
-                />
+                 <div className="flex flex-col sm:flex-row justify-between items-center mb-6 gap-4">
+                    <h2 className="text-xl font-bold text-slate-800 dark:text-slate-100 self-start sm:self-center">إدارة الأصناف</h2>
+                    <div className="w-full sm:w-auto flex flex-col-reverse sm:flex-row items-center gap-2">
+                         <div className="relative w-full sm:w-64">
+                            <input
+                                type="text"
+                                placeholder="ابحث عن صنف..."
+                                value={searchTerm}
+                                onChange={(e) => setSearchTerm(e.target.value)}
+                                className="w-full p-2 pl-10 border rounded-lg bg-white dark:bg-slate-700"
+                            />
+                        </div>
+                         <button onClick={handleExport} className="w-full sm:w-auto bg-slate-200 text-slate-700 dark:bg-slate-700 dark:text-slate-200 px-4 py-2 rounded-lg hover:bg-slate-300">تصدير CSV</button>
+                         <button onClick={() => { setEditingItem(null); setIsModalOpen(true); }} className="w-full sm:w-auto flex items-center justify-center bg-admin-primary text-white px-4 py-2 rounded-lg hover:bg-admin-primary-hover">
+                            <PlusIcon className="w-5 h-5 ml-2" />
+                            إضافة صنف
+                        </button>
+                    </div>
+                </div>
                 
                 <div className="flex-grow overflow-y-auto">
                     {loading ? <TableSkeleton /> : filteredItems.length > 0 ? (
-                        <>
-                            {/* Desktop Table View */}
-                            <div className="overflow-x-auto hidden md:block">
-                                <table className="w-full text-right">
-                                <thead>
-                                        <tr className="border-b-2 border-slate-100 dark:border-slate-700">
-                                            <SortableHeader<Item> label="الصنف" sortKey="arabicName" requestSort={requestSort} sortConfig={sortConfig} />
-                                            <SortableHeader<Item> label="الفئة" sortKey="category" requestSort={requestSort} sortConfig={sortConfig} />
-                                            <SortableHeader<Item> label="السعر" sortKey="price" requestSort={requestSort} sortConfig={sortConfig} />
-                                            <SortableHeader<Item> label="المخزون" sortKey="stock" requestSort={requestSort} sortConfig={sortConfig} />
-                                            <th className="p-3 text-sm font-semibold text-slate-500">إجراءات</th>
+                        <div className="overflow-x-auto">
+                            <table className="w-full text-right">
+                            <thead>
+                                    <tr className="border-b-2 border-slate-100 dark:border-slate-700">
+                                        <SortableHeader<Item> label="الصنف" sortKey="arabicName" requestSort={requestSort} sortConfig={sortConfig} />
+                                        <th className="p-3 text-sm font-semibold text-slate-500">عرض بالرئيسية</th>
+                                        <SortableHeader<Item> label="السعر" sortKey="price" requestSort={requestSort} sortConfig={sortConfig} />
+                                        <SortableHeader<Item> label="المخزون" sortKey="stock" requestSort={requestSort} sortConfig={sortConfig} />
+                                        <th className="p-3 text-sm font-semibold text-slate-500">إجراءات</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    {filteredItems.map(item => (
+                                        <tr key={item.id} className="border-b dark:border-slate-700 hover:bg-sky-100/50">
+                                            <td className="p-3">
+                                                <div className="flex items-center gap-3">
+                                                    <img src={getOptimizedImageUrl(item.imageUrl, 100)} alt={item.arabicName} className="w-12 h-12 rounded-md object-cover"/>
+                                                    <span className="font-medium">{item.arabicName}</span>
+                                                </div>
+                                            </td>
+                                             <td className="p-3">
+                                                <label className="relative inline-flex items-center cursor-pointer">
+                                                    <input type="checkbox" checked={item.isFeatured} onChange={() => handleToggleFeatured(item)} className="sr-only peer" />
+                                                    <div className="w-11 h-6 bg-gray-200 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-blue-300 dark:peer-focus:ring-blue-800 rounded-full peer dark:bg-gray-700 peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all dark:border-gray-600 peer-checked:bg-admin-primary"></div>
+                                                </label>
+                                            </td>
+                                            <td className="p-3">{item.price} ج.س</td>
+                                            <td className="p-3">{item.stock}</td>
+                                            <td className="p-3 space-x-4 space-x-reverse">
+                                                <button onClick={() => { setEditingItem(item); setIsModalOpen(true); }} className="text-admin-primary hover:underline">تعديل</button>
+                                                <button onClick={() => setItemToDelete(item)} className="text-red-500 hover:underline">حذف</button>
+                                            </td>
                                         </tr>
-                                    </thead>
-                                    <tbody>
-                                        {filteredItems.map(item => (
-                                            <tr key={item.id} className="border-b dark:border-slate-700 hover:bg-sky-100/50">
-                                                <td className="p-3">
-                                                    <div className="flex items-center gap-3">
-                                                        <img src={getOptimizedImageUrl(item.imageUrl, 100)} alt={item.arabicName} className="w-12 h-12 rounded-md object-cover"/>
-                                                        <span className="font-medium">{item.arabicName}</span>
-                                                    </div>
-                                                </td>
-                                                <td className="p-3">{item.category}</td>
-                                                <td className="p-3">{item.price} ج.س</td>
-                                                <td className="p-3">{item.stock}</td>
-                                                <td className="p-3 space-x-4 space-x-reverse">
-                                                    <button onClick={() => { setEditingItem(item); setIsModalOpen(true); }} className="text-admin-primary hover:underline">تعديل</button>
-                                                    <button onClick={() => setItemToDelete(item)} className="text-red-500 hover:underline">حذف</button>
-                                                </td>
-                                            </tr>
-                                        ))}
-                                    </tbody>
-                                </table>
-                            </div>
-                            {/* Mobile Card View */}
-                            <div className="space-y-4 md:hidden">
-                                {filteredItems.map(item => (
-                                    <div key={item.id} className="bg-slate-50 dark:bg-slate-800/50 p-4 rounded-lg shadow-sm border dark:border-slate-700">
-                                        <div className="flex items-start gap-4">
-                                            <img src={getOptimizedImageUrl(item.imageUrl, 150)} alt={item.arabicName} className="w-20 h-20 rounded-md object-cover flex-shrink-0" />
-                                            <div className="flex-grow">
-                                                <p className="font-bold text-lg text-slate-800 dark:text-slate-100">{item.arabicName}</p>
-                                                <p className="text-sm text-slate-500 dark:text-slate-400">{item.category}</p>
-                                            </div>
-                                        </div>
-                                        <div className="mt-4 pt-4 border-t dark:border-slate-700 space-y-3">
-                                            <div className="grid grid-cols-2 gap-4 text-center">
-                                                <div>
-                                                    <p className="text-xs text-slate-500 dark:text-slate-400">السعر</p>
-                                                    <p className="font-semibold text-slate-700 dark:text-slate-200">{item.price} ج.س</p>
-                                                </div>
-                                                <div>
-                                                    <p className="text-xs text-slate-500 dark:text-slate-400">المخزون</p>
-                                                    <p className="font-semibold text-slate-700 dark:text-slate-200">{item.stock}</p>
-                                                </div>
-                                            </div>
-                                            <div className="flex justify-end gap-4 pt-2">
-                                                <button onClick={() => { setEditingItem(item); setIsModalOpen(true); }} className="text-admin-primary font-semibold">تعديل</button>
-                                                <button onClick={() => setItemToDelete(item)} className="text-red-500 font-semibold">حذف</button>
-                                            </div>
-                                        </div>
-                                    </div>
-                                ))}
-                            </div>
-                        </>
+                                    ))}
+                                </tbody>
+                            </table>
+                        </div>
                     ) : (
                         <div className="text-center py-16">
                             <PackageIcon className="w-24 h-24 text-slate-300 dark:text-slate-600 mx-auto" />
                             <h3 className="mt-4 text-xl font-bold text-slate-700 dark:text-slate-200">
                                 {searchTerm ? 'لا توجد أصناف مطابقة' : 'لا توجد أصناف بعد'}
                             </h3>
-                            <p className="mt-2 text-slate-500 dark:text-slate-400">
-                            {searchTerm ? 'حاول البحث بكلمة أخرى.' : 'ابدأ بإضافة الأصناف الفردية لمنتجاتك.'}
-                            </p>
-                            {!searchTerm && (
-                                <button 
-                                    onClick={() => { setEditingItem(null); setIsModalOpen(true); }}
-                                    className="mt-6 flex items-center mx-auto bg-admin-primary text-white px-4 py-2 rounded-lg hover:bg-admin-primary-hover transition-colors shadow-sm">
-                                    <PlusIcon className="w-5 h-5 ml-2" />
-                                    إضافة صنف
-                                </button>
-                            )}
                         </div>
                     )}
                 </div>

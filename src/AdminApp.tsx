@@ -6,7 +6,7 @@ import { useAuth } from "./hooks/useAuth";
 import FullScreenLoader from "./components/FullScreenLoader";
 import { ToastProvider } from "./contexts/ToastContext";
 import { initializeFirebase } from "./firebase/config";
-import ScrollToTop from "/src/components/ScrollToTop.tsx";
+import ScrollToTop from "./components/ScrollToTop";
 import { SettingsProvider } from "./contexts/SettingsContext";
 import { CartProvider } from "./contexts/CartContext";
 import { WishlistProvider } from "./contexts/WishlistContext";
@@ -32,6 +32,8 @@ const AdminSettingsScreen = lazy(() => import("./screens/AdminSettingsScreen"));
 const DriverDashboardScreen = lazy(
   () => import("./screens/DriverDashboardScreen")
 );
+const AdminReportsScreen = lazy(() => import("./screens/AdminReportsScreen"));
+const AdminAuditLogScreen = lazy(() => import("./screens/AdminAuditLogScreen"));
 
 const ProtectedAdminRoutes: React.FC = () => {
   const { user, loading } = useAuth();
@@ -80,6 +82,8 @@ const ProtectedAdminRoutes: React.FC = () => {
             <Route path="/categories" element={<AdminCategoriesScreen />} />
             <Route path="/extras" element={<AdminExtrasScreen />} />
             <Route path="/settings" element={<AdminSettingsScreen />} />
+            <Route path="/reports" element={<AdminReportsScreen />} />
+            <Route path="/audit-log" element={<AdminAuditLogScreen />} />
           </>
         )}
 

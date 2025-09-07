@@ -1,5 +1,4 @@
 
-
 export interface User {
   uid: string;
   phone: string | null;
@@ -7,6 +6,7 @@ export interface User {
   address?: string;
   role: 'customer' | 'sub-admin' | 'admin' | 'super-admin' | 'driver';
   email?: string | null;
+  customDeliveryFee?: number;
 }
 
 export interface Item {
@@ -21,6 +21,7 @@ export interface Item {
   stock: number;
   averageRating?: number;
   reviewCount?: number;
+  isFeatured?: boolean;
 }
 
 export interface BundleContent {
@@ -89,6 +90,7 @@ export interface Order {
   paymentStatus: 'unpaid' | 'paid';
   deliveryInfo: DeliveryInfo;
   driverId?: string | null;
+  deliveryMethod: 'delivery' | 'pickup';
 }
 
 export interface DeliveryInfo {
@@ -131,25 +133,38 @@ export interface Category {
 }
 
 export interface StoreSettings {
-    deliveryFee: number;
+  deliveryFee: number;
+  logoUrl: string;
+  storeAddress: string;
+  announcementText?: string;
+  isAnnouncementActive?: boolean;
 }
 
+export interface AuditLog {
+  id: string;
+  timestamp: string; // ISO date string
+  adminId: string;
+  adminName: string;
+  action: string;
+  details?: string;
+}
+
+
 // Admin Panel Specific Types
-// FIX: Added the `Customer` interface to resolve import errors in other files.
 export interface Customer extends User {
-    joinDate: string; // ISO date string
-    orderHistory: string[]; // array of order IDs
+  joinDate: string; // ISO date string
+  orderHistory: string[]; // array of order IDs
 }
 
 export interface Driver {
-    id: string;
-    name: string;
-    phone: string;
-    status: 'Available' | 'On-Delivery' | 'Offline';
+  id: string;
+  name: string;
+  phone: string;
+  status: 'Available' | 'On-Delivery' | 'Offline';
 }
 
 export interface AdminOrder extends Order {
-    customer?: Omit<User, 'role'>;
+  customer?: Omit<User, 'role'>;
 }
 
 export interface AdminNotification {
