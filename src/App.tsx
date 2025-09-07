@@ -7,7 +7,8 @@ import { WishlistProvider } from "./contexts/WishlistContext";
 import { SettingsProvider } from "./contexts/SettingsContext";
 import FullScreenLoader from "./components/FullScreenLoader";
 import { initializeFirebase } from "./firebase/config";
-import ScrollToTop from "/src/components/ScrollToTop.tsx";
+import ScrollToTop from "./components/ScrollToTop";
+import ThemeApplicator from "./components/ThemeApplicator";
 
 // Statically import components critical for the initial page load (LCP)
 import MainLayout from "./components/MainLayout";
@@ -49,6 +50,7 @@ const App: React.FC = () => {
         <SettingsProvider>
           <CartProvider>
             <WishlistProvider>
+              <ThemeApplicator />
               <HashRouter>
                 <ScrollToTop />
                 <div className="animate-slide-in-up">

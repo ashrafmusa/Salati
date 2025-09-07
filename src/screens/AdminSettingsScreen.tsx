@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useMemo } from "react";
 import { db } from "../firebase/config";
 import { doc, onSnapshot, setDoc } from "firebase/firestore";
-import { StoreSettings } from "../types";
+import { StoreSettings, ThemeSettings } from "../types";
 import { useToast } from "../contexts/ToastContext";
 import { SpinnerIcon } from "../assets/icons";
 import { getOptimizedImageUrl, uploadToCloudinary } from "../utils/helpers";
@@ -17,6 +17,14 @@ const AdminSettingsScreen: React.FC = () => {
   const { showToast } = useToast();
 
   const settingsRef = useMemo(() => doc(db, "settings", "store"), []);
+
+  const sansFontOptions = [
+    "Almarai",
+    "Tajawal",
+    "Cairo",
+    "IBM Plex Sans Arabic",
+  ];
+  const displayFontOptions = ["Montserrat", "Noto Kufi Arabic", "Lemonada"];
 
   useEffect(() => {
     const unsubscribe = onSnapshot(
@@ -45,10 +53,27 @@ const AdminSettingsScreen: React.FC = () => {
   }, [settingsRef]);
 
   const handleInputChange = (
-    e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>
+    e: React.ChangeEvent<
+      HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement
+    >
   ) => {
     const { name, value, type } = e.target;
-    if (type === "checkbox") {
+
+    const themeProperties = [
+      "primaryColor",
+      "secondaryColor",
+      "sansFont",
+      "displayFont",
+    ];
+    if (themeProperties.includes(name)) {
+      setSettings((prev) => ({
+        ...prev,
+        theme: {
+          ...(prev.theme as ThemeSettings),
+          [name]: value,
+        },
+      }));
+    } else if (type === "checkbox") {
       const { checked } = e.target as HTMLInputElement;
       setSettings((prev) => ({ ...prev, [name]: checked }));
     } else {
@@ -184,6 +209,102 @@ const AdminSettingsScreen: React.FC = () => {
               <p className="text-xs text-slate-500 dark:text-slate-400 mt-1">
                 سيظهر هذا الشعار في رأس الموقع.
               </p>
+            </div>
+          </div>
+        </div>
+
+        <div className="bg-white dark:bg-slate-800 p-6 rounded-lg shadow-md">
+          <h2 className="text-2xl font-bold text-slate-800 dark:text-slate-100 mb-6">
+            تخصيص المظهر
+          </h2>
+          <div className="space-y-6">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+              <div>
+                <label
+                  htmlFor="primaryColor"
+                  className="block text-sm font-medium text-slate-700 dark:text-slate-300"
+                >
+                  اللون الأساسي
+                </label>
+                <div className="relative mt-1 flex items-center gap-3">
+                  <input
+                    type="color"
+                    id="primaryColor"
+                    name="primaryColor"
+                    value={settings.theme?.primaryColor || "#000000"}
+                    onChange={handleInputChange}
+                    className="p-0 h-10 w-12 block bg-white dark:bg-slate-700 border-none rounded-md cursor-pointer"
+                  />
+                  <span className="font-mono text-slate-500">
+                    {settings.theme?.primaryColor}
+                  </span>
+                </div>
+              </div>
+              <div>
+                <label
+                  htmlFor="secondaryColor"
+                  className="block text-sm font-medium text-slate-700 dark:text-slate-300"
+                >
+                  اللون الثانوي
+                </label>
+                <div className="relative mt-1 flex items-center gap-3">
+                  <input
+                    type="color"
+                    id="secondaryColor"
+                    name="secondaryColor"
+                    value={settings.theme?.secondaryColor || "#000000"}
+                    onChange={handleInputChange}
+                    className="p-0 h-10 w-12 block bg-white dark:bg-slate-700 border-none rounded-md cursor-pointer"
+                  />
+                  <span className="font-mono text-slate-500">
+                    {settings.theme?.secondaryColor}
+                  </span>
+                </div>
+              </div>
+            </div>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+              <div>
+                <label
+                  htmlFor="sansFont"
+                  className="block text-sm font-medium text-slate-700 dark:text-slate-300"
+                >
+                  خط النصوص
+                </label>
+                <select
+                  id="sansFont"
+                  name="sansFont"
+                  value={settings.theme?.sansFont || "Almarai"}
+                  onChange={handleInputChange}
+                  className={`${inputClasses} mt-1`}
+                >
+                  {sansFontOptions.map((font) => (
+                    <option key={font} value={font}>
+                      {font}
+                    </option>
+                  ))}
+                </select>
+              </div>
+              <div>
+                <label
+                  htmlFor="displayFont"
+                  className="block text-sm font-medium text-slate-700 dark:text-slate-300"
+                >
+                  خط العناوين
+                </label>
+                <select
+                  id="displayFont"
+                  name="displayFont"
+                  value={settings.theme?.displayFont || "Montserrat"}
+                  onChange={handleInputChange}
+                  className={`${inputClasses} mt-1`}
+                >
+                  {displayFontOptions.map((font) => (
+                    <option key={font} value={font}>
+                      {font}
+                    </option>
+                  ))}
+                </select>
+              </div>
             </div>
           </div>
         </div>

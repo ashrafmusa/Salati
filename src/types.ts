@@ -131,12 +131,20 @@ export interface Category {
   sortOrder: number;
 }
 
+export interface ThemeSettings {
+  primaryColor: string;
+  secondaryColor: string;
+  sansFont: string;
+  displayFont: string;
+}
+
 export interface StoreSettings {
   deliveryFee: number;
   logoUrl: string;
   storeAddress: string;
   announcementText?: string;
   isAnnouncementActive?: boolean;
+  theme: ThemeSettings;
 }
 
 export interface AuditLog {
