@@ -1,8 +1,10 @@
-import React from "react";
+
+
+import React from 'react';
 // FIX: The 'useSortableData.ts' file is not a module.
 // The correct type definition is in 'usePaginatedFirestore.ts'.
-import { PaginatedSortConfig as SortConfig } from "../hooks/usePaginatedFirestore";
-import { ChevronUpIcon, ChevronDownIcon } from "../assets/adminIcons";
+import { PaginatedSortConfig as SortConfig } from '../hooks/usePaginatedFirestore';
+import { ChevronUpIcon, ChevronDownIcon } from '../assets/adminIcons';
 
 interface SortableHeaderProps<T> {
   label: string;
@@ -17,13 +19,13 @@ const SortableHeader = <T extends object>({
   sortKey,
   requestSort,
   sortConfig,
-  className = "p-3 text-sm font-semibold text-slate-500 dark:text-slate-400",
+  className = "p-3 text-sm font-semibold text-slate-500 dark:text-slate-400"
 }: SortableHeaderProps<T>) => {
   const isSorted = sortConfig?.key === sortKey;
-
+  
   const DirectionIcon = () => {
     if (isSorted) {
-      return sortConfig.direction === "ascending" ? (
+      return sortConfig.direction === 'ascending' ? (
         <ChevronUpIcon className="w-4 h-4" />
       ) : (
         <ChevronDownIcon className="w-4 h-4" />
@@ -38,10 +40,7 @@ const SortableHeader = <T extends object>({
 
   return (
     <th className={className}>
-      <button
-        onClick={() => requestSort(sortKey)}
-        className="group flex items-center gap-1 hover:text-slate-700 dark:hover:text-slate-200 transition-colors"
-      >
+      <button onClick={() => requestSort(sortKey)} className="group flex items-center gap-1 hover:text-slate-700 dark:hover:text-slate-200 transition-colors">
         <span>{label}</span>
         <DirectionIcon />
       </button>

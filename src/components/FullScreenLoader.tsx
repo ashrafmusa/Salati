@@ -1,5 +1,5 @@
-import React from "react";
-import { SpinnerIcon } from "../assets/icons";
+import React from 'react';
+import { SpinnerIcon } from '../assets/icons';
 
 const FullScreenLoader: React.FC = () => (
   <div className="flex items-center justify-center h-screen w-full bg-slate-50 dark:bg-slate-950">

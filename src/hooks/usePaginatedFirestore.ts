@@ -66,9 +66,13 @@ export const usePaginatedFirestore = <T extends { id: string }>(
         setDocuments(newDocs);
       } else {
         // This case handles reaching the end or beginning
-        if (direction === 'next') setLastVisible(null);
-        if (direction === 'prev') setFirstVisible(null);
-        if (!direction) setDocuments([]); // Initial load is empty
+        if (direction === 'next') setLastVisible(null); // No more next pages
+        if (direction === 'prev') setFirstVisible(null); // No more previous pages
+        if (!direction) {
+          setDocuments([]); // Initial load is empty
+          setFirstVisible(null);
+          setLastVisible(null);
+        }
       }
 
     } catch (e: any) {
@@ -77,7 +81,8 @@ export const usePaginatedFirestore = <T extends { id: string }>(
     } finally {
       setLoading(false);
     }
-  }, [collectionPath, filters, sortConfig, pageSize, firstVisible, lastVisible]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [collectionPath, JSON.stringify(filters), sortConfig, pageSize, firstVisible, lastVisible]);
 
 
   useEffect(() => {
@@ -87,9 +92,10 @@ export const usePaginatedFirestore = <T extends { id: string }>(
     setLastVisible(null);
     loadData();
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [sortConfig, filters]);
+  }, [sortConfig, JSON.stringify(filters)]);
 
   const nextPage = () => {
+    if (documents.length < pageSize) return; // Don't go next if current page isn't full
     setPage(p => p + 1);
     loadData('next');
   };
@@ -115,8 +121,7 @@ export const usePaginatedFirestore = <T extends { id: string }>(
     error,
     nextPage,
     prevPage,
-    // A simplified way to check for next/prev pages. More robust checking would require fetching one extra item.
-    hasNextPage: documents.length === pageSize,
+    hasNextPage: documents.length === pageSize && lastVisible !== null,
     hasPrevPage: page > 1,
     requestSort,
     sortConfig,

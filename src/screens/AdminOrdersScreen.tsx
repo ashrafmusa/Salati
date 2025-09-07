@@ -20,6 +20,7 @@ import { useToast } from "../contexts/ToastContext";
 import SortableHeader from "../components/SortableHeader";
 import { usePaginatedFirestore } from "../hooks/usePaginatedFirestore";
 import Pagination from "../components/Pagination";
+import TableSkeleton from "../components/TableSkeleton";
 
 const getStatusPillClasses = (status: OrderStatus) => {
   switch (status) {
@@ -86,6 +87,7 @@ const AdminOrdersScreen: React.FC = () => {
 
   const [searchParams] = useSearchParams();
   const statusFilterFromUrl = searchParams.get("status") as OrderStatus | null;
+
   const [statusFilter, setStatusFilter] = useState<OrderStatus | "all">(
     statusFilterFromUrl || "all"
   );
@@ -96,40 +98,32 @@ const AdminOrdersScreen: React.FC = () => {
     "all" | "paid" | "unpaid"
   >("all");
 
-  const [selectedOrders, setSelectedOrders] = useState<string[]>([]);
+  const [selectedOrderIds, setSelectedOrderIds] = useState<Set<string>>(
+    new Set()
+  );
 
   useEffect(() => {
-    if (statusFilterFromUrl) {
-      setStatusFilter(statusFilterFromUrl);
-    }
-  }, [statusFilterFromUrl]);
-
-  useEffect(() => {
-    const unsubscribeDrivers = onSnapshot(
-      collection(db, "drivers"),
-      (snapshot) => {
-        const fetchedDrivers = snapshot.docs.map((doc) => ({
-          id: doc.id,
-          ...doc.data(),
-        })) as Driver[];
-        setDrivers(fetchedDrivers);
-      }
-    );
-    return () => unsubscribeDrivers();
+    const driversQuery = query(collection(db, "drivers"));
+    const unsubscribe = onSnapshot(driversQuery, (snapshot) => {
+      setDrivers(
+        snapshot.docs.map((doc) => ({ id: doc.id, ...doc.data() } as Driver))
+      );
+    });
+    return () => unsubscribe();
   }, []);
 
-  const queryConstraints = useMemo(() => {
-    const constraints: QueryConstraint[] = [];
-    if (statusFilter !== "all") {
-      constraints.push(where("status", "==", statusFilter));
+  const filters = useMemo(() => {
+    const q: QueryConstraint[] = [];
+    if (statusFilter && statusFilter !== "all") {
+      q.push(where("status", "==", statusFilter));
     }
-    if (deliveryMethodFilter !== "all") {
-      constraints.push(where("deliveryMethod", "==", deliveryMethodFilter));
+    if (deliveryMethodFilter && deliveryMethodFilter !== "all") {
+      q.push(where("deliveryMethod", "==", deliveryMethodFilter));
     }
-    if (paymentStatusFilter !== "all") {
-      constraints.push(where("paymentStatus", "==", paymentStatusFilter));
+    if (paymentStatusFilter && paymentStatusFilter !== "all") {
+      q.push(where("paymentStatus", "==", paymentStatusFilter));
     }
-    return constraints;
+    return q;
   }, [statusFilter, deliveryMethodFilter, paymentStatusFilter]);
 
   const initialSort = useMemo(
@@ -146,280 +140,195 @@ const AdminOrdersScreen: React.FC = () => {
     hasPrevPage,
     requestSort,
     sortConfig,
-  } = usePaginatedFirestore<AdminOrder>(
-    "orders",
-    initialSort,
-    queryConstraints
-  );
+  } = usePaginatedFirestore<AdminOrder>("orders", initialSort, filters);
 
   const filteredOrders = useMemo(() => {
     if (!searchTerm) return paginatedOrders;
+    const lowercasedTerm = searchTerm.toLowerCase();
     return paginatedOrders.filter(
-      (o) =>
-        o.id.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        (o.deliveryInfo?.name || "")
+      (order) =>
+        (order.deliveryInfo?.name || "")
           .toLowerCase()
-          .includes(searchTerm.toLowerCase())
+          .includes(lowercasedTerm) ||
+        order.id.toLowerCase().includes(lowercasedTerm)
     );
   }, [paginatedOrders, searchTerm]);
 
-  useEffect(() => {
-    setSelectedOrders([]);
-  }, [paginatedOrders]);
+  const handleSelectOrder = (orderId: string, isSelected: boolean) => {
+    setSelectedOrderIds((prev) => {
+      const newSet = new Set(prev);
+      if (isSelected) {
+        newSet.add(orderId);
+      } else {
+        newSet.delete(orderId);
+      }
+      return newSet;
+    });
+  };
 
-  const updateOrder = async (orderId: string, updates: Partial<AdminOrder>) => {
-    try {
-      await updateDoc(doc(db, "orders", orderId), updates);
-      showToast("Order updated successfully.", "success");
-    } catch (error) {
-      console.error("Error updating order:", error);
-      showToast("Failed to update order.", "error");
+  const handleSelectAll = (e: React.ChangeEvent<HTMLInputElement>) => {
+    if (e.target.checked) {
+      setSelectedOrderIds(new Set(filteredOrders.map((o) => o.id)));
+    } else {
+      setSelectedOrderIds(new Set());
     }
   };
 
   const handleBulkStatusChange = async (newStatus: OrderStatus) => {
-    if (selectedOrders.length === 0) return;
+    if (selectedOrderIds.size === 0) {
+      showToast("Please select orders to update.", "info");
+      return;
+    }
     const batch = writeBatch(db);
-    selectedOrders.forEach((orderId) => {
+    selectedOrderIds.forEach((orderId) => {
       const orderRef = doc(db, "orders", orderId);
       batch.update(orderRef, { status: newStatus });
     });
     try {
       await batch.commit();
       showToast(
-        `${selectedOrders.length} orders updated to "${newStatus}"`,
+        `Updated ${selectedOrderIds.size} orders to "${newStatus}".`,
         "success"
       );
-      setSelectedOrders([]);
+      setSelectedOrderIds(new Set());
     } catch (error) {
+      console.error("Error updating orders in bulk:", error);
       showToast("Failed to update orders.", "error");
     }
   };
 
-  const handleSelectAll = (e: React.ChangeEvent<HTMLInputElement>) => {
-    if (e.target.checked) {
-      setSelectedOrders(filteredOrders.map((o) => o.id));
-    } else {
-      setSelectedOrders([]);
+  const handleStatusChange = async (
+    orderId: string,
+    newStatus: OrderStatus
+  ) => {
+    try {
+      await updateDoc(doc(db, "orders", orderId), { status: newStatus });
+      showToast("Order status updated!", "success");
+    } catch (error) {
+      showToast("Failed to update order status.", "error");
     }
   };
 
-  const handleSelectOrder = (orderId: string, isSelected: boolean) => {
-    if (isSelected) {
-      setSelectedOrders((prev) => [...prev, orderId]);
-    } else {
-      setSelectedOrders((prev) => prev.filter((id) => id !== orderId));
+  const handleDriverAssign = async (
+    orderId: string,
+    driverId: string | null
+  ) => {
+    try {
+      await updateDoc(doc(db, "orders", orderId), { driverId });
+      showToast("Driver assigned!", "success");
+    } catch (error) {
+      showToast("Failed to assign driver.", "error");
     }
   };
 
-  const handleStatusChange = (order: AdminOrder, newStatus: OrderStatus) => {
-    if (order.status === newStatus) return;
-
-    const performUpdate = (
-      status: OrderStatus,
-      driverId: string | null = order.driverId
-    ) => {
-      updateOrder(order.id, { status, driverId });
-    };
-
-    if (
-      order.deliveryMethod === "pickup" &&
-      newStatus === OrderStatus.OutForDelivery
-    ) {
-      showToast("Cannot set 'Out for Delivery' for a pickup order.", "error");
-      setTimeout(() => {
-        const select = document.getElementById(
-          `status-${order.id}`
-        ) as HTMLSelectElement;
-        if (select) select.value = order.status;
-      }, 0);
-      return;
-    }
-
-    if (
-      newStatus === OrderStatus.ReadyForPickup &&
-      order.deliveryMethod === "delivery"
-    ) {
-      performUpdate(newStatus, null);
-      return;
-    }
-
-    if (
-      newStatus === OrderStatus.Delivered ||
-      newStatus === OrderStatus.Cancelled
-    ) {
-      setConfirmationState({
-        isOpen: true,
-        title: `Confirm Order ${
-          newStatus === OrderStatus.Delivered ? "Delivery" : "Cancellation"
-        }`,
-        message: `Are you sure you want to mark order #${order.id
-          .slice(0, 7)
-          .toUpperCase()} as ${newStatus}?`,
-        onConfirm: () => {
-          performUpdate(newStatus);
+  const handleDeleteOrder = (order: AdminOrder) => {
+    setConfirmationState({
+      isOpen: true,
+      title: "تأكيد الحذف",
+      message: `هل أنت متأكد من رغبتك في حذف الطلب #${order.id
+        .slice(0, 7)
+        .toUpperCase()}؟ لا يمكن التراجع عن هذا الإجراء.`,
+      isDestructive: true,
+      onConfirm: async () => {
+        try {
+          await deleteDoc(doc(db, "orders", order.id));
+          showToast("Order deleted successfully!", "success");
+        } catch (err) {
+          showToast("Failed to delete order.", "error");
+        } finally {
           setConfirmationState({
             isOpen: false,
             title: "",
             message: "",
             onConfirm: () => {},
           });
-        },
-        isDestructive: newStatus === OrderStatus.Cancelled,
-      });
-      setTimeout(() => {
-        const select = document.getElementById(
-          `status-${order.id}`
-        ) as HTMLSelectElement;
-        if (select) select.value = order.status;
-      }, 0);
-      return;
-    }
-
-    if (newStatus === OrderStatus.OutForDelivery && !order.driverId) {
-      const availableDriver = drivers.find((d) => d.status === "Available");
-      if (availableDriver) {
-        performUpdate(newStatus, availableDriver.id);
-      } else {
-        showToast(
-          "No available drivers to assign. Please assign a driver manually.",
-          "error"
-        );
-        setTimeout(() => {
-          const select = document.getElementById(
-            `status-${order.id}`
-          ) as HTMLSelectElement;
-          if (select) select.value = order.status;
-        }, 0);
-      }
-      return;
-    }
-
-    performUpdate(newStatus);
-  };
-
-  const handleDriverChange = (orderId: string, newDriverId: string | null) => {
-    updateOrder(orderId, { driverId: newDriverId });
-  };
-
-  const handleDeleteOrder = async (orderId: string) => {
-    setConfirmationState({
-      isOpen: true,
-      title: "Confirm Deletion",
-      message: `Are you sure you want to permanently delete order #${orderId
-        .slice(0, 7)
-        .toUpperCase()}? This action cannot be undone.`,
-      isDestructive: true,
-      onConfirm: async () => {
-        try {
-          await deleteDoc(doc(db, "orders", orderId));
-          showToast("Order deleted successfully.", "success");
-        } catch (error) {
-          console.error("Error deleting order:", error);
-          showToast("Failed to delete order.", "error");
         }
-        setConfirmationState({
-          isOpen: false,
-          title: "",
-          message: "",
-          onConfirm: () => {},
-        });
       },
     });
   };
-
-  const inputSelectClasses =
-    "p-2 border border-slate-300 dark:border-slate-600 rounded-lg focus:ring-2 focus:ring-admin-primary focus:outline-none bg-white dark:bg-slate-700 text-slate-900 dark:text-slate-100 shadow-sm";
 
   return (
     <>
       <div className="h-full flex flex-col bg-white dark:bg-slate-800 p-4 md:p-6 rounded-lg shadow-md">
         <AdminScreenHeader
-          title="قائمة الطلبات"
+          title="إدارة الطلبات"
           searchTerm={searchTerm}
           onSearchChange={setSearchTerm}
-          searchPlaceholder="ابحث بالرقم أو اسم العميل..."
+          searchPlaceholder="ابحث بالاسم أو رقم الطلب..."
         />
-        <div className="flex flex-col sm:flex-row justify-between items-center mb-6 gap-2">
-          <div className="w-full sm:w-auto flex flex-col sm:flex-row gap-2">
-            <select
-              value={statusFilter}
-              onChange={(e) =>
-                setStatusFilter(e.target.value as OrderStatus | "all")
-              }
-              className={`w-full sm:w-36 ${inputSelectClasses}`}
-            >
-              <option value="all">كل الحالات</option>
-              {Object.values(OrderStatus).map((s) => (
-                <option key={s} value={s}>
-                  {s}
-                </option>
-              ))}
-            </select>
-            <select
-              value={deliveryMethodFilter}
-              onChange={(e) =>
-                setDeliveryMethodFilter(
-                  e.target.value as "all" | "delivery" | "pickup"
-                )
-              }
-              className={`w-full sm:w-36 ${inputSelectClasses}`}
-            >
-              <option value="all">كل طرق الاستلام</option>
-              <option value="delivery">توصيل</option>
-              <option value="pickup">استلام</option>
-            </select>
-            <select
-              value={paymentStatusFilter}
-              onChange={(e) =>
-                setPaymentStatusFilter(
-                  e.target.value as "all" | "paid" | "unpaid"
-                )
-              }
-              className={`w-full sm:w-36 ${inputSelectClasses}`}
-            >
-              <option value="all">كل حالات الدفع</option>
-              <option value="paid">مدفوع</option>
-              <option value="unpaid">غير مدفوع</option>
-            </select>
-          </div>
-          {selectedOrders.length > 0 && (
-            <div className="w-full sm:w-auto flex items-center gap-2 p-2 bg-sky-100 dark:bg-sky-900/50 rounded-lg">
-              <span className="text-sm font-semibold text-sky-800 dark:text-sky-200">
-                {selectedOrders.length} orders selected
-              </span>
-              <select
-                onChange={(e) =>
-                  handleBulkStatusChange(e.target.value as OrderStatus)
-                }
-                className={`text-xs ${inputSelectClasses}`}
-              >
-                <option>Change status...</option>
-                {Object.values(OrderStatus).map((s) => (
-                  <option key={s} value={s}>
-                    {s}
-                  </option>
-                ))}
-              </select>
-            </div>
-          )}
+
+        <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-4">
+          <select
+            value={statusFilter}
+            onChange={(e) =>
+              setStatusFilter(e.target.value as OrderStatus | "all")
+            }
+            className="w-full p-2 border rounded-lg bg-white dark:bg-slate-700 dark:border-slate-600"
+          >
+            <option value="all">كل الحالات</option>
+            {Object.values(OrderStatus).map((s) => (
+              <option key={s} value={s}>
+                {s}
+              </option>
+            ))}
+          </select>
+          <select
+            value={deliveryMethodFilter}
+            onChange={(e) =>
+              setDeliveryMethodFilter(
+                e.target.value as "all" | "delivery" | "pickup"
+              )
+            }
+            className="w-full p-2 border rounded-lg bg-white dark:bg-slate-700 dark:border-slate-600"
+          >
+            <option value="all">كل طرق الاستلام</option>
+            <option value="delivery">توصيل</option>
+            <option value="pickup">استلام من المتجر</option>
+          </select>
+          <select
+            value={paymentStatusFilter}
+            onChange={(e) =>
+              setPaymentStatusFilter(
+                e.target.value as "all" | "paid" | "unpaid"
+              )
+            }
+            className="w-full p-2 border rounded-lg bg-white dark:bg-slate-700 dark:border-slate-600"
+          >
+            <option value="all">كل حالات الدفع</option>
+            <option value="paid">مدفوع</option>
+            <option value="unpaid">غير مدفوع</option>
+          </select>
+          <select
+            onChange={(e) =>
+              handleBulkStatusChange(e.target.value as OrderStatus)
+            }
+            disabled={selectedOrderIds.size === 0}
+            className="w-full p-2 border rounded-lg bg-white dark:bg-slate-700 dark:border-slate-600 disabled:opacity-50"
+          >
+            <option>تغيير حالة المحدد</option>
+            {Object.values(OrderStatus).map((s) => (
+              <option key={s} value={s}>
+                {s}
+              </option>
+            ))}
+          </select>
         </div>
 
         <div className="flex-grow overflow-y-auto">
           {loading ? (
-            <p>جار تحميل الطلبات...</p>
+            <TableSkeleton />
           ) : (
             <>
               <div className="overflow-x-auto hidden md:block">
                 <table className="w-full text-right">
                   <thead className="border-b-2 border-slate-100 dark:border-slate-700">
                     <tr>
-                      <th className="p-3 w-4">
+                      <th className="p-3">
                         <input
                           type="checkbox"
                           onChange={handleSelectAll}
                           checked={
-                            selectedOrders.length === filteredOrders.length &&
+                            selectedOrderIds.size === filteredOrders.length &&
                             filteredOrders.length > 0
                           }
                         />
@@ -430,11 +339,8 @@ const AdminOrdersScreen: React.FC = () => {
                         requestSort={requestSort}
                         sortConfig={sortConfig}
                       />
-                      <th className="p-3 text-sm font-semibold text-slate-500 dark:text-slate-400">
+                      <th className="p-3 text-sm font-semibold text-slate-500">
                         العميل
-                      </th>
-                      <th className="p-3 text-sm font-semibold text-slate-500 dark:text-slate-400">
-                        طريقة الاستلام
                       </th>
                       <SortableHeader<AdminOrder>
                         label="الإجمالي"
@@ -442,33 +348,35 @@ const AdminOrdersScreen: React.FC = () => {
                         requestSort={requestSort}
                         sortConfig={sortConfig}
                       />
-                      <th className="p-3 text-sm font-semibold text-slate-500 dark:text-slate-400">
-                        حالة الطلب
+                      <th className="p-3 text-sm font-semibold text-slate-500">
+                        الحالة
                       </th>
-                      <th className="p-3 text-sm font-semibold text-slate-500 dark:text-slate-400">
+                      <th className="p-3 text-sm font-semibold text-slate-500">
                         السائق
                       </th>
-                      <th className="p-3 text-sm font-semibold text-slate-500 dark:text-slate-400">
+                      <th className="p-3 text-sm font-semibold text-slate-500">
                         إجراءات
                       </th>
                     </tr>
                   </thead>
                   <tbody>
-                    {filteredOrders.map((order, index) => {
-                      const statusClasses = getStatusPillClasses(order.status);
+                    {filteredOrders.map((order) => {
+                      const { select } = getStatusPillClasses(
+                        order.status || OrderStatus.Preparing
+                      );
                       return (
                         <tr
                           key={order.id}
                           className={`border-b dark:border-slate-700 transition-colors ${
-                            index % 2 === 0
-                              ? "bg-white dark:bg-slate-800"
-                              : "bg-slate-50 dark:bg-slate-800/50"
-                          } hover:bg-sky-100/50 dark:hover:bg-sky-900/20`}
+                            selectedOrderIds.has(order.id)
+                              ? "bg-sky-100/50 dark:bg-sky-900/20"
+                              : "hover:bg-slate-50 dark:hover:bg-slate-700/50"
+                          }`}
                         >
-                          <td className="p-3 w-4">
+                          <td className="p-3">
                             <input
                               type="checkbox"
-                              checked={selectedOrders.includes(order.id)}
+                              checked={selectedOrderIds.has(order.id)}
                               onChange={(e) =>
                                 handleSelectOrder(order.id, e.target.checked)
                               }
@@ -480,57 +388,39 @@ const AdminOrdersScreen: React.FC = () => {
                           <td className="p-3 text-slate-600 dark:text-slate-300">
                             {order.deliveryInfo?.name || "غير معروف"}
                           </td>
-                          <td className="p-3 text-slate-600 dark:text-slate-300 font-semibold">
-                            {order.deliveryMethod === "pickup"
-                              ? "استلام"
-                              : "توصيل"}
-                          </td>
                           <td className="p-3 text-slate-600 dark:text-slate-300">
-                            {(order.total ?? 0).toLocaleString()} ج.س
+                            {(order.total || 0).toLocaleString()} ج.س
                           </td>
-                          <td className="p-3 w-48">
-                            <div className="flex items-center gap-2">
-                              <span
-                                className={`w-2.5 h-2.5 rounded-full ${statusClasses.dot}`}
-                              ></span>
-                              <select
-                                id={`status-${order.id}`}
-                                value={order.status}
-                                onChange={(e) =>
-                                  handleStatusChange(
-                                    order,
-                                    e.target.value as OrderStatus
-                                  )
-                                }
-                                className={`p-1.5 w-full rounded text-sm border focus:ring-2 focus:ring-admin-primary focus:outline-none font-semibold ${statusClasses.select}`}
-                                onClick={(e) => e.stopPropagation()}
-                              >
-                                {Object.values(OrderStatus).map((s) => (
-                                  <option key={s} value={s}>
-                                    {s}
-                                  </option>
-                                ))}
-                              </select>
-                            </div>
+                          <td className="p-3">
+                            <select
+                              value={order.status}
+                              onChange={(e) =>
+                                handleStatusChange(
+                                  order.id,
+                                  e.target.value as OrderStatus
+                                )
+                              }
+                              className={`p-1.5 w-40 text-sm font-semibold rounded-lg border-2 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-offset-white dark:focus:ring-offset-slate-800 focus:ring-admin-primary ${select}`}
+                            >
+                              {Object.values(OrderStatus).map((s) => (
+                                <option key={s} value={s}>
+                                  {s}
+                                </option>
+                              ))}
+                            </select>
                           </td>
-                          <td className="p-3 w-40">
+                          <td className="p-3">
                             <select
                               value={order.driverId || ""}
                               onChange={(e) =>
-                                handleDriverChange(
+                                handleDriverAssign(
                                   order.id,
                                   e.target.value || null
                                 )
                               }
-                              className="p-2 w-full rounded text-sm border-slate-300 dark:border-slate-600 focus:ring-admin-primary focus:border-admin-primary bg-white dark:bg-slate-700 text-slate-900 dark:text-slate-100"
-                              onClick={(e) => e.stopPropagation()}
-                              disabled={order.deliveryMethod === "pickup"}
+                              className="p-1.5 w-36 rounded text-sm bg-white dark:bg-slate-700 border border-slate-300 dark:border-slate-600"
                             >
-                              <option value="">
-                                {order.deliveryMethod === "pickup"
-                                  ? "لا يوجد"
-                                  : "اختر سائق"}
-                              </option>
+                              <option value="">لم يتم التعيين</option>
                               {drivers.map((d) => (
                                 <option key={d.id} value={d.id}>
                                   {d.name}
@@ -541,21 +431,16 @@ const AdminOrdersScreen: React.FC = () => {
                           <td className="p-3 space-x-4 space-x-reverse">
                             <button
                               onClick={() => setSelectedOrder(order)}
-                              className="text-admin-primary hover:underline text-sm font-semibold"
+                              className="text-admin-primary hover:underline"
                             >
                               التفاصيل
                             </button>
-                            {order.status === OrderStatus.Cancelled && (
-                              <button
-                                onClick={(e) => {
-                                  e.stopPropagation();
-                                  handleDeleteOrder(order.id);
-                                }}
-                                className="text-red-500 hover:underline text-sm font-semibold"
-                              >
-                                حذف
-                              </button>
-                            )}
+                            <button
+                              onClick={() => handleDeleteOrder(order)}
+                              className="text-red-500 hover:underline"
+                            >
+                              حذف
+                            </button>
                           </td>
                         </tr>
                       );
@@ -565,58 +450,50 @@ const AdminOrdersScreen: React.FC = () => {
               </div>
 
               <div className="space-y-4 md:hidden">
-                {filteredOrders.map((order) => {
-                  const statusClasses = getStatusPillClasses(order.status);
-                  return (
-                    <div
-                      key={order.id}
-                      className={`bg-slate-50 dark:bg-slate-800/50 p-4 rounded-lg shadow-sm border-l-4 ${statusClasses.dot.replace(
-                        "bg-",
-                        "border-"
-                      )}`}
-                    >
-                      <div className="flex justify-between items-start mb-3">
-                        <div>
-                          <p className="text-sm text-slate-500 dark:text-slate-400">
-                            طلب #{order.id.slice(0, 7).toUpperCase()}
-                          </p>
-                          <p className="font-bold text-slate-800 dark:text-slate-100">
-                            {order.deliveryInfo?.name || "غير معروف"}
-                          </p>
-                        </div>
-                        <p className="text-xl font-bold text-primary dark:text-green-400">
-                          {(order.total ?? 0).toLocaleString()} ج.س
-                        </p>
-                      </div>
-
-                      <div className="pt-3 border-t dark:border-slate-700">
-                        <div className="mb-3">
-                          <label className="text-xs text-slate-500 dark:text-slate-400 block mb-1">
-                            طريقة الاستلام:
-                          </label>
-                          <span
-                            className={`font-semibold text-slate-700 dark:text-slate-200`}
-                          >
-                            {order.deliveryMethod === "pickup"
-                              ? "استلام من المتجر"
-                              : "توصيل للمنزل"}
-                          </span>
-                        </div>
-                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                {filteredOrders.map((order) => (
+                  <div
+                    key={order.id}
+                    className="bg-slate-50 dark:bg-slate-800/50 p-4 rounded-lg shadow-sm border dark:border-slate-700"
+                  >
+                    <div className="flex items-start gap-2">
+                      <input
+                        type="checkbox"
+                        className="mt-1"
+                        checked={selectedOrderIds.has(order.id)}
+                        onChange={(e) =>
+                          handleSelectOrder(order.id, e.target.checked)
+                        }
+                      />
+                      <div className="flex-grow">
+                        <div className="flex justify-between items-start">
                           <div>
-                            <label className="text-xs text-slate-500 dark:text-slate-400 block mb-1">
-                              حالة الطلب:
+                            <p className="font-bold text-slate-800 dark:text-slate-100">
+                              {order.deliveryInfo?.name || "غير معروف"}
+                            </p>
+                            <p className="text-sm text-slate-500 dark:text-slate-400">
+                              #{order.id.slice(0, 7).toUpperCase()}
+                            </p>
+                          </div>
+                          <p className="font-bold text-primary">
+                            {(order.total || 0).toLocaleString()} ج.س
+                          </p>
+                        </div>
+                        <div className="mt-4 pt-4 border-t dark:border-slate-700 space-y-3">
+                          <div className="flex items-center justify-between">
+                            <label className="text-sm font-medium">
+                              الحالة:
                             </label>
                             <select
-                              id={`status-mobile-${order.id}`}
                               value={order.status}
                               onChange={(e) =>
                                 handleStatusChange(
-                                  order,
+                                  order.id,
                                   e.target.value as OrderStatus
                                 )
                               }
-                              className={`p-2 w-full rounded text-sm border focus:ring-admin-primary focus:outline-none font-semibold ${statusClasses.select}`}
+                              className={`p-1 w-36 rounded text-xs border focus:ring-admin-primary ${
+                                getStatusPillClasses(order.status).select
+                              }`}
                             >
                               {Object.values(OrderStatus).map((s) => (
                                 <option key={s} value={s}>
@@ -625,26 +502,21 @@ const AdminOrdersScreen: React.FC = () => {
                               ))}
                             </select>
                           </div>
-                          <div>
-                            <label className="text-xs text-slate-500 dark:text-slate-400 block mb-1">
+                          <div className="flex items-center justify-between">
+                            <label className="text-sm font-medium">
                               السائق:
                             </label>
                             <select
                               value={order.driverId || ""}
                               onChange={(e) =>
-                                handleDriverChange(
+                                handleDriverAssign(
                                   order.id,
                                   e.target.value || null
                                 )
                               }
-                              className={`p-2 w-full rounded text-sm ${inputSelectClasses}`}
-                              disabled={order.deliveryMethod === "pickup"}
+                              className="p-1 w-36 rounded text-xs bg-white dark:bg-slate-700 border border-slate-300 dark:border-slate-600"
                             >
-                              <option value="">
-                                {order.deliveryMethod === "pickup"
-                                  ? "لا يوجد"
-                                  : "اختر سائق"}
-                              </option>
+                              <option value="">لم يتم التعيين</option>
                               {drivers.map((d) => (
                                 <option key={d.id} value={d.id}>
                                   {d.name}
@@ -652,40 +524,30 @@ const AdminOrdersScreen: React.FC = () => {
                               ))}
                             </select>
                           </div>
-                        </div>
-                      </div>
-                      <div className="mt-4 pt-3 border-t dark:border-slate-700">
-                        {order.status === OrderStatus.Cancelled ? (
-                          <div className="flex items-center gap-2">
+                          <div className="flex justify-end gap-4 pt-2">
                             <button
                               onClick={() => setSelectedOrder(order)}
-                              className="flex-grow bg-admin-primary/10 text-admin-primary font-semibold px-3 py-2 text-sm rounded hover:bg-admin-primary/20 transition-colors"
+                              className="text-admin-primary font-semibold"
                             >
-                              عرض التفاصيل
+                              التفاصيل
                             </button>
                             <button
-                              onClick={() => handleDeleteOrder(order.id)}
-                              className="flex-shrink-0 bg-red-500/10 text-red-500 font-semibold px-4 py-2 text-sm rounded hover:bg-red-500/20 transition-colors"
+                              onClick={() => handleDeleteOrder(order)}
+                              className="text-red-500 font-semibold"
                             >
                               حذف
                             </button>
                           </div>
-                        ) : (
-                          <button
-                            onClick={() => setSelectedOrder(order)}
-                            className="w-full bg-admin-primary/10 text-admin-primary font-semibold px-3 py-2 text-sm rounded hover:bg-admin-primary/20 transition-colors"
-                          >
-                            عرض التفاصيل
-                          </button>
-                        )}
+                        </div>
                       </div>
                     </div>
-                  );
-                })}
+                  </div>
+                ))}
               </div>
             </>
           )}
         </div>
+
         <Pagination
           onNext={nextPage}
           onPrev={prevPage}
@@ -693,6 +555,7 @@ const AdminOrdersScreen: React.FC = () => {
           hasPrevPage={hasPrevPage}
         />
       </div>
+
       {selectedOrder && (
         <OrderDetailsModal
           order={selectedOrder}
@@ -700,17 +563,12 @@ const AdminOrdersScreen: React.FC = () => {
           drivers={drivers}
         />
       )}
+
       <ConfirmationModal
-        isOpen={confirmationState.isOpen}
+        {...confirmationState}
         onClose={() =>
-          setConfirmationState({ ...confirmationState, isOpen: false })
+          setConfirmationState((prev) => ({ ...prev, isOpen: false }))
         }
-        onConfirm={confirmationState.onConfirm}
-        title={confirmationState.title}
-        message={confirmationState.message}
-        isDestructive={confirmationState.isDestructive}
-        confirmText="تأكيد"
-        cancelText="إلغاء"
       />
     </>
   );
