@@ -1,4 +1,3 @@
-
 import { StoreProduct, ExtraItem, CartItem, Offer, Bundle, Item } from '../types';
 
 // --- CLOUDINARY CONFIGURATION ---
