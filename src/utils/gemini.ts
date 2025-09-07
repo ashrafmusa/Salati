@@ -1,52 +1,53 @@
 import { GoogleGenAI, Type } from "@google/genai";
 import { Item } from '../types';
 
-const ai = new GoogleGenAI({ apiKey: import.meta.env.VITE_GEMINI_API_KEY! });
-
-const bundleIdeaSchema = {
-    type: Type.OBJECT,
-    properties: {
-        ideas: {
-            type: Type.ARRAY,
-            description: "A list of 3 creative bundle ideas.",
-            items: {
-                type: Type.OBJECT,
-                properties: {
-                    bundleName: {
-                        type: Type.STRING,
-                        description: "A catchy and descriptive name for the bundle in Arabic.",
-                    },
-                    description: {
-                        type: Type.STRING,
-                        description: "A short, appealing description for the bundle in Arabic.",
-                    },
-                    itemNames: {
-                        type: Type.ARRAY,
-                        description: "An array of item names from the provided list to be included in this bundle.",
-                        items: {
-                            type: Type.STRING,
-                        },
-                    },
-                },
-                required: ["bundleName", "description", "itemNames"],
-            },
-        },
-    },
-};
-
 export interface BundleIdea {
     bundleName: string;
     description: string;
     itemNames: string[];
 }
 
+const API_KEY = import.meta.env.VITE_GEMINI_API_KEY;
+
+if (!API_KEY) {
+    console.error("Gemini API key is missing. Please add VITE_GEMINI_API_KEY to your .env file to use AI features.");
+}
+
+const ai = new GoogleGenAI({ apiKey: API_KEY! });
+
+const responseSchema = {
+    type: Type.OBJECT,
+    properties: {
+        ideas: {
+            type: Type.ARRAY,
+            items: {
+                type: Type.OBJECT,
+                properties: {
+                    bundleName: { type: Type.STRING },
+                    description: { type: Type.STRING },
+                    itemNames: { type: Type.ARRAY, items: { type: Type.STRING } },
+                }
+            }
+        }
+    }
+};
+
+/**
+ * Generates bundle ideas by calling the Google Gemini API directly from the client.
+ * Requires the VITE_GEMINI_API_KEY environment variable to be set.
+ * @param items - A list of available individual items.
+ * @returns A promise that resolves to an array of bundle ideas.
+ */
 export const generateBundleIdeas = async (items: Item[]): Promise<BundleIdea[]> => {
+    if (!API_KEY) {
+        throw new Error("Gemini API key is not configured. AI features are disabled.");
+    }
     if (items.length === 0) {
         return [];
     }
 
     const itemNames = items.map(item => item.arabicName).join(', ');
-    const prompt = `Based on the following list of available grocery items, generate 3 creative and appealing bundle ideas for an online store in Sudan. For each bundle, provide a name, a short description, and a list of items from the provided list. The items are: ${itemNames}.`;
+    const prompt = `Based on the following list of grocery and food items, generate 3 creative and appealing bundle ideas. For each bundle, provide a catchy Arabic name (bundleName), a short Arabic description, and a list of 2 to 4 item names (itemNames) from the provided list that would fit well together. The items are: ${itemNames}`;
 
     try {
         const response = await ai.models.generateContent({
@@ -54,16 +55,16 @@ export const generateBundleIdeas = async (items: Item[]): Promise<BundleIdea[]> 
             contents: prompt,
             config: {
                 responseMimeType: "application/json",
-                responseSchema: bundleIdeaSchema,
+                responseSchema: responseSchema,
             },
         });
 
         const jsonString = response.text.trim();
         const parsedResponse = JSON.parse(jsonString);
-
         return parsedResponse.ideas || [];
+
     } catch (error) {
         console.error("Error generating bundle ideas with Gemini:", error);
-        throw new Error("Failed to generate ideas. Please check the API key and try again.");
+        throw new Error("Failed to generate bundle ideas. Please check your API key and network connection.");
     }
 };

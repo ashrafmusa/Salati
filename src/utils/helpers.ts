@@ -1,42 +1,46 @@
 import { StoreProduct, ExtraItem, CartItem, Offer, Bundle, Item } from '../types';
 
 // --- CLOUDINARY CONFIGURATION ---
-// The cloud name is public and can remain on the client. All secret keys and presets are handled server-side.
 const CLOUDINARY_CLOUD_NAME = import.meta.env.VITE_CLOUDINARY_CLOUD_NAME;
+const CLOUDINARY_UPLOAD_PRESET = import.meta.env.VITE_CLOUDINARY_UPLOAD_PRESET;
 
 /**
- * Securely uploads a file by sending it to a serverless function.
- * The server-side function will then upload the file to Cloudinary using a secure API key.
+ * Uploads a file directly to Cloudinary from the client-side.
+ * This method uses an "unsigned" upload preset for security.
  * @param file The file to upload.
  * @returns The secure URL of the uploaded image.
  */
 export const uploadToCloudinary = async (file: File): Promise<string> => {
+    if (!CLOUDINARY_CLOUD_NAME || !CLOUDINARY_UPLOAD_PRESET) {
+        const errorMessage = "Cloudinary configuration is missing. Please check your .env file for VITE_CLOUDINARY_CLOUD_NAME and VITE_CLOUDINARY_UPLOAD_PRESET.";
+        console.error(errorMessage);
+        throw new Error(errorMessage);
+    }
+
     const formData = new FormData();
     formData.append('file', file);
+    formData.append('upload_preset', CLOUDINARY_UPLOAD_PRESET);
 
     try {
-        // The API call is now made to our own backend endpoint.
-        // This endpoint should be a serverless function (e.g., on Netlify or Vercel).
-        const response = await fetch('/api/uploadImage', {
+        const response = await fetch(`https://api.cloudinary.com/v1_1/${CLOUDINARY_CLOUD_NAME}/image/upload`, {
             method: 'POST',
             body: formData,
         });
 
         if (!response.ok) {
-            const errorData = await response.json().catch(() => ({ message: 'An unknown server error occurred during image upload.' }));
-            throw new Error(errorData.message || `Server responded with status ${response.status}`);
+            const errorData = await response.json().catch(() => ({ error: { message: 'An unknown Cloudinary error occurred.' } }));
+            throw new Error(errorData.error.message || `Cloudinary responded with status ${response.status}`);
         }
 
         const data = await response.json();
-        // The serverless function is expected to return the secure URL.
         if (!data.secure_url) {
-            throw new Error("Server did not return a valid image URL.");
+            throw new Error("Cloudinary did not return a valid image URL.");
         }
         return data.secure_url;
 
     } catch (error) {
-        console.error("Error uploading image via serverless function:", error);
-        throw new Error("Failed to upload image. Please ensure the backend service is running correctly.");
+        console.error("Error uploading image directly to Cloudinary:", error);
+        throw new Error("Failed to upload image.");
     }
 };
 
