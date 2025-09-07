@@ -5,13 +5,17 @@
     <link rel="icon" type="image/svg+xml" href="/logo.svg" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>Salati Admin Panel</title>
+    <meta name="description" content="Administration panel for the Salati platform. Manage orders, products, users, and settings in real-time.">
+    
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Almarai:wght@400;700&family=Lato:wght@400;700&family=Montserrat:wght@700;800&display=swap" rel="stylesheet">
+    <link rel="preload" href="https://fonts.googleapis.com/css2?family=Almarai:wght@400;700&family=Lato:wght@400;700&family=Montserrat:wght@700;800&display=swap" as="style" onload="this.onload=null;this.rel='stylesheet'">
+    <noscript><link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Almarai:wght@400;700&family=Lato:wght@400;700&family=Montserrat:wght@700;800&display=swap"></noscript>
+
     <link rel="stylesheet" href="/index.css">
   </head>
   <body class="antialiased">
     <div id="root"></div>
-    <script type="module" src="/src/AdminApp.tsx"></script>
+    <script type="module" src="/src/admin.tsx"></script>
   </body>
 </html>
