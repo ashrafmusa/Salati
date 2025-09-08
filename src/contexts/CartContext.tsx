@@ -25,7 +25,7 @@ import {
   calculateItemAndExtrasTotal,
 } from "../utils/helpers";
 import { useSettings } from "./SettingsContext";
-import { dispatchCartUpdate } from "../components/NavigationBar";
+import { dispatchCartUpdate } from "../utils/eventBus";
 
 interface CartState {
   items: CartItem[];
