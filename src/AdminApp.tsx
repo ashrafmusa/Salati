@@ -33,6 +33,16 @@ const DriverDashboardScreen = lazy(
 );
 const AdminReportsScreen = lazy(() => import("./screens/AdminReportsScreen"));
 const AdminAuditLogScreen = lazy(() => import("./screens/AdminAuditLogScreen"));
+// --- SCM Components ---
+const AdminSuppliersScreen = lazy(
+  () => import("./screens/AdminSuppliersScreen")
+);
+const AdminPurchaseOrdersScreen = lazy(
+  () => import("./screens/AdminPurchaseOrdersScreen")
+);
+const AdminPurchaseOrderFormScreen = lazy(
+  () => import("./screens/AdminPurchaseOrderFormScreen")
+);
 
 const ProtectedAdminRoutes: React.FC = () => {
   const { user, loading } = useAuth();
@@ -70,6 +80,20 @@ const ProtectedAdminRoutes: React.FC = () => {
             <Route path="/products" element={<AdminProductsScreen />} />
             <Route path="/offers" element={<AdminOffersScreen />} />
             <Route path="/drivers" element={<AdminDriversScreen />} />
+            {/* SCM Routes */}
+            <Route path="/suppliers" element={<AdminSuppliersScreen />} />
+            <Route
+              path="/purchase-orders"
+              element={<AdminPurchaseOrdersScreen />}
+            />
+            <Route
+              path="/purchase-orders/new"
+              element={<AdminPurchaseOrderFormScreen />}
+            />
+            <Route
+              path="/purchase-orders/:id"
+              element={<AdminPurchaseOrderFormScreen />}
+            />
           </>
         )}
 

@@ -9,7 +9,8 @@ import {
   deleteDoc,
   writeBatch,
 } from "firebase/firestore";
-import { Item, Category, Bundle, StoreProduct } from "../types";
+// FIX: Imported the `Supplier` type to be used for fetching and passing supplier data.
+import { Item, Category, Bundle, StoreProduct, Supplier } from "../types";
 import AdminScreenHeader from "../components/AdminScreenHeader";
 import { getOptimizedImageUrl, exportToCsv } from "../utils/helpers";
 import ConfirmationModal from "../components/ConfirmationModal";
@@ -30,6 +31,8 @@ const AdminProductsScreen: React.FC = () => {
   const { user: adminUser } = useAuth();
   const [categories, setCategories] = useState<Category[]>([]);
   const [allItems, setAllItems] = useState<Item[]>([]);
+  // FIX: Added state to store the list of suppliers.
+  const [suppliers, setSuppliers] = useState<Supplier[]>([]);
   const [searchTerm, setSearchTerm] = useState("");
   const [selectedProductIds, setSelectedProductIds] = useState<Set<string>>(
     new Set()
@@ -82,9 +85,16 @@ const AdminProductsScreen: React.FC = () => {
         snapshot.docs.map((doc) => ({ id: doc.id, ...doc.data() } as Item))
       )
     );
+    // FIX: Fetched suppliers to pass to the ItemFormModal.
+    const unsubSuppliers = onSnapshot(collection(db, "suppliers"), (snapshot) =>
+      setSuppliers(
+        snapshot.docs.map((doc) => ({ id: doc.id, ...doc.data() } as Supplier))
+      )
+    );
     return () => {
       unsubCategories();
       unsubItems();
+      unsubSuppliers();
     };
   }, []);
 
@@ -361,6 +371,7 @@ const AdminProductsScreen: React.FC = () => {
         hasPrevPage={hasPrevPage}
       />
 
+      {/* FIX: Passed the `suppliers` prop to the ItemFormModal to resolve the error. */}
       {modalType === "item" && (
         <ItemFormModal
           item={editingProduct as Item | null}
@@ -368,6 +379,7 @@ const AdminProductsScreen: React.FC = () => {
           onSave={handleSave as (item: Item) => void}
           isSaving={isSaving}
           categories={categories}
+          suppliers={suppliers}
         />
       )}
       {modalType === "bundle" && (

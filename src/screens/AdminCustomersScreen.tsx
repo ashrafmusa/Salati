@@ -14,15 +14,15 @@ import AdminScreenHeader from "../components/AdminScreenHeader";
 import { useToast } from "../contexts/ToastContext";
 import SortableHeader from "../components/SortableHeader";
 import UserEditModal from "../components/UserEditModal";
-import { usePaginatedFirestore } from "../hooks/usePaginatedFirestore";
 import Pagination from "../components/Pagination";
 import TableSkeleton from "../components/TableSkeleton";
 import { logAdminAction } from "../utils/auditLogger";
+import { useClientSidePagination } from "../hooks/useClientSidePagination";
 
 type PaginatedUser = User & {
   id: string;
-  totalOrders?: number;
-  totalSpent?: number;
+  totalOrders: number;
+  totalSpent: number;
 };
 
 const RoleBadge: React.FC<{ role: User["role"] }> = ({ role }) => {
@@ -73,16 +73,36 @@ const AdminCustomersScreen: React.FC = () => {
   const [selectedUserIds, setSelectedUserIds] = useState<Set<string>>(
     new Set()
   );
-  const [allOrders, setAllOrders] = useState<Order[]>([]);
 
-  // Fetch all orders once to calculate customer stats
+  const [allUsers, setAllUsers] = useState<User[]>([]);
+  const [allOrders, setAllOrders] = useState<Order[]>([]);
+  const [loading, setLoading] = useState(true);
+
+  // Fetch all users and orders once to calculate customer stats and enable correct client-side sorting.
   useEffect(() => {
-    const unsub = onSnapshot(collection(db, "orders"), (snapshot) => {
-      setAllOrders(
-        snapshot.docs.map((doc) => ({ id: doc.id, ...doc.data() } as Order))
+    setLoading(true);
+    const unsubUsers = onSnapshot(collection(db, "users"), (snapshot) => {
+      const fetchedUsers = snapshot.docs.map(
+        (doc) => ({ id: doc.id, uid: doc.id, ...doc.data() } as User)
       );
+      setAllUsers(fetchedUsers);
     });
-    return () => unsub();
+
+    const unsubOrders = onSnapshot(
+      collection(db, "orders"),
+      (snapshot) => {
+        setAllOrders(
+          snapshot.docs.map((doc) => ({ id: doc.id, ...doc.data() } as Order))
+        );
+        setLoading(false); // Consider loading complete after the last fetch
+      },
+      () => setLoading(false)
+    );
+
+    return () => {
+      unsubUsers();
+      unsubOrders();
+    };
   }, []);
 
   const customerStats = useMemo(() => {
@@ -102,53 +122,42 @@ const AdminCustomersScreen: React.FC = () => {
     return stats;
   }, [allOrders]);
 
+  const augmentedUsers = useMemo(() => {
+    return allUsers.map((user) => ({
+      ...user,
+      id: user.uid, // ensure id is present for the hook
+      totalOrders: customerStats.get(user.uid)?.totalOrders || 0,
+      totalSpent: customerStats.get(user.uid)?.totalSpent || 0,
+    }));
+  }, [allUsers, customerStats]);
+
+  const filteredAndSortedUsers = useMemo(() => {
+    if (!searchTerm) return augmentedUsers;
+    return augmentedUsers.filter(
+      (user: PaginatedUser) =>
+        user.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        (user.email || "").toLowerCase().includes(searchTerm.toLowerCase()) ||
+        (user.phone || "").includes(searchTerm)
+    );
+  }, [augmentedUsers, searchTerm]);
+
   const initialSort = useMemo(
     () => ({ key: "name" as const, direction: "ascending" as const }),
     []
   );
 
   const {
-    documents: paginatedUsers,
-    loading,
+    paginatedDocuments: usersToRender,
+    requestSort,
+    sortConfig,
     nextPage,
     prevPage,
     hasNextPage,
     hasPrevPage,
-    requestSort,
-    sortConfig,
-  } = usePaginatedFirestore<PaginatedUser>("users", initialSort);
-
-  const augmentedUsers = useMemo(() => {
-    return paginatedUsers.map((user) => ({
-      ...user,
-      totalOrders: customerStats.get(user.uid)?.totalOrders || 0,
-      totalSpent: customerStats.get(user.uid)?.totalSpent || 0,
-    }));
-  }, [paginatedUsers, customerStats]);
-
-  const locallySortedUsers = useMemo(() => {
-    const sorted = [...augmentedUsers];
-    if (sortConfig.key === "totalOrders" || sortConfig.key === "totalSpent") {
-      sorted.sort((a, b) => {
-        const valA = a[sortConfig.key as "totalOrders" | "totalSpent"] || 0;
-        const valB = b[sortConfig.key as "totalOrders" | "totalSpent"] || 0;
-        if (valA < valB) return sortConfig.direction === "ascending" ? -1 : 1;
-        if (valA > valB) return sortConfig.direction === "ascending" ? 1 : -1;
-        return 0;
-      });
-    }
-    return sorted;
-  }, [augmentedUsers, sortConfig]);
-
-  const filteredUsers = useMemo(() => {
-    if (!searchTerm) return locallySortedUsers;
-    return locallySortedUsers.filter(
-      (user: PaginatedUser) =>
-        user.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        (user.email || "").toLowerCase().includes(searchTerm.toLowerCase()) ||
-        (user.phone || "").includes(searchTerm)
-    );
-  }, [locallySortedUsers, searchTerm]);
+  } = useClientSidePagination<PaginatedUser>(
+    filteredAndSortedUsers,
+    initialSort
+  );
 
   const handleOpenEditModal = (user: PaginatedUser) => {
     setEditingUser(user);
@@ -248,7 +257,7 @@ const AdminCustomersScreen: React.FC = () => {
 
   const handleSelectAll = (e: React.ChangeEvent<HTMLInputElement>) => {
     if (e.target.checked) {
-      setSelectedUserIds(new Set(filteredUsers.map((u) => u.uid)));
+      setSelectedUserIds(new Set(filteredAndSortedUsers.map((u) => u.uid)));
     } else {
       setSelectedUserIds(new Set());
     }
@@ -304,8 +313,9 @@ const AdminCustomersScreen: React.FC = () => {
                       type="checkbox"
                       onChange={handleSelectAll}
                       checked={
-                        selectedUserIds.size === filteredUsers.length &&
-                        filteredUsers.length > 0
+                        selectedUserIds.size ===
+                          filteredAndSortedUsers.length &&
+                        filteredAndSortedUsers.length > 0
                       }
                     />
                   </th>
@@ -333,7 +343,7 @@ const AdminCustomersScreen: React.FC = () => {
                 </tr>
               </thead>
               <tbody>
-                {filteredUsers.map((user: PaginatedUser) => {
+                {usersToRender.map((user: PaginatedUser) => {
                   const permissions = getManagementPermissions(user);
                   return (
                     <tr
