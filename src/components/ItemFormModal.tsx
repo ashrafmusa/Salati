@@ -42,6 +42,7 @@ const ItemFormModal: React.FC<ItemFormModalProps> = ({
         price: 0,
         stock: 0,
         isFeatured: false,
+        supplierId: "",
         costPrice: 0,
       });
       setImagePreview(null);
