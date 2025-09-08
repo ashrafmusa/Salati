@@ -25,7 +25,7 @@ export default {
         },
       },
       fontFamily: {
-        sans: ['var(--font-sans)', 'Almarai', 'Lato', 'sans-serif'],
+        sans: ['var(--font-sans)', 'Almarai', 'sans-serif'],
         display: ['var(--font-display)', 'Montserrat', 'sans-serif'],
       },
       boxShadow: {
@@ -89,6 +89,10 @@ export default {
         'progress-bar-fill': {
           'from': { transform: 'scaleX(0)' },
           'to': { transform: 'scaleX(1)' },
+        },
+        'jiggle': {
+          '0%, 100%': { transform: 'rotate(-3deg)' },
+          '50%': { transform: 'rotate(3deg)' },
         }
       },
       animation: {
@@ -110,6 +114,7 @@ export default {
         'slide-in-letter': 'slide-in-letter 0.5s forwards',
         'nudge-reveal': 'nudge-reveal 4s ease-in-out',
         'progress-bar-fill': 'progress-bar-fill 1.5s ease-out forwards',
+        'jiggle': 'jiggle 0.4s ease-in-out',
       },
     },
   },

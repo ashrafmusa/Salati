@@ -25,6 +25,7 @@ import {
   calculateItemAndExtrasTotal,
 } from "../utils/helpers";
 import { useSettings } from "./SettingsContext";
+import { dispatchCartUpdate } from "../components/NavigationBar";
 
 interface CartState {
   items: CartItem[];
@@ -247,14 +248,19 @@ export const CartProvider: React.FC<{ children: ReactNode }> = ({
               ? cartDoc.data()!.items
               : [];
           transaction.set(cartRef, { items: action(currentItems) });
-        }).catch((e) => {
-          console.error("Error adding item to cart:", e);
-          setError({ type: "add", message: "Failed to add item to cart." });
-        });
+        })
+          .then(() => {
+            dispatchCartUpdate(); // Dispatch event on successful add
+          })
+          .catch((e) => {
+            console.error("Error adding item to cart:", e);
+            setError({ type: "add", message: "Failed to add item to cart." });
+          });
       } else {
         setItems((prev) => {
           const newItems = action(prev);
           saveGuestCart(newItems);
+          dispatchCartUpdate(); // Dispatch event on successful add
           return newItems;
         });
       }
