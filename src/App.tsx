@@ -9,6 +9,7 @@ import FullScreenLoader from "./components/FullScreenLoader";
 import { initializeFirebase } from "./firebase/config";
 import ScrollToTop from "./components/ScrollToTop";
 import ThemeApplicator from "./components/ThemeApplicator";
+import ConfigurationErrorScreen from "./components/ConfigurationErrorScreen"; // New Import
 
 // Statically import components critical for the initial page load (LCP)
 import MainLayout from "./components/MainLayout";
@@ -30,18 +31,34 @@ const TermsScreen = lazy(() => import("./screens/TermsScreen"));
 const PrivacyPolicyScreen = lazy(() => import("./screens/PrivacyPolicyScreen"));
 
 const App: React.FC = () => {
-  const [isFirebaseReady, setIsFirebaseReady] = useState(false);
+  const [initializationState, setInitializationState] = useState<
+    "loading" | "ready" | "error"
+  >("loading");
+  const [initializationError, setInitializationError] = useState<string | null>(
+    null
+  );
 
   useEffect(() => {
     const loadFirebase = async () => {
-      await initializeFirebase();
-      setIsFirebaseReady(true);
+      try {
+        await initializeFirebase();
+        setInitializationState("ready");
+      } catch (error: any) {
+        setInitializationError(
+          error.message || "An unexpected error occurred during initialization."
+        );
+        setInitializationState("error");
+      }
     };
     loadFirebase();
   }, []);
 
-  if (!isFirebaseReady) {
+  if (initializationState === "loading") {
     return <FullScreenLoader />;
+  }
+
+  if (initializationState === "error") {
+    return <ConfigurationErrorScreen error={initializationError} />;
   }
 
   return (

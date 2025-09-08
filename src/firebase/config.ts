@@ -13,9 +13,12 @@ const firebaseConfig = {
     appId: import.meta.env.VITE_FIREBASE_APP_ID,
 };
 
-// A check to ensure all required environment variables are present during development.
-if (import.meta.env.DEV && Object.values(firebaseConfig).some(value => !value)) {
-    console.error("Firebase configuration is missing. Make sure you have a .env file with all the required VITE_FIREBASE_ variables.");
+// A check to ensure all required environment variables are present.
+// This is critical for the app to function.
+if (Object.values(firebaseConfig).some(value => !value)) {
+    // We throw an error here to be caught by the App root components.
+    // This provides a clear, user-facing error message instead of a cryptic crash.
+    throw new Error("Firebase configuration is missing. Please check your .env file and ensure all VITE_FIREBASE_ variables are set correctly.");
 }
 
 // Initialize Firebase

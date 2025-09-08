@@ -10,6 +10,7 @@ import ScrollToTop from "./components/ScrollToTop";
 import { SettingsProvider } from "./contexts/SettingsContext";
 import { CartProvider } from "./contexts/CartContext";
 import { WishlistProvider } from "./contexts/WishlistContext";
+import ConfigurationErrorScreen from "./components/ConfigurationErrorScreen"; // New Import
 
 // --- Lazy-loaded Admin Components ---
 const AdminLayout = lazy(() => import("./components/AdminLayout"));
@@ -116,18 +117,34 @@ const ProtectedAdminRoutes: React.FC = () => {
 };
 
 const AdminApp: React.FC = () => {
-  const [isFirebaseReady, setIsFirebaseReady] = useState(false);
+  const [initializationState, setInitializationState] = useState<
+    "loading" | "ready" | "error"
+  >("loading");
+  const [initializationError, setInitializationError] = useState<string | null>(
+    null
+  );
 
   useEffect(() => {
     const loadFirebase = async () => {
-      await initializeFirebase();
-      setIsFirebaseReady(true);
+      try {
+        await initializeFirebase();
+        setInitializationState("ready");
+      } catch (error: any) {
+        setInitializationError(
+          error.message || "An unexpected error occurred during initialization."
+        );
+        setInitializationState("error");
+      }
     };
     loadFirebase();
   }, []);
 
-  if (!isFirebaseReady) {
+  if (initializationState === "loading") {
     return <FullScreenLoader />;
+  }
+
+  if (initializationState === "error") {
+    return <ConfigurationErrorScreen error={initializationError} />;
   }
 
   return (
