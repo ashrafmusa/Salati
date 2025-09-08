@@ -14,7 +14,6 @@ import {
 import { useCart } from "../hooks/useCart";
 import { useWishlist } from "../hooks/useWishlist";
 import SubPageHeader from "../components/SubPageHeader";
-import { getOptimizedImageUrl } from "../utils/helpers";
 import { Item, Review } from "../types";
 import {
   CheckCircleIcon,
@@ -28,6 +27,7 @@ import SectionHeader from "../components/SectionHeader";
 import ReviewSummary from "../components/ReviewSummary";
 import ReviewCard from "../components/ReviewCard";
 import MetaTagManager from "../components/MetaTagManager";
+import ProductImageGallery from "../components/ProductImageGallery";
 
 const StarRating: React.FC<{ rating: number; reviewCount: number }> = ({
   rating,
@@ -240,10 +240,10 @@ const ItemDetailScreen: React.FC = () => {
         <div className="p-4">
           <div className="grid grid-cols-1 md:grid-cols-2 gap-8 items-start">
             <div>
-              <img
-                src={getOptimizedImageUrl(item.imageUrl, 800)}
-                alt={item.arabicName}
-                className="w-full h-auto rounded-2xl shadow-lg object-cover"
+              <ProductImageGallery
+                mainImage={item.imageUrl}
+                otherImages={item.imageUrls}
+                altText={item.arabicName}
               />
               <button
                 onClick={handleToggleWishlist}

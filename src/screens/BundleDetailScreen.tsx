@@ -31,6 +31,7 @@ import SectionHeader from "../components/SectionHeader";
 import ReviewSummary from "../components/ReviewSummary";
 import ReviewCard from "../components/ReviewCard";
 import MetaTagManager from "../components/MetaTagManager";
+import ProductImageGallery from "../components/ProductImageGallery";
 
 const StarRating: React.FC<{ rating: number; reviewCount: number }> = ({
   rating,
@@ -302,10 +303,10 @@ const BundleDetailScreen: React.FC = () => {
         <div className="p-4">
           <div className="grid grid-cols-1 md:grid-cols-2 gap-8 items-start">
             <div>
-              <img
-                src={getOptimizedImageUrl(bundle.imageUrl, 800)}
-                alt={bundle.arabicName}
-                className="w-full h-auto rounded-2xl shadow-lg object-cover"
+              <ProductImageGallery
+                mainImage={bundle.imageUrl}
+                otherImages={bundle.imageUrls}
+                altText={bundle.arabicName}
               />
               <button
                 onClick={handleToggleWishlist}

@@ -1,4 +1,4 @@
-import React, { useState, useMemo } from "react";
+import React, { useState, useMemo, useEffect } from "react";
 import { db } from "../firebase/config";
 import {
   collection,
@@ -6,8 +6,9 @@ import {
   updateDoc,
   deleteDoc,
   writeBatch,
+  onSnapshot,
 } from "firebase/firestore";
-import { User } from "../types";
+import { User, Order } from "../types";
 import { useAuth } from "../hooks/useAuth";
 import AdminScreenHeader from "../components/AdminScreenHeader";
 import { useToast } from "../contexts/ToastContext";
@@ -18,7 +19,11 @@ import Pagination from "../components/Pagination";
 import TableSkeleton from "../components/TableSkeleton";
 import { logAdminAction } from "../utils/auditLogger";
 
-type PaginatedUser = User & { id: string };
+type PaginatedUser = User & {
+  id: string;
+  totalOrders?: number;
+  totalSpent?: number;
+};
 
 const RoleBadge: React.FC<{ role: User["role"] }> = ({ role }) => {
   const roleConfig = {
@@ -68,6 +73,34 @@ const AdminCustomersScreen: React.FC = () => {
   const [selectedUserIds, setSelectedUserIds] = useState<Set<string>>(
     new Set()
   );
+  const [allOrders, setAllOrders] = useState<Order[]>([]);
+
+  // Fetch all orders once to calculate customer stats
+  useEffect(() => {
+    const unsub = onSnapshot(collection(db, "orders"), (snapshot) => {
+      setAllOrders(
+        snapshot.docs.map((doc) => ({ id: doc.id, ...doc.data() } as Order))
+      );
+    });
+    return () => unsub();
+  }, []);
+
+  const customerStats = useMemo(() => {
+    const stats = new Map<
+      string,
+      { totalOrders: number; totalSpent: number }
+    >();
+    allOrders.forEach((order) => {
+      const current = stats.get(order.userId) || {
+        totalOrders: 0,
+        totalSpent: 0,
+      };
+      current.totalOrders += 1;
+      current.totalSpent += order.total;
+      stats.set(order.userId, current);
+    });
+    return stats;
+  }, [allOrders]);
 
   const initialSort = useMemo(
     () => ({ key: "name" as const, direction: "ascending" as const }),
@@ -85,15 +118,37 @@ const AdminCustomersScreen: React.FC = () => {
     sortConfig,
   } = usePaginatedFirestore<PaginatedUser>("users", initialSort);
 
+  const augmentedUsers = useMemo(() => {
+    return paginatedUsers.map((user) => ({
+      ...user,
+      totalOrders: customerStats.get(user.uid)?.totalOrders || 0,
+      totalSpent: customerStats.get(user.uid)?.totalSpent || 0,
+    }));
+  }, [paginatedUsers, customerStats]);
+
+  const locallySortedUsers = useMemo(() => {
+    const sorted = [...augmentedUsers];
+    if (sortConfig.key === "totalOrders" || sortConfig.key === "totalSpent") {
+      sorted.sort((a, b) => {
+        const valA = a[sortConfig.key as "totalOrders" | "totalSpent"] || 0;
+        const valB = b[sortConfig.key as "totalOrders" | "totalSpent"] || 0;
+        if (valA < valB) return sortConfig.direction === "ascending" ? -1 : 1;
+        if (valA > valB) return sortConfig.direction === "ascending" ? 1 : -1;
+        return 0;
+      });
+    }
+    return sorted;
+  }, [augmentedUsers, sortConfig]);
+
   const filteredUsers = useMemo(() => {
-    if (!searchTerm) return paginatedUsers;
-    return paginatedUsers.filter(
+    if (!searchTerm) return locallySortedUsers;
+    return locallySortedUsers.filter(
       (user: PaginatedUser) =>
         user.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
         (user.email || "").toLowerCase().includes(searchTerm.toLowerCase()) ||
         (user.phone || "").includes(searchTerm)
     );
-  }, [paginatedUsers, searchTerm]);
+  }, [locallySortedUsers, searchTerm]);
 
   const handleOpenEditModal = (user: PaginatedUser) => {
     setEditingUser(user);
@@ -104,7 +159,7 @@ const AdminCustomersScreen: React.FC = () => {
     if (!editingUser) return;
     setIsSaving(true);
     try {
-      const { id, ...userData } = updatedUser;
+      const { id, totalOrders, totalSpent, ...userData } = updatedUser;
       await updateDoc(doc(db, "users", editingUser.uid), userData);
       logAdminAction(
         adminUser,
@@ -260,16 +315,25 @@ const AdminCustomersScreen: React.FC = () => {
                     requestSort={requestSort}
                     sortConfig={sortConfig}
                   />
-                  <th className="p-3 text-sm font-semibold text-slate-500 dark:text-slate-400">
-                    رقم الهاتف / الإيميل
-                  </th>
+                  <SortableHeader<PaginatedUser>
+                    label="إجمالي الطلبات"
+                    sortKey="totalOrders"
+                    requestSort={requestSort}
+                    sortConfig={sortConfig}
+                  />
+                  <SortableHeader<PaginatedUser>
+                    label="إجمالي المدفوعات"
+                    sortKey="totalSpent"
+                    requestSort={requestSort}
+                    sortConfig={sortConfig}
+                  />
                   <th className="p-3 text-sm font-semibold text-slate-500 dark:text-slate-400">
                     إجراءات
                   </th>
                 </tr>
               </thead>
               <tbody>
-                {filteredUsers.map((user: PaginatedUser, index: number) => {
+                {filteredUsers.map((user: PaginatedUser) => {
                   const permissions = getManagementPermissions(user);
                   return (
                     <tr
@@ -302,11 +366,11 @@ const AdminCustomersScreen: React.FC = () => {
                           </div>
                         </div>
                       </td>
-                      <td
-                        className="p-3 text-slate-600 dark:text-slate-300"
-                        dir="ltr"
-                      >
-                        {user.phone || user.email}
+                      <td className="p-3 text-slate-600 dark:text-slate-300">
+                        {user.totalOrders}
+                      </td>
+                      <td className="p-3 text-slate-600 dark:text-slate-300">
+                        {(user.totalSpent || 0).toLocaleString()} ج.س
                       </td>
                       <td className="p-3">
                         <div className="flex items-center gap-4">

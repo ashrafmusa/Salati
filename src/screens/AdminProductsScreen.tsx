@@ -24,6 +24,7 @@ import { useCombinedPaginatedFirestore } from "../hooks/useCombinedPaginatedFire
 import ItemFormModal from "../components/ItemFormModal";
 import BundleFormModal from "../components/BundleFormModal";
 import { useClickOutside } from "../hooks/useClickOutside";
+import BulkActionModal from "../components/BulkActionModal";
 
 const AdminProductsScreen: React.FC = () => {
   const { user: adminUser } = useAuth();
@@ -47,6 +48,9 @@ const AdminProductsScreen: React.FC = () => {
   const [isAddDropdownOpen, setIsAddDropdownOpen] = useState(false);
   const addDropdownRef = useRef<HTMLDivElement>(null);
   useClickOutside(addDropdownRef, () => setIsAddDropdownOpen(false));
+  const [bulkAction, setBulkAction] = useState<"category" | "stock" | null>(
+    null
+  );
 
   const initialSort = useMemo(
     () => ({ key: "arabicName" as const, direction: "ascending" as const }),
@@ -122,7 +126,8 @@ const AdminProductsScreen: React.FC = () => {
         await updateDoc(doc(db, collectionName, id), data);
         showToast("Product updated successfully!", "success");
       } else {
-        await setDoc(doc(db, collectionName, id || `prod_${Date.now()}`), data);
+        const newDocRef = doc(collection(db, collectionName));
+        await setDoc(newDocRef, { ...data, id: newDocRef.id });
         showToast("Product added successfully!", "success");
       }
       logAdminAction(
@@ -153,6 +158,41 @@ const AdminProductsScreen: React.FC = () => {
     }
   };
 
+  const handleBulkUpdate = async (value: string | number) => {
+    if (selectedProductIds.size === 0 || !bulkAction) return;
+    setIsSaving(true);
+    const batch = writeBatch(db);
+    const fieldToUpdate = bulkAction === "category" ? "category" : "stock";
+
+    selectedProductIds.forEach((id) => {
+      const product = products.find((p) => p.id === id);
+      if (product) {
+        const collectionName = product.type === "item" ? "items" : "bundles";
+        const docRef = doc(db, collectionName, id);
+        batch.update(docRef, { [fieldToUpdate]: value });
+      }
+    });
+
+    try {
+      await batch.commit();
+      logAdminAction(
+        adminUser,
+        "Bulk Product Update",
+        `${selectedProductIds.size} products updated: ${fieldToUpdate} -> ${value}`
+      );
+      showToast(
+        `${selectedProductIds.size} products updated successfully!`,
+        "success"
+      );
+    } catch (error) {
+      showToast("Bulk update failed.", "error");
+    } finally {
+      setIsSaving(false);
+      setBulkAction(null);
+      setSelectedProductIds(new Set());
+    }
+  };
+
   const ProductTypeBadge: React.FC<{ type: "item" | "bundle" }> = ({
     type,
   }) => (
@@ -176,7 +216,28 @@ const AdminProductsScreen: React.FC = () => {
         searchPlaceholder="ابحث عن منتج..."
       />
 
-      <div className="flex justify-end mb-4">
+      <div className="flex justify-between items-center mb-4">
+        <div>
+          {selectedProductIds.size > 0 && (
+            <div className="flex items-center gap-4 animate-fade-in">
+              <span className="text-sm font-semibold">
+                {selectedProductIds.size} منتجات محددة
+              </span>
+              <button
+                onClick={() => setBulkAction("category")}
+                className="text-sm text-admin-primary font-semibold hover:underline"
+              >
+                تغيير الفئة
+              </button>
+              <button
+                onClick={() => setBulkAction("stock")}
+                className="text-sm text-admin-primary font-semibold hover:underline"
+              >
+                تحديد المخزون
+              </button>
+            </div>
+          )}
+        </div>
         <div ref={addDropdownRef} className="relative">
           <button
             onClick={() => setIsAddDropdownOpen((p) => !p)}
@@ -215,15 +276,16 @@ const AdminProductsScreen: React.FC = () => {
         ) : (
           <div className="overflow-x-auto">
             <table className="w-full text-right">
-              <thead>
+              <thead className="border-b-2 border-slate-100 dark:border-slate-700">
                 <tr>
-                  <th>
+                  <th className="p-3">
                     <input
                       type="checkbox"
                       onChange={handleSelectAll}
                       checked={
                         selectedProductIds.size > 0 &&
-                        selectedProductIds.size === filteredProducts.length
+                        selectedProductIds.size === filteredProducts.length &&
+                        filteredProducts.length > 0
                       }
                     />
                   </th>
@@ -233,10 +295,10 @@ const AdminProductsScreen: React.FC = () => {
                     requestSort={requestSort}
                     sortConfig={sortConfig}
                   />
-                  <th>النوع</th>
-                  <th>الفئة</th>
-                  <th>المخزون</th>
-                  <th>إجراءات</th>
+                  <th className="p-3 text-sm font-semibold">النوع</th>
+                  <th className="p-3 text-sm font-semibold">الفئة</th>
+                  <th className="p-3 text-sm font-semibold">المخزون</th>
+                  <th className="p-3 text-sm font-semibold">إجراءات</th>
                 </tr>
               </thead>
               <tbody>
@@ -247,7 +309,7 @@ const AdminProductsScreen: React.FC = () => {
                       selectedProductIds.has(product.id) ? "bg-sky-100/50" : ""
                     }`}
                   >
-                    <td>
+                    <td className="p-3">
                       <input
                         type="checkbox"
                         checked={selectedProductIds.has(product.id)}
@@ -256,7 +318,7 @@ const AdminProductsScreen: React.FC = () => {
                         }
                       />
                     </td>
-                    <td>
+                    <td className="p-3">
                       <div className="flex items-center gap-3">
                         <img
                           src={getOptimizedImageUrl(product.imageUrl, 100)}
@@ -266,12 +328,12 @@ const AdminProductsScreen: React.FC = () => {
                         <span>{product.arabicName}</span>
                       </div>
                     </td>
-                    <td>
+                    <td className="p-3">
                       <ProductTypeBadge type={product.type} />
                     </td>
-                    <td>{product.category}</td>
-                    <td>{product.stock}</td>
-                    <td className="space-x-4">
+                    <td className="p-3">{product.category}</td>
+                    <td className="p-3">{product.stock}</td>
+                    <td className="p-3 space-x-4">
                       <button
                         onClick={() => handleOpenModal(product.type, product)}
                         className="text-admin-primary hover:underline"
@@ -325,6 +387,24 @@ const AdminProductsScreen: React.FC = () => {
         title="تأكيد الحذف"
         message={`هل أنت متأكد من حذف "${productToDelete?.arabicName}"؟`}
         isDestructive
+      />
+      <BulkActionModal
+        isOpen={!!bulkAction}
+        onClose={() => setBulkAction(null)}
+        onConfirm={handleBulkUpdate}
+        title={
+          bulkAction === "category"
+            ? "تغيير الفئة للمنتجات المحددة"
+            : "تحديد المخزون للمنتجات المحددة"
+        }
+        inputType={bulkAction === "category" ? "select" : "number"}
+        label={
+          bulkAction === "category"
+            ? "اختر فئة جديدة"
+            : "أدخل كمية المخزون الجديدة"
+        }
+        options={categories.map((c) => ({ value: c.name, label: c.name }))}
+        isSaving={isSaving}
       />
     </div>
   );

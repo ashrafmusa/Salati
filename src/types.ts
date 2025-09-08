@@ -14,6 +14,7 @@ export interface Item {
   name: string;
   arabicName: string;
   imageUrl: string;
+  imageUrls?: string[]; // For product gallery
   category: string;
   description: string;
   price: number;
@@ -34,6 +35,7 @@ export interface Bundle {
   name: string;
   arabicName: string;
   imageUrl: string;
+  imageUrls?: string[]; // For product gallery
   category: string;
   description: string;
   contents: BundleContent[];
