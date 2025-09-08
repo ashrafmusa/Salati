@@ -18,6 +18,7 @@ import EmptyState from "../components/EmptyState";
 import { getOptimizedImageUrl, calculateBundlePrice } from "../utils/helpers";
 import HomeScreenSkeleton from "../components/HomeScreenSkeleton";
 import SiteHeader from "../components/SiteHeader";
+import MetaTagManager from "../components/MetaTagManager";
 
 const HomeScreen: React.FC = () => {
   const [items, setItems] = useState<Item[]>([]);
@@ -178,6 +179,10 @@ const HomeScreen: React.FC = () => {
 
   return (
     <>
+      <MetaTagManager
+        title="سـلـتـي | تسوق البقالة والمزيد أونلاين"
+        description="منصة سـلـتـي هي وجهتك الأولى لتسوق البقالة السودانية، سلات الفطور، والمزيد. توصيل سريع وخدمة مميزة."
+      />
       <SiteHeader
         onFilterClick={() => setIsFilterOpen(true)}
         areFiltersActive={areFiltersActive}
