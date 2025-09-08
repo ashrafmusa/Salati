@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from "react";
-import { Item, Category } from "../types";
+import { Item, Category, Supplier } from "../types";
 import { uploadToCloudinary, getOptimizedImageUrl } from "../utils/helpers";
 import { SpinnerIcon } from "../assets/icons";
 import { useToast } from "../contexts/ToastContext";
@@ -10,6 +10,7 @@ interface ItemFormModalProps {
   onSave: (item: Item) => void;
   isSaving: boolean;
   categories: Category[];
+  suppliers: Supplier[];
 }
 
 const ItemFormModal: React.FC<ItemFormModalProps> = ({
@@ -18,6 +19,7 @@ const ItemFormModal: React.FC<ItemFormModalProps> = ({
   onSave,
   isSaving,
   categories,
+  suppliers,
 }) => {
   const [formData, setFormData] = useState<Partial<Item>>({});
   const [imagePreview, setImagePreview] = useState<string | null>(null);
@@ -40,6 +42,7 @@ const ItemFormModal: React.FC<ItemFormModalProps> = ({
         price: 0,
         stock: 0,
         isFeatured: false,
+        costPrice: 0,
       });
       setImagePreview(null);
     }
@@ -67,6 +70,11 @@ const ItemFormModal: React.FC<ItemFormModalProps> = ({
     if (field === "category" || !field) {
       if (!currentData.category) newErrors.category = "يجب اختيار فئة";
       else delete newErrors.category;
+    }
+    if (field === "costPrice" || !field) {
+      if ((currentData.costPrice ?? -1) < 0)
+        newErrors.costPrice = "سعر التكلفة لا يمكن أن يكون سالباً";
+      else delete newErrors.costPrice;
     }
     setErrors(newErrors);
     return Object.keys(newErrors).length === 0;
@@ -172,7 +180,7 @@ const ItemFormModal: React.FC<ItemFormModalProps> = ({
           <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
             <div>
               <label htmlFor="price" className="block text-sm font-medium">
-                السعر
+                سعر البيع
               </label>
               <input
                 id="price"
@@ -184,6 +192,22 @@ const ItemFormModal: React.FC<ItemFormModalProps> = ({
               />
               {errors.price && (
                 <p className="text-red-500 text-xs mt-1">{errors.price}</p>
+              )}
+            </div>
+            <div>
+              <label htmlFor="costPrice" className="block text-sm font-medium">
+                سعر التكلفة
+              </label>
+              <input
+                id="costPrice"
+                type="number"
+                name="costPrice"
+                value={formData.costPrice ?? ""}
+                onChange={handleChange}
+                className={`${inputClasses("costPrice")} mt-1`}
+              />
+              {errors.costPrice && (
+                <p className="text-red-500 text-xs mt-1">{errors.costPrice}</p>
               )}
             </div>
             <div>
@@ -202,6 +226,8 @@ const ItemFormModal: React.FC<ItemFormModalProps> = ({
                 <p className="text-red-500 text-xs mt-1">{errors.stock}</p>
               )}
             </div>
+          </div>
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div>
               <label htmlFor="category" className="block text-sm font-medium">
                 الفئة
@@ -223,6 +249,25 @@ const ItemFormModal: React.FC<ItemFormModalProps> = ({
               {errors.category && (
                 <p className="text-red-500 text-xs mt-1">{errors.category}</p>
               )}
+            </div>
+            <div>
+              <label htmlFor="supplierId" className="block text-sm font-medium">
+                المورد
+              </label>
+              <select
+                id="supplierId"
+                name="supplierId"
+                value={formData.supplierId || ""}
+                onChange={handleChange}
+                className={`${inputClasses("supplierId")} mt-1`}
+              >
+                <option value="">اختر مورد</option>
+                {suppliers.map((s) => (
+                  <option key={s.id} value={s.id}>
+                    {s.name}
+                  </option>
+                ))}
+              </select>
             </div>
           </div>
           <div>

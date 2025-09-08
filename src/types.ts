@@ -22,6 +22,8 @@ export interface Item {
   averageRating?: number;
   reviewCount?: number;
   isFeatured?: boolean;
+  supplierId?: string; // SCM feature
+  costPrice?: number;   // SCM feature
 }
 
 export interface BundleContent {
@@ -156,6 +158,45 @@ export interface AuditLog {
   adminName: string;
   action: string;
   details?: string;
+}
+
+// --- SCM (Supply Chain Management) Types ---
+
+export interface Supplier {
+  id: string;
+  name: string;
+  contactPerson: string;
+  phone: string;
+  email: string;
+  address: string;
+  paymentTerms: string;
+  bankDetails: string;
+}
+
+export interface PurchaseOrderItem {
+  itemId: string;
+  itemName: string; // Denormalized for display
+  quantity: number;
+  costPrice: number;
+}
+
+export enum PurchaseOrderStatus {
+  Draft = "مسودة",
+  Sent = "مرسل للمورد",
+  PartiallyReceived = "تم الاستلام جزئياً",
+  FullyReceived = "تم الاستلام بالكامل",
+  Cancelled = "ملغي",
+}
+
+export interface PurchaseOrder {
+  id: string;
+  supplierId: string;
+  supplierName: string; // Denormalized for display
+  createdDate: string; // ISO date string
+  expectedDate: string; // ISO date string
+  items: PurchaseOrderItem[];
+  totalCost: number;
+  status: PurchaseOrderStatus;
 }
 
 

@@ -19,6 +19,8 @@ import {
   ChartBarIcon,
   ClipboardListIcon,
   ChevronDoubleLeftIcon,
+  BuildingStorefrontIcon,
+  ClipboardDocumentListIcon,
 } from "../assets/adminIcons";
 import AdminNotifications from "./AdminNotifications";
 import ThemeToggle from "./ThemeToggle";
@@ -32,7 +34,7 @@ interface NavLinkItem {
   roles: ("sub-admin" | "admin" | "super-admin" | "driver")[];
 }
 
-const navLinks: NavLinkItem[] = [
+const mainNavLinksList: NavLinkItem[] = [
   {
     to: "/",
     label: "لوحة التحكم",
@@ -63,6 +65,24 @@ const navLinks: NavLinkItem[] = [
     icon: TruckIcon,
     roles: ["admin", "super-admin"],
   },
+];
+
+const supplyChainNavLinksList: NavLinkItem[] = [
+  {
+    to: "/suppliers",
+    label: "إدارة الموردين",
+    icon: BuildingStorefrontIcon,
+    roles: ["admin", "super-admin"],
+  },
+  {
+    to: "/purchase-orders",
+    label: "أوامر الشراء",
+    icon: ClipboardDocumentListIcon,
+    roles: ["admin", "super-admin"],
+  },
+];
+
+const superAdminNavLinksList: NavLinkItem[] = [
   {
     to: "/users",
     label: "إدارة المستخدمين",
@@ -115,29 +135,20 @@ const Sidebar: React.FC<{
   const { user, logout } = useAuth();
   const location = useLocation();
 
-  const isSuperAdmin = user?.role === "super-admin";
-  const superAdminPaths = [
-    "/users",
-    "/categories",
-    "/extras",
-    "/settings",
-    "/reports",
-    "/audit-log",
-  ];
+  // FIX: Added a check for `user.role !== 'customer'` and role existence to satisfy TypeScript.
+  const filterLinksByRole = (links: NavLinkItem[]) =>
+    links.filter(
+      (link) =>
+        user &&
+        user.role !== "customer" &&
+        user.role !== "driver" &&
+        link.roles.includes(user.role)
+    );
 
-  // FIX: Added a check for `user.role !== 'customer'` to satisfy TypeScript's type narrowing.
-  // The `user.role` from `useAuth` includes 'customer', which is not a valid role for admin navigation links.
-  // This check ensures type safety before calling `link.roles.includes()`.
-  const mainNavLinks = navLinks.filter(
-    (link) =>
-      user &&
-      user.role !== "customer" &&
-      link.roles.includes(user.role) &&
-      !superAdminPaths.includes(link.to)
-  );
-  const superAdminNavLinks = navLinks.filter(
-    (link) => isSuperAdmin && superAdminPaths.includes(link.to)
-  );
+  const mainNavLinks = filterLinksByRole(mainNavLinksList);
+  const supplyChainNavLinks = filterLinksByRole(supplyChainNavLinksList);
+  const superAdminNavLinks = filterLinksByRole(superAdminNavLinksList);
+  const isDriver = user?.role === "driver";
 
   useEffect(() => {
     if (isMobileOpen) {
@@ -173,6 +184,20 @@ const Sidebar: React.FC<{
         </span>
       )}
     </NavLink>
+  );
+
+  const SectionHeader: React.FC<{
+    title: string;
+    icon: React.FC<{ className?: string }>;
+  }> = ({ title, icon: Icon }) => (
+    <h3
+      className={`px-2 text-xs font-semibold uppercase text-slate-400 mb-2 flex items-center gap-2 whitespace-nowrap transition-opacity duration-200 ${
+        isDesktopCollapsed ? "opacity-0" : "opacity-100"
+      }`}
+    >
+      <Icon className="w-5 h-5 flex-shrink-0" />
+      <span>{title}</span>
+    </h3>
   );
 
   return (
@@ -212,31 +237,30 @@ const Sidebar: React.FC<{
         </div>
 
         <nav className="flex-grow p-3 overflow-y-auto overflow-x-hidden">
+          {!isDriver && (
+            <a
+              href="./index.html#/"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="relative flex items-center p-3 my-1 rounded-md transition-colors duration-200 group text-gray-300 hover:bg-admin-sidebar-hover hover:text-white"
+            >
+              <EyeIcon className="w-6 h-6 flex-shrink-0" />
+              <span
+                className={`mr-4 transition-opacity duration-200 ${
+                  isDesktopCollapsed ? "opacity-0" : "opacity-100"
+                }`}
+              >
+                عرض الموقع
+              </span>
+              {isDesktopCollapsed && (
+                <span className="absolute left-full ml-4 w-auto p-2 min-w-max rounded-md shadow-md bg-slate-800 text-white text-xs font-bold transition-all duration-100 scale-0 origin-left group-hover:scale-100 z-50">
+                  عرض الموقع
+                </span>
+              )}
+            </a>
+          )}
+
           <ul>
-            {user?.role !== "driver" && (
-              <li>
-                <a
-                  href="./index.html#/"
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="relative flex items-center p-3 my-1 rounded-md transition-colors duration-200 group text-gray-300 hover:bg-admin-sidebar-hover hover:text-white"
-                >
-                  <EyeIcon className="w-6 h-6 flex-shrink-0" />
-                  <span
-                    className={`mr-4 transition-opacity duration-200 ${
-                      isDesktopCollapsed ? "opacity-0" : "opacity-100"
-                    }`}
-                  >
-                    عرض الموقع
-                  </span>
-                  {isDesktopCollapsed && (
-                    <span className="absolute left-full ml-4 w-auto p-2 min-w-max rounded-md shadow-md bg-slate-800 text-white text-xs font-bold transition-all duration-100 scale-0 origin-left group-hover:scale-100 z-50">
-                      عرض الموقع
-                    </span>
-                  )}
-                </a>
-              </li>
-            )}
             {mainNavLinks.map((link) => (
               <li key={link.to}>
                 <NavItem link={link} />
@@ -244,16 +268,22 @@ const Sidebar: React.FC<{
             ))}
           </ul>
 
-          {isSuperAdmin && (
+          {supplyChainNavLinks.length > 0 && (
             <div className="mt-4 pt-4 border-t border-white/10">
-              <h3
-                className={`px-2 text-xs font-semibold uppercase text-slate-400 mb-2 flex items-center gap-2 whitespace-nowrap transition-opacity duration-200 ${
-                  isDesktopCollapsed ? "opacity-0" : "opacity-100"
-                }`}
-              >
-                <ShieldCheckIcon className="w-5 h-5 flex-shrink-0" />
-                <span>Super Admin</span>
-              </h3>
+              <SectionHeader title="سلسلة التوريد" icon={TruckIcon} />
+              <ul>
+                {supplyChainNavLinks.map((link) => (
+                  <li key={link.to}>
+                    <NavItem link={link} />
+                  </li>
+                ))}
+              </ul>
+            </div>
+          )}
+
+          {superAdminNavLinks.length > 0 && (
+            <div className="mt-4 pt-4 border-t border-white/10">
+              <SectionHeader title="Super Admin" icon={ShieldCheckIcon} />
               <ul>
                 {superAdminNavLinks.map((link) => (
                   <li key={link.to}>
@@ -324,7 +354,14 @@ const Header: React.FC<{
   const location = useLocation();
   const { user } = useAuth();
 
-  const currentLink = navLinks
+  // Combine all nav links for title lookup
+  const allLinks = [
+    ...mainNavLinksList,
+    ...supplyChainNavLinksList,
+    ...superAdminNavLinksList,
+  ];
+
+  const currentLink = allLinks
     .slice()
     .reverse()
     .find(
