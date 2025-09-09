@@ -1,6 +1,3 @@
-
-
-
 // FIX: Refactored Firebase imports to use the v8 compat library to resolve module errors.
 import firebase from 'firebase/compat/app';
 import 'firebase/compat/auth';
@@ -26,12 +23,12 @@ const firebaseConfig = {
 // A check to ensure all required environment variables are present during development.
 // FIX: Replaced direct `import.meta.env` access with `(import.meta as any).env` to resolve TypeScript typing errors.
 if ((import.meta as any).env.DEV && Object.values(firebaseConfig).some(value => !value)) {
-    console.error("Firebase configuration is missing. Make sure you have a .env file with all the required VITE_FIREBASE_ variables.");
+  console.error("Firebase configuration is missing. Make sure you have a .env file with all the required VITE_FIREBASE_ variables.");
 }
 
 // FIX: Refactored Firebase initialization to use v8 compat syntax.
 if (!firebase.apps.length) {
-    firebase.initializeApp(firebaseConfig);
+  firebase.initializeApp(firebaseConfig);
 }
 
 // FIX: Refactored Firebase service exports to use v8 compat syntax.
@@ -46,13 +43,13 @@ export const initializeFirebase = async () => {
     await db.enablePersistence();
   } catch (err: any) {
     if (err.code == 'failed-precondition') {
-        // This can happen if multiple tabs are open.
-        console.warn('Firestore persistence failed: Multiple tabs open.');
+      // This can happen if multiple tabs are open.
+      console.warn('Firestore persistence failed: Multiple tabs open.');
     } else if (err.code == 'unimplemented') {
-        // The current browser does not support all of the features required to enable persistence.
-        console.warn('Firestore persistence is not supported in this browser.');
+      // The current browser does not support all of the features required to enable persistence.
+      console.warn('Firestore persistence is not supported in this browser.');
     }
   }
-  // Seed the database with dummy data if it's empty
-  await seedDatabase(db);
+  // The automatic seeding call has been removed from here to prevent permission errors on startup.
+  // Seeding should be done manually by a Super Admin from the settings page.
 };
