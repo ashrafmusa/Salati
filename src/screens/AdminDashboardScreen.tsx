@@ -7,14 +7,7 @@ import {
   CustomersIcon,
   CurrencyDollarIcon,
 } from "../assets/adminIcons";
-import {
-  AdminOrder,
-  OrderStatus,
-  Item,
-  Bundle,
-  StoreSettings,
-  User,
-} from "../types";
+import { AdminOrder, OrderStatus, Item, Bundle, StoreSettings } from "../types";
 import { db } from "../firebase/config";
 import {
   collection,
@@ -24,6 +17,7 @@ import {
   orderBy,
   getDocs,
   doc,
+  QuerySnapshot,
 } from "firebase/firestore";
 import DonutChart from "../components/DonutChart";
 import LineChart from "../components/LineChart";
@@ -273,9 +267,9 @@ const AdminDashboardScreen: React.FC = () => {
       orderBy("date", "desc")
     );
     unsubs.push(
-      onSnapshot(ordersQuery, (snapshot) => {
+      onSnapshot(ordersQuery, (snapshot: QuerySnapshot) => {
         const orders = snapshot.docs.map(
-          (doc) => ({ id: doc.id, ...doc.data() } as AdminOrder)
+          (doc) => ({ id: doc.id, ...(doc.data() as any) } as AdminOrder)
         );
         setAllOrders(orders);
         setLoading(false);
@@ -287,16 +281,16 @@ const AdminDashboardScreen: React.FC = () => {
       where("role", "==", "customer")
     );
     unsubs.push(
-      onSnapshot(usersQuery, (snapshot) => {
+      onSnapshot(usersQuery, (snapshot: QuerySnapshot) => {
         setAllUsersCount(snapshot.size);
       })
     );
 
     const itemsQuery = query(collection(db, "items"));
     unsubs.push(
-      onSnapshot(itemsQuery, (snapshot) => {
+      onSnapshot(itemsQuery, (snapshot: QuerySnapshot) => {
         const products = snapshot.docs.map(
-          (doc) => ({ id: doc.id, ...doc.data() } as Item)
+          (doc) => ({ id: doc.id, ...(doc.data() as any) } as Item)
         );
         setAllLowStockItems(products.filter((p) => (p.stock || 0) < 20).length);
       })
@@ -308,17 +302,15 @@ const AdminDashboardScreen: React.FC = () => {
         try {
           const itemsSnapshot = await getDocs(collection(db, "items"));
           const bundlesSnapshot = await getDocs(collection(db, "bundles"));
-          const settingsSnapshot = await getDocs(collection(db, "settings"));
 
           const items = itemsSnapshot.docs.map(
-            (doc) => ({ id: doc.id, ...doc.data() } as Item)
+            (doc) => ({ id: doc.id, ...(doc.data() as any) } as Item)
           );
           const bundles = bundlesSnapshot.docs.map(
-            (doc) => ({ id: doc.id, ...doc.data() } as Bundle)
+            (doc) => ({ id: doc.id, ...(doc.data() as any) } as Bundle)
           );
-          const settingsDoc = doc(db, "settings", "store");
-          const settingsSnap = await getDocs(query(collection(db, "settings")));
 
+          const settingsSnap = await getDocs(query(collection(db, "settings")));
           const settings =
             settingsSnap.docs.length > 0
               ? (settingsSnap.docs[0].data() as StoreSettings)

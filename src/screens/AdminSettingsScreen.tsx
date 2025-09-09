@@ -142,7 +142,7 @@ const AdminSettingsScreen: React.FC = () => {
     setIsSaving(true);
     try {
       await setDoc(settingsRef, settings, { merge: true });
-      logAdminAction(adminUser, "Updated Store Settings");
+      await logAdminAction(adminUser, "Updated Store Settings");
       showToast("Settings saved successfully!", "success");
     } catch (error) {
       showToast("Failed to save settings.", "error");

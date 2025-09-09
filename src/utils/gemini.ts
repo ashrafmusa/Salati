@@ -7,7 +7,7 @@ export interface BundleIdea {
     itemNames: string[];
 }
 
-const API_KEY = import.meta.env.VITE_GEMINI_API_KEY;
+const API_KEY = (import.meta as any).env.VITE_GEMINI_API_KEY;
 
 if (!API_KEY) {
     console.error("Gemini API key is missing. Please add VITE_GEMINI_API_KEY to your .env file to use AI features.");
