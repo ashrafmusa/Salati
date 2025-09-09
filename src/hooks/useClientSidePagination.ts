@@ -16,20 +16,20 @@ export const useClientSidePagination = <T extends { id: string }>(
   const sortedData = useMemo(() => {
     const sortableItems = [...fullData];
     if (sortConfig.key) {
-      sortableItems.sort((a, b) => {
-        const key = sortConfig.key;
-        // Handle cases where properties might be undefined or null
-        const valA = a[key] ?? (typeof a[key] === 'number' ? 0 : '');
-        const valB = b[key] ?? (typeof b[key] === 'number' ? 0 : '');
-
-        if (valA < valB) {
-          return sortConfig.direction === 'ascending' ? -1 : 1;
-        }
-        if (valA > valB) {
-          return sortConfig.direction === 'ascending' ? 1 : -1;
-        }
-        return 0;
-      });
+        sortableItems.sort((a, b) => {
+            const key = sortConfig.key;
+            // Handle cases where properties might be undefined or null
+            const valA = a[key] ?? (typeof a[key] === 'number' ? 0 : '');
+            const valB = b[key] ?? (typeof b[key] === 'number' ? 0 : '');
+            
+            if (valA < valB) {
+                return sortConfig.direction === 'ascending' ? -1 : 1;
+            }
+            if (valA > valB) {
+                return sortConfig.direction === 'ascending' ? 1 : -1;
+            }
+            return 0;
+        });
     }
     return sortableItems;
   }, [fullData, sortConfig]);

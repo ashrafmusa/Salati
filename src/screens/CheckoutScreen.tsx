@@ -1,11 +1,11 @@
 import React, { useState, useEffect } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate } from "react-router-dom";
 import { useCart } from '../hooks/useCart';
 import { useAuth } from '../hooks/useAuth';
 import SubPageHeader from '../components/SubPageHeader';
 import { Order, OrderStatus } from '../types';
 import { db } from '../firebase/config';
-import { collection, doc, runTransaction, addDoc } from "firebase/firestore";
+// FIX: Refactored Firebase imports to use the v8 compat library to resolve module errors.
 import { getOptimizedImageUrl, calculateItemAndExtrasTotal } from '../utils/helpers';
 import { SpinnerIcon, TruckIcon, LocationMarkerIcon } from '../assets/icons'; // Assuming TruckIcon exists
 import { useSettings } from '../contexts/SettingsContext';
@@ -59,12 +59,12 @@ const CheckoutScreen: React.FC = () => {
     setErrors({});
     
     try {
-        const newOrderId = await runTransaction(db, async (transaction) => {
+        const newOrderId = await db.runTransaction(async (transaction) => {
             const itemsToUpdate: { ref: any, newStock: number }[] = [];
 
             for (const item of state.items) {
                 const productCollection = item.productType === 'item' ? 'items' : 'bundles';
-                const productRef = doc(db, productCollection, item.productId);
+                const productRef = db.collection(productCollection).doc(item.productId);
                 const productDoc = await transaction.get(productRef);
 
                 if (!productDoc.exists()) {
@@ -86,7 +86,7 @@ const CheckoutScreen: React.FC = () => {
                 transaction.update(itemUpdate.ref, { stock: itemUpdate.newStock });
             });
             
-            const newOrderRef = doc(collection(db, 'orders'));
+            const newOrderRef = db.collection('orders').doc();
             const newOrderData: Omit<Order, 'id'> = {
                 userId: user.uid,
                 date: new Date().toISOString(),
@@ -115,7 +115,7 @@ const CheckoutScreen: React.FC = () => {
             throw new Error("Failed to create order. Please try again.");
         }
 
-        await addDoc(collection(db, 'notifications'), {
+        await db.collection('notifications').add({
             message: `طلب جديد #${newOrderId.slice(0, 7).toUpperCase()} من ${name}.`,
             timestamp: new Date().toISOString(),
             read: false,

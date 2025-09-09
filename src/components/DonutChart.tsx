@@ -1,4 +1,4 @@
-import React, { useMemo } from "react";
+import React, { useMemo } from 'react';
 
 interface ChartData {
   value: number;
@@ -13,26 +13,17 @@ interface DonutChartProps {
   onSegmentClick?: (label: string) => void;
 }
 
-const DonutChart: React.FC<DonutChartProps> = ({
-  data,
-  size = 200,
-  strokeWidth = 25,
-  onSegmentClick,
-}) => {
+const DonutChart: React.FC<DonutChartProps> = ({ data, size = 200, strokeWidth = 25, onSegmentClick }) => {
   const radius = (size - strokeWidth) / 2;
   const circumference = 2 * Math.PI * radius;
 
-  const total = useMemo(
-    () => data.reduce((sum, item) => sum + item.value, 0),
-    [data]
-  );
+  const total = useMemo(() => data.reduce((sum, item) => sum + item.value, 0), [data]);
 
   let accumulatedPercentage = 0;
 
-  const segments = data.map((item) => {
+  const segments = data.map(item => {
     const percentage = total > 0 ? (item.value / total) * 100 : 0;
-    const dashOffset =
-      circumference - (accumulatedPercentage / 100) * circumference;
+    const dashOffset = circumference - (accumulatedPercentage / 100) * circumference;
     const dashArray = (percentage / 100) * circumference;
 
     accumulatedPercentage += percentage;
@@ -45,16 +36,8 @@ const DonutChart: React.FC<DonutChartProps> = ({
   });
 
   return (
-    <div
-      className="relative flex items-center justify-center"
-      style={{ width: size, height: size }}
-    >
-      <svg
-        width={size}
-        height={size}
-        viewBox={`0 0 ${size} ${size}`}
-        className="-rotate-90"
-      >
+    <div className="relative flex items-center justify-center" style={{ width: size, height: size }}>
+      <svg width={size} height={size} viewBox={`0 0 ${size} ${size}`} className="-rotate-90">
         <circle
           cx={size / 2}
           cy={size / 2}
@@ -64,11 +47,7 @@ const DonutChart: React.FC<DonutChartProps> = ({
           className="stroke-slate-200 dark:stroke-slate-700"
         />
         {segments.map((segment, index) => (
-          <g
-            key={index}
-            onClick={() => onSegmentClick?.(segment.label)}
-            className={onSegmentClick ? "cursor-pointer group" : ""}
-          >
+          <g key={index} onClick={() => onSegmentClick?.(segment.label)} className={onSegmentClick ? 'cursor-pointer group' : ''}>
             <circle
               cx={size / 2}
               cy={size / 2}
@@ -79,21 +58,14 @@ const DonutChart: React.FC<DonutChartProps> = ({
               strokeDasharray={circumference}
               strokeDashoffset={circumference}
               className="animate-draw-chart group-hover:opacity-80 transition-opacity"
-              style={{
-                strokeDashoffset: segment.dashOffset,
-                transition: "stroke-dashoffset 2s ease-out",
-              }}
+              style={{ strokeDashoffset: segment.dashOffset, transition: 'stroke-dashoffset 2s ease-out' }}
             />
           </g>
         ))}
       </svg>
       <div className="absolute text-center">
-        <span className="text-3xl font-bold text-slate-800 dark:text-slate-100">
-          {total}
-        </span>
-        <span className="block text-sm text-slate-500 dark:text-slate-400">
-          إجمالي الطلبات
-        </span>
+        <span className="text-3xl font-bold text-slate-800 dark:text-slate-100">{total}</span>
+        <span className="block text-sm text-slate-500 dark:text-slate-400">إجمالي الطلبات</span>
       </div>
     </div>
   );

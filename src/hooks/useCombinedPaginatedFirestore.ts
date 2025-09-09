@@ -1,12 +1,12 @@
+
 import { useState, useEffect, useMemo } from 'react';
-import { collection, getDocs, query, QueryConstraint } from 'firebase/firestore';
+// FIX: Refactored Firebase imports to use the v8 compat library to resolve module errors.
 import { db } from '../firebase/config';
 import { Item, Bundle, StoreProduct } from '../types';
 import { PaginatedSortConfig } from './usePaginatedFirestore';
 
 export const useCombinedPaginatedFirestore = <T extends StoreProduct>(
   initialSortConfig: PaginatedSortConfig<T>,
-  filters: QueryConstraint[] = [],
   pageSize = 15
 ) => {
   const [documents, setDocuments] = useState<T[]>([]);
@@ -21,19 +21,20 @@ export const useCombinedPaginatedFirestore = <T extends StoreProduct>(
       setLoading(true);
       setError(null);
       try {
-        const itemsQuery = query(collection(db, 'items'), ...filters);
-        const bundlesQuery = query(collection(db, 'bundles'), ...filters);
-
+        // FIX: Refactored Firestore getDocs and collection calls to use v8 compat syntax.
+        const itemsQuery = db.collection('items');
+        const bundlesQuery = db.collection('bundles');
+        
         const [itemsSnapshot, bundlesSnapshot] = await Promise.all([
-          getDocs(itemsQuery),
-          getDocs(bundlesQuery),
+          itemsQuery.get(),
+          bundlesQuery.get(),
         ]);
 
-        const items = itemsSnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as Item));
-        const bundles = bundlesSnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as Bundle));
-
+        const items = itemsSnapshot.docs.map(doc => ({ id: doc.id, ...doc.data(), type: 'item' } as Item));
+        const bundles = bundlesSnapshot.docs.map(doc => ({ id: doc.id, ...doc.data(), type: 'bundle' } as Bundle));
+        
         const allDocs = [...items, ...bundles] as T[];
-
+        
         // Apply sorting
         allDocs.sort((a, b) => {
           const key = sortConfig.key;
@@ -45,9 +46,9 @@ export const useCombinedPaginatedFirestore = <T extends StoreProduct>(
           }
           return 0;
         });
-
+        
         setTotalDocs(allDocs.length);
-
+        
         // Apply pagination
         const start = (currentPage - 1) * pageSize;
         const end = start + pageSize;
@@ -62,7 +63,7 @@ export const useCombinedPaginatedFirestore = <T extends StoreProduct>(
     };
 
     loadData();
-  }, [sortConfig, JSON.stringify(filters), currentPage, pageSize]);
+  }, [sortConfig, currentPage, pageSize]);
 
   const requestSort = (key: keyof T) => {
     let direction: 'ascending' | 'descending' = 'ascending';
@@ -72,7 +73,7 @@ export const useCombinedPaginatedFirestore = <T extends StoreProduct>(
     setSortConfig({ key, direction });
     setCurrentPage(1); // Reset to first page on sort change
   };
-
+  
   const hasNextPage = useMemo(() => currentPage * pageSize < totalDocs, [currentPage, pageSize, totalDocs]);
   const hasPrevPage = useMemo(() => currentPage > 1, [currentPage]);
 

@@ -1,7 +1,8 @@
 
+
 import React from 'react';
 import { NavLink } from 'react-router-dom';
-import { DashboardIcon, OrdersIcon, BundlesIcon, MenuIcon } from '../assets/adminIcons';
+import { DashboardIcon, OrdersIcon, PackageIcon, MenuIcon } from '../assets/adminIcons';
 import { useAuth } from '../hooks/useAuth';
 
 interface AdminNavigationBarProps {
@@ -15,10 +16,10 @@ const AdminNavigationBar: React.FC<AdminNavigationBarProps> = ({ onMenuClick }) 
   const navItems = [
     { path: '/', icon: DashboardIcon, label: 'الرئيسية', roles: ['sub-admin', 'admin', 'super-admin'] },
     { path: '/orders', icon: OrdersIcon, label: 'الطلبات', roles: ['sub-admin', 'admin', 'super-admin'] },
-    { path: '/bundles', icon: BundlesIcon, label: 'الحزم', roles: ['admin', 'super-admin'] },
+    { path: '/products', icon: PackageIcon, label: 'المنتجات', roles: ['admin', 'super-admin'] },
   ];
   
-  const accessibleNavItems = navItems.filter(item => user && item.roles.includes(user.role));
+  const accessibleNavItems = navItems.filter(item => user && user.role !== 'customer' && user.role !== 'driver' && item.roles.includes(user.role));
 
   return (
     <nav className="md:hidden fixed bottom-0 left-0 right-0 bg-white/80 dark:bg-slate-900/80 backdrop-blur-lg border-t border-slate-200 dark:border-slate-800 shadow-lg-up z-30">

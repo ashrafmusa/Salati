@@ -1,0 +1,30 @@
+<svg width="100%" height="100%" viewBox="0 0 800 600" xmlns="http://www.w3.org/2000/svg" preserveAspectRatio="xMidYMid slice">
+  <defs>
+    <linearGradient id="grad1" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" style="stop-color:rgb(var(--color-primary));stop-opacity:0.05" />
+      <stop offset="100%" style="stop-color:rgb(var(--color-secondary));stop-opacity:0.05" />
+    </linearGradient>
+    <style>
+      .primary-fill { fill: rgb(var(--color-primary)); }
+      .secondary-fill { fill: rgb(var(--color-secondary)); }
+      .accent-fill { fill: #f59e0b; }
+    </style>
+  </defs>
+  <rect width="800" height="600" fill="url(#grad1)"/>
+  
+  <!-- Basket -->
+  <path class="primary-fill" opacity="0.8" d="M200 400 Q250 500 400 500 Q550 500 600 400 L550 300 H250 Z" transform="rotate(-5 400 400)"/>
+  <path class="secondary-fill" opacity="0.7" d="M220 350 Q260 450 400 450 Q540 450 580 350 L540 280 H260 Z" transform="rotate(-5 400 400)"/>
+  <path class="primary-fill" opacity="0.9" d="M180 320 C 200 250, 600 250, 620 320" stroke="none" fill="rgb(var(--color-primary))" />
+  
+  <!-- Produce -->
+  <circle class="secondary-fill" cx="350" cy="320" r="40" transform="rotate(10 350 320)"/>
+  <circle class="accent-fill" cx="450" cy="340" r="35" transform="rotate(-15 450 340)"/>
+  <ellipse class="primary-fill" cx="400" cy="290" rx="50" ry="30" transform="rotate(20 400 290)"/>
+  
+  <!-- Floating shapes for decoration -->
+  <circle cx="100" cy="150" r="20" class="secondary-fill" opacity="0.5"/>
+  <rect x="650" y="100" width="50" height="50" class="accent-fill" opacity="0.4" rx="10" transform="rotate(30 675 125)"/>
+  <path d="M150 500 L170 520 L150 540 Z" class="primary-fill" opacity="0.6"/>
+  <circle cx="700" cy="450" r="30" class="primary-fill" opacity="0.3"/>
+</svg>

@@ -7,8 +7,8 @@
     --color-primary: 0 122 51; /* #007A33 */
     --color-secondary: 210 16 52; /* #D21034 */
     --color-secondary-hover: 166 13 41; /* #a60d29 */
-    --font-sans: 'Almarai';
-    --font-display: 'Montserrat';
+    --font-sans: 'Almarai', sans-serif;
+    --font-display: 'Montserrat', sans-serif;
   }
 }
 
@@ -145,4 +145,13 @@ input[type="range"]:hover::-moz-range-thumb {
 }
 .dark .header-shadow {
   box-shadow: 0 4px 6px -1px rgb(0 0 0 / 0.1), 0 2px 4px -2px rgb(0 0 0 / 0.1), 0 0 0 1px rgb(255 255 255 / 0.05);
+}
+
+@layer components {
+  .auth-tab {
+    @apply w-full rounded-md px-4 py-2 text-center text-sm font-semibold transition-colors duration-300;
+  }
+  .auth-tab.active {
+    @apply bg-white dark:bg-slate-700 text-primary shadow-sm;
+  }
 }

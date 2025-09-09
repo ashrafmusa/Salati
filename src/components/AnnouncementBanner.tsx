@@ -1,17 +1,12 @@
-import React, { useState } from "react";
-import { useSettings } from "../contexts/SettingsContext";
-import { CloseIcon } from "../assets/icons";
+import React, { useState } from 'react';
+import { useSettings } from '../contexts/SettingsContext';
+import { CloseIcon } from '../assets/icons';
 
 const AnnouncementBanner: React.FC = () => {
   const { settings, loading } = useSettings();
   const [isVisible, setIsVisible] = useState(true);
 
-  if (
-    loading ||
-    !settings?.isAnnouncementActive ||
-    !settings?.announcementText ||
-    !isVisible
-  ) {
+  if (loading || !settings?.isAnnouncementActive || !settings?.announcementText || !isVisible) {
     return null;
   }
 

@@ -6,7 +6,8 @@ interface WhatsAppButtonProps {
 }
 
 const WhatsAppButton: React.FC<WhatsAppButtonProps> = ({ isNavBarVisible }) => {
-    const phoneNumber = import.meta.env.VITE_WHATSAPP_PHONE_NUMBER;
+    // FIX: Replaced direct `import.meta.env` access with `(import.meta as any).env` to resolve TypeScript typing errors.
+    const phoneNumber = (import.meta as any).env.VITE_WHATSAPP_PHONE_NUMBER;
     const whatsappUrl = `https://wa.me/${phoneNumber}`;
     const [nudge, setNudge] = useState(false);
     const text = "تواصل معنا";

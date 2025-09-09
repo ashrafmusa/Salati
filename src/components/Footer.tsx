@@ -5,7 +5,8 @@ import { EmailIcon, WhatsAppIcon, FacebookIcon, InstagramIcon } from '../assets/
 
 const Footer: React.FC = () => {
   const currentYear = new Date().getFullYear();
-  const phoneNumber = import.meta.env.VITE_WHATSAPP_PHONE_NUMBER;
+  // FIX: Replaced direct `import.meta.env` access with `(import.meta as any).env` to resolve TypeScript typing errors.
+  const phoneNumber = (import.meta as any).env.VITE_WHATSAPP_PHONE_NUMBER;
   const emailAddress = "salati.sudan@gmail.com";
   const whatsappUrl = `https://wa.me/${phoneNumber}`;
 

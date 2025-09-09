@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { db } from '../firebase/config';
-import { collection, query, where, onSnapshot, doc, runTransaction, updateDoc } from "firebase/firestore";
+// FIX: Refactored Firebase imports to use the v8 compat library to resolve module errors.
 import { useAuth } from '../hooks/useAuth';
 import { AdminOrder, OrderStatus } from '../types';
 import { SpinnerIcon, CheckCircleIcon } from '../assets/icons';
@@ -22,12 +22,10 @@ const DriverDashboardScreen: React.FC = () => {
     useEffect(() => {
         if (!user) return;
         setLoading(prev => ({ ...prev, mine: true }));
-        const q = query(
-            collection(db, 'orders'), 
-            where('driverId', '==', user.uid), 
-            where('status', '==', OrderStatus.OutForDelivery)
-        );
-        const unsubscribe = onSnapshot(q, snapshot => {
+        const q = db.collection('orders')
+            .where('driverId', '==', user.uid)
+            .where('status', '==', OrderStatus.OutForDelivery);
+        const unsubscribe = q.onSnapshot(snapshot => {
                 const fetchedOrders = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as AdminOrder));
                 setMyDeliveries(fetchedOrders);
                 setLoading(prev => ({ ...prev, mine: false }));
@@ -42,12 +40,10 @@ const DriverDashboardScreen: React.FC = () => {
     // Fetch available orders for pickup
     useEffect(() => {
         setLoading(prev => ({ ...prev, available: true }));
-        const q = query(
-            collection(db, 'orders'), 
-            where('status', '==', OrderStatus.ReadyForPickup),
-            where('deliveryMethod', '==', 'delivery')
-        );
-        const unsubscribe = onSnapshot(q, snapshot => {
+        const q = db.collection('orders')
+            .where('status', '==', OrderStatus.ReadyForPickup)
+            .where('deliveryMethod', '==', 'delivery');
+        const unsubscribe = q.onSnapshot(snapshot => {
                 const fetchedOrders = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as AdminOrder));
                 setAvailableOrders(fetchedOrders);
                 setLoading(prev => ({ ...prev, available: false }));
@@ -63,9 +59,9 @@ const DriverDashboardScreen: React.FC = () => {
         if (!user) return;
         setIsSubmitting(prev => ({ ...prev, [order.id]: true }));
 
-        const orderRef = doc(db, 'orders', order.id);
+        const orderRef = db.collection('orders').doc(order.id);
         try {
-            await runTransaction(db, async (transaction) => {
+            await db.runTransaction(async (transaction) => {
                 const orderDoc = await transaction.get(orderRef);
                 if (!orderDoc.exists() || orderDoc.data()?.status !== OrderStatus.ReadyForPickup) {
                     throw new Error("Order is no longer available.");
@@ -88,7 +84,7 @@ const DriverDashboardScreen: React.FC = () => {
         if (!confirmingOrder) return;
         setIsSubmitting(prev => ({ ...prev, [confirmingOrder.id]: true }));
         try {
-            await updateDoc(doc(db, 'orders', confirmingOrder.id), {
+            await db.collection('orders').doc(confirmingOrder.id).update({
                 status: OrderStatus.Delivered,
                 paymentStatus: 'paid'
             });

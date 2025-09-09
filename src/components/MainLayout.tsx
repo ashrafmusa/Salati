@@ -1,7 +1,5 @@
-
-
 import React from 'react';
-import { Outlet, useLocation } from 'react-router-dom';
+import { Outlet, useLocation } from "react-router-dom";
 import NavigationBar from './NavigationBar';
 import WhatsAppButton from './WhatsAppButton';
 import Footer from './Footer';

@@ -1,5 +1,5 @@
 import React from 'react';
-import { Link } from 'react-router-dom';
+import { Link } from "react-router-dom";
 import { getOptimizedImageUrl } from '../utils/helpers';
 import { useSettings } from '../contexts/SettingsContext';
 
