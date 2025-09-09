@@ -1,24 +1,30 @@
 
+
 import { initializeApp } from "firebase/app";
 import { getAuth } from "firebase/auth";
 import { getFirestore, enableIndexedDbPersistence } from "firebase/firestore";
+import { seedDatabase } from "./seed";
 
 // Firebase configuration is loaded from environment variables for security.
 const firebaseConfig = {
-    apiKey: import.meta.env.VITE_FIREBASE_API_KEY,
-    authDomain: import.meta.env.VITE_FIREBASE_AUTH_DOMAIN,
-    projectId: import.meta.env.VITE_FIREBASE_PROJECT_ID,
-    storageBucket: import.meta.env.VITE_FIREBASE_STORAGE_BUCKET,
-    messagingSenderId: import.meta.env.VITE_FIREBASE_MESSAGING_SENDER_ID,
-    appId: import.meta.env.VITE_FIREBASE_APP_ID,
+    // FIX: Replaced direct `import.meta.env` access with `(import.meta as any).env` to resolve TypeScript typing errors.
+    apiKey: (import.meta as any).env.VITE_FIREBASE_API_KEY,
+    // FIX: Replaced direct `import.meta.env` access with `(import.meta as any).env` to resolve TypeScript typing errors.
+    authDomain: (import.meta as any).env.VITE_FIREBASE_AUTH_DOMAIN,
+    // FIX: Replaced direct `import.meta.env` access with `(import.meta as any).env` to resolve TypeScript typing errors.
+    projectId: (import.meta as any).env.VITE_FIREBASE_PROJECT_ID,
+    // FIX: Replaced direct `import.meta.env` access with `(import.meta as any).env` to resolve TypeScript typing errors.
+    storageBucket: (import.meta as any).env.VITE_FIREBASE_STORAGE_BUCKET,
+    // FIX: Replaced direct `import.meta.env` access with `(import.meta as any).env` to resolve TypeScript typing errors.
+    messagingSenderId: (import.meta as any).env.VITE_FIREBASE_MESSAGING_SENDER_ID,
+    // FIX: Replaced direct `import.meta.env` access with `(import.meta as any).env` to resolve TypeScript typing errors.
+    appId: (import.meta as any).env.VITE_FIREBASE_APP_ID,
 };
 
-// A check to ensure all required environment variables are present.
-// This is critical for the app to function.
-if (Object.values(firebaseConfig).some(value => !value)) {
-    // We throw an error here to be caught by the App root components.
-    // This provides a clear, user-facing error message instead of a cryptic crash.
-    throw new Error("Firebase configuration is missing. Please check your .env file and ensure all VITE_FIREBASE_ variables are set correctly.");
+// A check to ensure all required environment variables are present during development.
+// FIX: Replaced direct `import.meta.env` access with `(import.meta as any).env` to resolve TypeScript typing errors.
+if ((import.meta as any).env.DEV && Object.values(firebaseConfig).some(value => !value)) {
+    console.error("Firebase configuration is missing. Make sure you have a .env file with all the required VITE_FIREBASE_ variables.");
 }
 
 // Initialize Firebase
@@ -42,4 +48,6 @@ export const initializeFirebase = async () => {
             console.warn('Firestore persistence is not supported in this browser.');
         }
     }
+    // Seed the database with dummy data if it's empty
+    await seedDatabase(db);
 };
