@@ -1,15 +1,8 @@
 import React, { useState, useEffect, useMemo, useRef } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import { db } from "../firebase/config";
-import {
-  collection,
-  doc,
-  getDoc,
-  setDoc,
-  updateDoc,
-  onSnapshot,
-  addDoc,
-} from "firebase/firestore";
+// FIX: Refactored Firebase imports to use the v8 compat library to resolve module errors.
+import "firebase/compat/firestore";
 import {
   Supplier,
   Item,
@@ -45,22 +38,31 @@ const AdminPurchaseOrderFormScreen: React.FC = () => {
   useClickOutside(dropdownRef, () => setIsDropdownOpen(false));
 
   useEffect(() => {
-    const unsubSuppliers = onSnapshot(collection(db, "suppliers"), (snap) =>
-      setSuppliers(
-        snap.docs.map((d) => ({ id: d.id, ...d.data() } as Supplier))
-      )
-    );
-    const unsubItems = onSnapshot(collection(db, "items"), (snap) =>
-      setAllItems(snap.docs.map((d) => ({ id: d.id, ...d.data() } as Item)))
-    );
+    // FIX: Refactored Firestore onSnapshot call to use v8 compat syntax.
+    const unsubSuppliers = db
+      .collection("suppliers")
+      .onSnapshot((snap) =>
+        setSuppliers(
+          snap.docs.map((d) => ({ id: d.id, ...d.data() } as Supplier))
+        )
+      );
+    const unsubItems = db
+      .collection("items")
+      .onSnapshot((snap) =>
+        setAllItems(snap.docs.map((d) => ({ id: d.id, ...d.data() } as Item)))
+      );
 
     if (id) {
-      getDoc(doc(db, "purchaseOrders", id)).then((docSnap) => {
-        if (docSnap.exists()) {
-          setPo({ id: docSnap.id, ...docSnap.data() } as PurchaseOrder);
-        }
-        setLoading(false);
-      });
+      // FIX: Refactored Firestore getDoc call to use v8 compat syntax.
+      db.collection("purchaseOrders")
+        .doc(id)
+        .get()
+        .then((docSnap) => {
+          if (docSnap.exists) {
+            setPo({ id: docSnap.id, ...docSnap.data() } as PurchaseOrder);
+          }
+          setLoading(false);
+        });
     } else {
       setLoading(false);
     }
@@ -154,13 +156,12 @@ const AdminPurchaseOrderFormScreen: React.FC = () => {
 
     try {
       if (id) {
-        await updateDoc(doc(db, "purchaseOrders", id), dataToSave);
+        // FIX: Refactored Firestore updateDoc call to use v8 compat syntax.
+        await db.collection("purchaseOrders").doc(id).update(dataToSave);
         showToast("Purchase Order updated!", "success");
       } else {
-        const newDoc = await addDoc(
-          collection(db, "purchaseOrders"),
-          dataToSave
-        );
+        // FIX: Refactored Firestore addDoc call to use v8 compat syntax.
+        const newDoc = await db.collection("purchaseOrders").add(dataToSave);
         showToast("Purchase Order created!", "success");
         navigate(`/purchase-orders/${newDoc.id}`);
       }

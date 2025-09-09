@@ -1,12 +1,7 @@
 import React, { useState, useMemo } from "react";
 import { db } from "../firebase/config";
-import {
-  collection,
-  doc,
-  addDoc,
-  updateDoc,
-  deleteDoc,
-} from "firebase/firestore";
+// FIX: Refactored Firebase imports to use the v8 compat library to resolve module errors.
+import "firebase/compat/firestore";
 import { Supplier } from "../types";
 import AdminScreenHeader from "../components/AdminScreenHeader";
 import ConfirmationModal from "../components/ConfirmationModal";
@@ -59,10 +54,15 @@ const AdminSuppliersScreen: React.FC = () => {
     try {
       if (editingSupplier) {
         const { id, ...data } = supplierData;
-        await updateDoc(doc(db, "suppliers", id), data);
+        // FIX: Refactored Firestore updateDoc call to use v8 compat syntax.
+        await db.collection("suppliers").doc(id).update(data);
         showToast("Supplier updated!", "success");
       } else {
-        await addDoc(collection(db, "suppliers"), supplierData);
+        // FIX: When creating a document, the object passed to addDoc should not contain an `id` field,
+        // as Firestore generates it. Destructuring `id` out ensures a clean data object is sent.
+        const { id, ...data } = supplierData;
+        // FIX: Refactored Firestore addDoc call to use v8 compat syntax.
+        await db.collection("suppliers").add(data);
         showToast("Supplier added!", "success");
       }
       logAdminAction(
@@ -72,6 +72,7 @@ const AdminSuppliersScreen: React.FC = () => {
       );
       setIsModalOpen(false);
     } catch (error) {
+      console.error("Error saving supplier:", error);
       showToast("Failed to save supplier.", "error");
     } finally {
       setIsSaving(false);
@@ -81,7 +82,8 @@ const AdminSuppliersScreen: React.FC = () => {
   const confirmDelete = async () => {
     if (!supplierToDelete) return;
     try {
-      await deleteDoc(doc(db, "suppliers", supplierToDelete.id));
+      // FIX: Refactored Firestore deleteDoc call to use v8 compat syntax.
+      await db.collection("suppliers").doc(supplierToDelete.id).delete();
       logAdminAction(
         adminUser,
         "Deleted Supplier",

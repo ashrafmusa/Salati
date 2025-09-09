@@ -11,7 +11,8 @@ import {
   KeyIcon,
 } from "../assets/icons";
 import ThemeToggle from "../components/ThemeToggle";
-import { getAuth } from "firebase/auth";
+// FIX: Removed unused and erroneous getAuth import.
+import MetaTagManager from "../components/MetaTagManager";
 
 const ProfileScreen: React.FC = () => {
   const { user, firebaseUser, updateUserDetails, logout } = useAuth();
@@ -94,6 +95,7 @@ const ProfileScreen: React.FC = () => {
 
   return (
     <div>
+      <MetaTagManager title="حسابي - سـلـتـي" />
       <SubPageHeader title="حسابي" backPath="/" />
       <div className="p-4 max-w-2xl mx-auto space-y-6">
         {isProfileIncomplete && isEditing && (

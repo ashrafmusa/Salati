@@ -1,4 +1,5 @@
-import { collection, addDoc } from 'firebase/firestore';
+// FIX: Refactored Firebase imports to use the v8 compat library to resolve module errors.
+import 'firebase/compat/firestore';
 import { db } from '../firebase/config';
 import { User } from '../types';
 
@@ -19,7 +20,8 @@ export const logAdminAction = async (
         return;
     }
     try {
-        await addDoc(collection(db, 'auditLogs'), {
+        // FIX: Refactored Firestore addDoc call to use v8 compat syntax.
+        await db.collection('auditLogs').add({
             timestamp: new Date().toISOString(),
             adminId: adminUser.uid,
             adminName: adminUser.name,

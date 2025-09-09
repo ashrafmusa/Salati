@@ -1,5 +1,8 @@
 
-import { collection, writeBatch, getDocs, query, limit, Firestore, doc } from 'firebase/firestore';
+
+// FIX: Refactored Firebase imports to use the v8 compat library to resolve module errors.
+import firebase from 'firebase/compat/app';
+import 'firebase/compat/firestore';
 import { Category, Supplier, Item, Bundle, ExtraItem, Offer, Driver } from '../types';
 
 // --- DUMMY DATA DEFINITIONS ---
@@ -79,60 +82,70 @@ const dummyDrivers: Omit<Driver, 'id'>[] = [
     { name: 'فاطمة عمر', phone: '+249922222222', status: 'Offline' },
 ];
 
-export const seedDatabase = async (db: Firestore) => {
+// FIX: Update Firestore type to compat version.
+export const seedDatabase = async (db: firebase.firestore.Firestore) => {
     // Check if data already exists to prevent re-seeding
-    const categoriesCheck = await getDocs(query(collection(db, 'categories'), limit(1)));
+    // FIX: Refactor Firestore query to use v8 compat syntax.
+    const categoriesCheck = await db.collection('categories').limit(1).get();
     if (!categoriesCheck.empty) {
         console.log("Database already contains data. Skipping seed process.");
         return;
     }
 
     console.log("Database appears to be empty. Seeding with dummy data...");
-    const batch = writeBatch(db);
+    // FIX: Refactor writeBatch call to use v8 compat syntax.
+    const batch = db.batch();
 
     // Add Categories
     dummyCategories.forEach(data => {
-        const docRef = doc(collection(db, 'categories'));
+        // FIX: Refactor doc creation to use v8 compat syntax.
+        const docRef = db.collection('categories').doc();
         batch.set(docRef, data);
     });
 
     // Add Suppliers
     dummySuppliers.forEach(data => {
         const { id, ...supplierData } = data;
-        const docRef = doc(db, 'suppliers', id);
+        // FIX: Refactor doc creation to use v8 compat syntax.
+        const docRef = db.collection('suppliers').doc(id);
         batch.set(docRef, supplierData);
     });
 
     // Add Items
     dummyItems.forEach(item => {
         const { id, ...itemData } = item;
-        const docRef = doc(db, 'items', id);
+        // FIX: Refactor doc creation to use v8 compat syntax.
+        const docRef = db.collection('items').doc(id);
         batch.set(docRef, itemData);
     });
 
     // Add Extras
     dummyExtras.forEach(extra => {
         const { id, ...extraData } = extra;
-        const docRef = doc(db, 'extras', id);
+        // FIX: Refactor doc creation to use v8 compat syntax.
+        const docRef = db.collection('extras').doc(id);
         batch.set(docRef, extraData);
     });
 
     // Add Bundles
     dummyBundles.forEach(bundle => {
         const { id, ...bundleData } = bundle;
-        const docRef = doc(db, 'bundles', id);
+        // FIX: Refactor doc creation to use v8 compat syntax.
+        const docRef = db.collection('bundles').doc(id);
         batch.set(docRef, bundleData);
     });
 
     // Add Offers
     dummyOffers.forEach(data => {
-        const docRef = doc(collection(db, 'offers'));
+        // FIX: Refactor doc creation to use v8 compat syntax.
+        const docRef = db.collection('offers').doc();
         batch.set(docRef, data);
     });
 
     // Add Drivers
     dummyDrivers.forEach(data => {
-        const docRef = doc(collection(db, 'drivers'));
+        // FIX: Refactor doc creation to use v8 compat syntax.
+        const docRef = db.collection('drivers').doc();
         batch.set(docRef, data);
     });
 

@@ -1,8 +1,10 @@
 
 
-import { initializeApp } from "firebase/app";
-import { getAuth } from "firebase/auth";
-import { getFirestore, enableIndexedDbPersistence } from "firebase/firestore";
+
+// FIX: Refactored Firebase imports to use the v8 compat library to resolve module errors.
+import firebase from 'firebase/compat/app';
+import 'firebase/compat/auth';
+import 'firebase/compat/firestore';
 import { seedDatabase } from "./seed";
 
 // Firebase configuration is loaded from environment variables for security.
@@ -27,18 +29,21 @@ if ((import.meta as any).env.DEV && Object.values(firebaseConfig).some(value => 
     console.error("Firebase configuration is missing. Make sure you have a .env file with all the required VITE_FIREBASE_ variables.");
 }
 
-// Initialize Firebase
-const app = initializeApp(firebaseConfig);
+// FIX: Refactored Firebase initialization to use v8 compat syntax.
+if (!firebase.apps.length) {
+    firebase.initializeApp(firebaseConfig);
+}
 
-// Initialize and export Firebase services
-export const auth = getAuth(app);
-export const db = getFirestore(app);
+// FIX: Refactored Firebase service exports to use v8 compat syntax.
+export const auth = firebase.auth();
+export const db = firebase.firestore();
 
 // Export an initialization function that handles asynchronous setup.
 export const initializeFirebase = async () => {
     try {
         // Enable Firestore offline persistence for a better offline experience and faster startup.
-        await enableIndexedDbPersistence(db);
+        // FIX: Refactored enable persistence call to use v8 compat syntax.
+        await db.enablePersistence();
     } catch (err: any) {
         if (err.code == 'failed-precondition') {
             // This can happen if multiple tabs are open.

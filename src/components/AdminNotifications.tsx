@@ -2,16 +2,9 @@ import React, { useState, useEffect, useRef } from "react";
 import { useNavigate } from "react-router-dom";
 import { BellIcon } from "../assets/adminIcons";
 import { db } from "../firebase/config";
-import {
-  collection,
-  query,
-  orderBy,
-  limit,
-  onSnapshot,
-  doc,
-  updateDoc,
-  writeBatch,
-} from "firebase/firestore";
+// FIX: Refactored Firebase imports to use the v8 compat library to resolve module errors.
+import firebase from "firebase/compat/app";
+import "firebase/compat/firestore";
 import { AdminNotification } from "../types";
 
 const AdminNotifications: React.FC = () => {
@@ -22,18 +15,23 @@ const AdminNotifications: React.FC = () => {
   const navigate = useNavigate();
 
   useEffect(() => {
-    const notificationsQuery = query(
-      collection(db, "notifications"),
-      orderBy("timestamp", "desc"),
-      limit(10)
+    // FIX: Refactored Firestore query to use v8 compat syntax.
+    const notificationsQuery = db
+      .collection("notifications")
+      .orderBy("timestamp", "desc")
+      .limit(10);
+    // FIX: Explicitly typed the snapshot parameter as QuerySnapshot to resolve the "'docs' does not exist" error.
+    const unsubscribe = notificationsQuery.onSnapshot(
+      (
+        snapshot: firebase.firestore.QuerySnapshot<firebase.firestore.DocumentData>
+      ) => {
+        const allNotifs = snapshot.docs.map(
+          (doc) => ({ id: doc.id, ...(doc.data() as any) } as AdminNotification)
+        );
+        setNotifications(allNotifs);
+        setUnreadCount(allNotifs.filter((n) => !n.read).length);
+      }
     );
-    const unsubscribe = onSnapshot(notificationsQuery, (snapshot) => {
-      const allNotifs = snapshot.docs.map(
-        (doc) => ({ id: doc.id, ...doc.data() } as AdminNotification)
-      );
-      setNotifications(allNotifs);
-      setUnreadCount(allNotifs.filter((n) => !n.read).length);
-    });
 
     return () => unsubscribe();
   }, []);
@@ -42,9 +40,11 @@ const AdminNotifications: React.FC = () => {
 
   const handleNotificationClick = async (notification: AdminNotification) => {
     if (!notification.read) {
-      await updateDoc(doc(db, "notifications", notification.id), {
-        read: true,
-      });
+      // FIX: Refactored Firestore updateDoc call to use v8 compat syntax.
+      await db
+        .collection("notifications")
+        .doc(notification.id)
+        .update({ read: true });
     }
     if (notification.link) {
       navigate(notification.link);
@@ -56,9 +56,10 @@ const AdminNotifications: React.FC = () => {
     const unreadNotifs = notifications.filter((n) => !n.read);
     if (unreadNotifs.length === 0) return;
 
-    const batch = writeBatch(db);
+    // FIX: Refactored writeBatch call to use v8 compat syntax.
+    const batch = db.batch();
     unreadNotifs.forEach((notification) => {
-      const notifRef = doc(db, "notifications", notification.id);
+      const notifRef = db.collection("notifications").doc(notification.id);
       batch.update(notifRef, { read: true });
     });
 

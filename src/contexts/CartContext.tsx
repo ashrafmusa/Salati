@@ -8,15 +8,9 @@ import React, {
   ReactNode,
 } from "react";
 import { db } from "../firebase/config";
-import {
-  collection,
-  doc,
-  onSnapshot,
-  query,
-  where,
-  runTransaction,
-  setDoc,
-} from "firebase/firestore";
+// FIX: Refactored Firebase imports to use the v8 compat library to resolve module errors.
+import firebase from "firebase/compat/app";
+import "firebase/compat/firestore";
 import { useAuth } from "../hooks/useAuth";
 import { StoreProduct, CartItem, ExtraItem, Offer, Item } from "../types";
 import {
@@ -25,7 +19,7 @@ import {
   calculateItemAndExtrasTotal,
 } from "../utils/helpers";
 import { useSettings } from "./SettingsContext";
-import { dispatchCartUpdate } from "../utils/eventBus";
+import { dispatchCartUpdate } from "../components/NavigationBar";
 
 interface CartState {
   items: CartItem[];
@@ -96,25 +90,36 @@ export const CartProvider: React.FC<{ children: ReactNode }> = ({
   const [areAllItemsLoaded, setAreAllItemsLoaded] = useState(false);
 
   useEffect(() => {
-    const itemsQuery = query(collection(db, "items"));
-    const unsubscribeItems = onSnapshot(itemsQuery, (snapshot) => {
-      const fetchedItems = snapshot.docs.map(
-        (doc) => ({ id: doc.id, ...doc.data() } as Item)
-      );
-      setAllItems(fetchedItems);
-      setAreAllItemsLoaded(true);
-    });
-
-    const offersQuery = query(
-      collection(db, "offers"),
-      where("expiryDate", ">", new Date().toISOString())
+    // FIX: Refactored Firestore query to use v8 compat syntax.
+    const itemsQuery = db.collection("items");
+    // FIX: Explicitly typed the snapshot parameter as QuerySnapshot to resolve the "'docs' does not exist" error.
+    const unsubscribeItems = itemsQuery.onSnapshot(
+      (
+        snapshot: firebase.firestore.QuerySnapshot<firebase.firestore.DocumentData>
+      ) => {
+        const fetchedItems = snapshot.docs.map(
+          (doc) => ({ id: doc.id, ...(doc.data() as any) } as Item)
+        );
+        setAllItems(fetchedItems);
+        setAreAllItemsLoaded(true);
+      }
     );
-    const unsubscribeOffers = onSnapshot(offersQuery, (snapshot) => {
-      const activeOffers = snapshot.docs.map(
-        (doc) => ({ id: doc.id, ...doc.data() } as Offer)
-      );
-      setOffers(activeOffers);
-    });
+
+    // FIX: Refactored Firestore query to use v8 compat syntax.
+    const offersQuery = db
+      .collection("offers")
+      .where("expiryDate", ">", new Date().toISOString());
+    // FIX: Explicitly typed the snapshot parameter as QuerySnapshot to resolve the "'docs' does not exist" error.
+    const unsubscribeOffers = offersQuery.onSnapshot(
+      (
+        snapshot: firebase.firestore.QuerySnapshot<firebase.firestore.DocumentData>
+      ) => {
+        const activeOffers = snapshot.docs.map(
+          (doc) => ({ id: doc.id, ...(doc.data() as any) } as Offer)
+        );
+        setOffers(activeOffers);
+      }
+    );
 
     return () => {
       unsubscribeItems();
@@ -127,16 +132,23 @@ export const CartProvider: React.FC<{ children: ReactNode }> = ({
 
     const mergeCartsAndListen = async () => {
       if (!user) return;
-      const cartRef = doc(db, "users", user.uid, "cart", "current");
+      // FIX: Refactored Firestore doc call to use v8 compat syntax.
+      const cartRef = db
+        .collection("users")
+        .doc(user.uid)
+        .collection("cart")
+        .doc("current");
       const guestItems = getGuestCart();
 
       if (guestItems.length > 0) {
         try {
-          await runTransaction(db, async (transaction) => {
+          // FIX: Refactored runTransaction to use v8 compat syntax.
+          await db.runTransaction(async (transaction) => {
             const cartDoc = await transaction.get(cartRef);
+            // FIX: Cast document data to correctly access the 'items' property.
             const firestoreItems: CartItem[] =
-              cartDoc.exists() && cartDoc.data()?.items
-                ? cartDoc.data()!.items
+              cartDoc.exists && (cartDoc.data() as { items: CartItem[] })?.items
+                ? (cartDoc.data() as { items: CartItem[] })!.items
                 : [];
 
             guestItems.forEach((guestItem) => {
@@ -159,12 +171,13 @@ export const CartProvider: React.FC<{ children: ReactNode }> = ({
         }
       }
 
-      unsubscribeCart = onSnapshot(
-        cartRef,
+      // FIX: Refactored onSnapshot to use v8 compat syntax.
+      unsubscribeCart = cartRef.onSnapshot(
         (docSnap) => {
+          // FIX: Cast document data to correctly access the 'items' property.
           setItems(
-            docSnap.exists() && docSnap.data()?.items
-              ? docSnap.data()!.items
+            docSnap.exists && (docSnap.data() as { items: CartItem[] })?.items
+              ? (docSnap.data() as { items: CartItem[] })!.items
               : []
           );
           setLoading(false);
@@ -240,12 +253,18 @@ export const CartProvider: React.FC<{ children: ReactNode }> = ({
       };
 
       if (user) {
-        const cartRef = doc(db, "users", user.uid, "cart", "current");
-        runTransaction(db, async (transaction) => {
+        // FIX: Refactored Firestore calls to use v8 compat syntax.
+        const cartRef = db
+          .collection("users")
+          .doc(user.uid)
+          .collection("cart")
+          .doc("current");
+        db.runTransaction(async (transaction) => {
           const cartDoc = await transaction.get(cartRef);
+          // FIX: Cast document data to correctly access the 'items' property.
           const currentItems =
-            cartDoc.exists() && cartDoc.data()?.items
-              ? cartDoc.data()!.items
+            cartDoc.exists && (cartDoc.data() as { items: CartItem[] })?.items
+              ? (cartDoc.data() as { items: CartItem[] })!.items
               : [];
           transaction.set(cartRef, { items: action(currentItems) });
         })
@@ -274,12 +293,18 @@ export const CartProvider: React.FC<{ children: ReactNode }> = ({
         prevItems.filter((item) => item.cartId !== cartId);
 
       if (user) {
-        const cartRef = doc(db, "users", user.uid, "cart", "current");
-        runTransaction(db, async (transaction) => {
+        // FIX: Refactored Firestore calls to use v8 compat syntax.
+        const cartRef = db
+          .collection("users")
+          .doc(user.uid)
+          .collection("cart")
+          .doc("current");
+        db.runTransaction(async (transaction) => {
           const cartDoc = await transaction.get(cartRef);
+          // FIX: Cast document data to correctly access the 'items' property.
           const currentItems =
-            cartDoc.exists() && cartDoc.data()?.items
-              ? cartDoc.data()!.items
+            cartDoc.exists && (cartDoc.data() as { items: CartItem[] })?.items
+              ? (cartDoc.data() as { items: CartItem[] })!.items
               : [];
           transaction.set(cartRef, { items: action(currentItems) });
         }).catch((e) => {
@@ -318,12 +343,18 @@ export const CartProvider: React.FC<{ children: ReactNode }> = ({
       };
 
       if (user) {
-        const cartRef = doc(db, "users", user.uid, "cart", "current");
-        runTransaction(db, async (transaction) => {
+        // FIX: Refactored Firestore calls to use v8 compat syntax.
+        const cartRef = db
+          .collection("users")
+          .doc(user.uid)
+          .collection("cart")
+          .doc("current");
+        db.runTransaction(async (transaction) => {
           const cartDoc = await transaction.get(cartRef);
+          // FIX: Cast document data to correctly access the 'items' property.
           const currentItems =
-            cartDoc.exists() && cartDoc.data()?.items
-              ? cartDoc.data()!.items
+            cartDoc.exists && (cartDoc.data() as { items: CartItem[] })?.items
+              ? (cartDoc.data() as { items: CartItem[] })!.items
               : [];
           transaction.set(cartRef, { items: action(currentItems) });
         }).catch((e) => {
@@ -346,10 +377,15 @@ export const CartProvider: React.FC<{ children: ReactNode }> = ({
 
   const clearCart = useCallback(async () => {
     if (user) {
-      const cartRef = doc(db, "users", user.uid, "cart", "current");
-      await setDoc(cartRef, { items: [] }).catch((e) =>
-        console.error("Error clearing cart:", e)
-      );
+      // FIX: Refactored Firestore calls to use v8 compat syntax.
+      const cartRef = db
+        .collection("users")
+        .doc(user.uid)
+        .collection("cart")
+        .doc("current");
+      await cartRef
+        .set({ items: [] })
+        .catch((e) => console.error("Error clearing cart:", e));
     } else {
       setItems([]);
       saveGuestCart([]);

@@ -3,7 +3,8 @@ import { Link, useParams } from "react-router-dom";
 import { WhatsAppIcon, CheckCircleIcon, SpinnerIcon } from "../assets/icons";
 import { useAuth } from "../hooks/useAuth";
 import { Order } from "../types";
-import { doc, getDoc } from "firebase/firestore";
+// FIX: Refactored Firebase imports to use the v8 compat library to resolve module errors.
+import "firebase/compat/firestore";
 import { db } from "../firebase/config";
 
 const SaveDetailsPrompt: React.FC<{ order: Order | null }> = ({ order }) => {
@@ -75,9 +76,10 @@ const OrderSuccessScreen: React.FC = () => {
   useEffect(() => {
     const fetchOrder = async () => {
       if (orderId) {
-        const orderRef = doc(db, "orders", orderId);
-        const orderSnap = await getDoc(orderRef);
-        if (orderSnap.exists()) {
+        // FIX: Refactored Firestore getDoc call to use v8 compat syntax.
+        const orderRef = db.collection("orders").doc(orderId);
+        const orderSnap = await orderRef.get();
+        if (orderSnap.exists) {
           setOrder({ id: orderSnap.id, ...orderSnap.data() } as Order);
         }
       }

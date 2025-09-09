@@ -7,14 +7,9 @@ import StoreProductCard from "../components/ProductCard";
 import { HeartIcon, SpinnerIcon, CheckCircleIcon } from "../assets/icons";
 import { StoreProduct, Item, Bundle } from "../types";
 import { db } from "../firebase/config";
-import {
-  collection,
-  query,
-  where,
-  documentId,
-  getDocs,
-  onSnapshot,
-} from "firebase/firestore";
+// FIX: Refactored Firebase imports to use the v8 compat library to resolve module errors.
+import firebase from "firebase/compat/app";
+import "firebase/compat/firestore";
 import WishlistScreenSkeleton from "../components/WishlistScreenSkeleton";
 import { calculateBundlePrice } from "../utils/helpers";
 import MetaTagManager from "../components/MetaTagManager";
@@ -32,8 +27,9 @@ const WishlistScreen: React.FC = () => {
 
   useEffect(() => {
     // Fetch all items once to be used for bundle price calculation.
-    const itemsQuery = query(collection(db, "items"));
-    const unsub = onSnapshot(itemsQuery, (snapshot) => {
+    // FIX: Refactored Firestore query to use v8 compat syntax.
+    const itemsQuery = db.collection("items");
+    const unsub = itemsQuery.onSnapshot((snapshot) => {
       setAllItems(
         snapshot.docs.map((doc) => ({ id: doc.id, ...doc.data() } as Item))
       );
@@ -61,18 +57,17 @@ const WishlistScreen: React.FC = () => {
           const chunk = itemIds.slice(i, i + chunkSize);
           if (chunk.length === 0) continue;
 
-          const itemsQuery = query(
-            collection(db, "items"),
-            where(documentId(), "in", chunk)
-          );
-          const bundlesQuery = query(
-            collection(db, "bundles"),
-            where(documentId(), "in", chunk)
-          );
+          // FIX: Refactored Firestore query to use v8 compat syntax.
+          const itemsQuery = db
+            .collection("items")
+            .where(firebase.firestore.FieldPath.documentId(), "in", chunk);
+          const bundlesQuery = db
+            .collection("bundles")
+            .where(firebase.firestore.FieldPath.documentId(), "in", chunk);
 
           const [itemsSnapshot, bundlesSnapshot] = await Promise.all([
-            getDocs(itemsQuery),
-            getDocs(bundlesQuery),
+            itemsQuery.get(),
+            bundlesQuery.get(),
           ]);
 
           const itemsList = itemsSnapshot.docs.map(
@@ -198,5 +193,4 @@ const WishlistScreen: React.FC = () => {
   );
 };
 
-// FIX: Added default export to fix lazy loading issue.
 export default WishlistScreen;

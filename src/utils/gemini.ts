@@ -13,6 +13,7 @@ if (!API_KEY) {
     console.error("Gemini API key is missing. Please add VITE_GEMINI_API_KEY to your .env file to use AI features.");
 }
 
+// FIX: Correctly initialize GoogleGenAI with a named apiKey property.
 const ai = new GoogleGenAI({ apiKey: API_KEY! });
 
 const responseSchema = {

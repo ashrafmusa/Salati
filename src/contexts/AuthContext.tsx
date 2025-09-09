@@ -7,19 +7,10 @@ import React, {
   ReactNode,
   useCallback,
 } from "react";
-import {
-  getAuth,
-  onAuthStateChanged,
-  createUserWithEmailAndPassword,
-  signInWithEmailAndPassword,
-  signOut,
-  updateProfile,
-  RecaptchaVerifier,
-  signInWithPhoneNumber,
-  User as FirebaseUser,
-  ConfirmationResult,
-} from "firebase/auth";
-import { doc, getDoc, setDoc, updateDoc } from "firebase/firestore";
+// FIX: Refactored Firebase imports to use the v8 compat library to resolve module errors.
+import firebase from "firebase/compat/app";
+import "firebase/compat/auth";
+import "firebase/compat/firestore";
 import { auth, db } from "../firebase/config";
 import { User } from "../types";
 
@@ -27,6 +18,10 @@ const SUPER_ADMIN_EMAILS = [
   "ashraf0968491090@gmail.com",
   "salahashrf58@gmail.com",
 ];
+
+// FIX: Replaced v9 types with v8 compat types.
+type FirebaseUser = firebase.User;
+type ConfirmationResult = firebase.auth.ConfirmationResult;
 
 interface AuthContextType {
   user: User | null;
@@ -73,13 +68,15 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({
     useState<ConfirmationResult | null>(null);
 
   useEffect(() => {
-    const unsubscribe = onAuthStateChanged(auth, async (fbUser) => {
+    // FIX: Refactored onAuthStateChanged to use v8 compat syntax.
+    const unsubscribe = auth.onAuthStateChanged(async (fbUser) => {
       setFirebaseUser(fbUser);
       if (fbUser) {
-        const userRef = doc(db, "users", fbUser.uid);
-        const userSnap = await getDoc(userRef);
+        // FIX: Refactored Firestore calls to use v8 compat syntax.
+        const userRef = db.collection("users").doc(fbUser.uid);
+        const userSnap = await userRef.get();
 
-        if (userSnap.exists()) {
+        if (userSnap.exists) {
           let userData = userSnap.data() as User;
           const isSuperAdminByEmail = fbUser.email
             ? SUPER_ADMIN_EMAILS.map((e) => e.toLowerCase()).includes(
@@ -89,7 +86,8 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({
 
           if (isSuperAdminByEmail && userData.role !== "super-admin") {
             userData.role = "super-admin";
-            updateDoc(userRef, { role: "super-admin" }).catch((err) => {
+            // FIX: Refactored Firestore updateDoc call to use v8 compat syntax.
+            userRef.update({ role: "super-admin" }).catch((err) => {
               console.error("Failed to self-heal super-admin role:", err);
             });
           }
@@ -108,7 +106,8 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({
             phone: fbUser.phoneNumber,
             role: isSuperAdmin ? "super-admin" : "customer",
           };
-          await setDoc(userRef, newUser);
+          // FIX: Refactored Firestore setDoc call to use v8 compat syntax.
+          await userRef.set(newUser);
           setUser(newUser);
         }
       } else {
@@ -122,15 +121,16 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({
   const registerWithEmail = useCallback(
     async (email: string, password: string, name: string) => {
       try {
-        const result = await createUserWithEmailAndPassword(
-          auth,
+        // FIX: Refactored createUserWithEmailAndPassword to use v8 compat syntax.
+        const result = await auth.createUserWithEmailAndPassword(
           email,
           password
         );
         const fbUser = result.user;
         if (!fbUser) throw new Error("User creation failed.");
 
-        await updateProfile(fbUser, { displayName: name });
+        // FIX: Refactored updateProfile to use v8 compat syntax.
+        await fbUser.updateProfile({ displayName: name });
       } catch (error) {
         console.error("Registration error:", error);
         throw error;
@@ -142,7 +142,8 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({
   const loginWithEmail = useCallback(
     async (email: string, password: string) => {
       try {
-        await signInWithEmailAndPassword(auth, email, password);
+        // FIX: Refactored signInWithEmailAndPassword to use v8 compat syntax.
+        await auth.signInWithEmailAndPassword(email, password);
       } catch (error) {
         console.error("Login error:", error);
         throw error;
@@ -157,11 +158,15 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({
         if ((window as any).grecaptcha) {
           (window as any).grecaptcha.reset();
         }
-        const appVerifier = new RecaptchaVerifier(auth, recaptchaContainerId, {
-          size: "invisible",
-        });
-        const confirmation = await signInWithPhoneNumber(
-          auth,
+        // FIX: Refactored RecaptchaVerifier to use v8 compat syntax.
+        const appVerifier = new firebase.auth.RecaptchaVerifier(
+          recaptchaContainerId,
+          {
+            size: "invisible",
+          }
+        );
+        // FIX: Refactored signInWithPhoneNumber to use v8 compat syntax.
+        const confirmation = await auth.signInWithPhoneNumber(
           phoneNumber,
           appVerifier
         );
@@ -193,7 +198,8 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({
   const updateUserDetails = useCallback(
     async (details: { name: string; address: string; phone?: string }) => {
       if (!firebaseUser) throw new Error("User not authenticated.");
-      const userRef = doc(db, "users", firebaseUser.uid);
+      // FIX: Refactored Firestore doc call to use v8 compat syntax.
+      const userRef = db.collection("users").doc(firebaseUser.uid);
 
       const updateData: Partial<User> = {
         name: details.name,
@@ -204,14 +210,16 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({
         updateData.phone = details.phone;
       }
 
-      await updateDoc(userRef, updateData);
+      // FIX: Refactored Firestore updateDoc call to use v8 compat syntax.
+      await userRef.update(updateData);
       setUser((prevUser) => (prevUser ? { ...prevUser, ...updateData } : null));
     },
     [firebaseUser]
   );
 
   const logout = useCallback(async () => {
-    await signOut(auth);
+    // FIX: Refactored signOut to use v8 compat syntax.
+    await auth.signOut();
     setUser(null);
   }, []);
 

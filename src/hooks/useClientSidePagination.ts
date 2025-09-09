@@ -68,7 +68,7 @@ export const useClientSidePagination = <T extends { id: string }>(
   // When the underlying data changes (e.g., due to filtering), reset to the first page.
   useEffect(() => {
     setCurrentPage(1);
-  }, [fullData.length]);
+  }, [fullData]);
 
 
   return {

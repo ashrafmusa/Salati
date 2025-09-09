@@ -7,7 +7,8 @@ import React, {
   useMemo,
 } from "react";
 import { db } from "../firebase/config";
-import { doc, onSnapshot } from "firebase/firestore";
+// FIX: Refactored Firebase imports to use the v8 compat library to resolve module errors.
+import "firebase/compat/firestore";
 import { StoreSettings, ThemeSettings } from "../types";
 
 interface SettingsContextType {
@@ -51,12 +52,13 @@ export const SettingsProvider: React.FC<{ children: ReactNode }> = ({
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    const settingsRef = doc(db, "settings", "store");
+    // FIX: Refactored Firestore doc call to use v8 compat syntax.
+    const settingsRef = db.collection("settings").doc("store");
 
-    const unsubscribe = onSnapshot(
-      settingsRef,
+    // FIX: Refactored onSnapshot call to use v8 compat syntax.
+    const unsubscribe = settingsRef.onSnapshot(
       (docSnap) => {
-        if (docSnap.exists()) {
+        if (docSnap.exists) {
           const data = docSnap.data() as Partial<StoreSettings>;
           // Ensure all properties have a value to prevent crashes.
           setSettings({
