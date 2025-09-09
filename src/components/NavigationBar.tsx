@@ -2,10 +2,11 @@ import React, { useState, useEffect, useRef } from "react";
 import { NavLink, useLocation } from "react-router-dom";
 import { HomeIcon, CartIcon, UserIcon, HeartIcon } from "../assets/icons";
 import { useCart } from "../hooks/useCart";
-import {
-  addCartUpdateListener,
-  removeCartUpdateListener,
-} from "../utils/eventBus";
+
+// A simple event bus to communicate cart updates to the nav bar
+const cartUpdateEvents = new EventTarget();
+export const dispatchCartUpdate = () =>
+  cartUpdateEvents.dispatchEvent(new Event("cart-updated"));
 
 const NavigationBar: React.FC = () => {
   const { getCartCount } = useCart();
@@ -28,8 +29,9 @@ const NavigationBar: React.FC = () => {
       setIsCartBumping(true);
       setTimeout(() => setIsCartBumping(false), 400); // Duration of the animation
     };
-    addCartUpdateListener(handleCartUpdate);
-    return () => removeCartUpdateListener(handleCartUpdate);
+    cartUpdateEvents.addEventListener("cart-updated", handleCartUpdate);
+    return () =>
+      cartUpdateEvents.removeEventListener("cart-updated", handleCartUpdate);
   }, []);
 
   // Animate the active pill background
