@@ -1,5 +1,13 @@
-// FIX: Export the User type so it can be imported by other modules.
-export type { User } from './auth';
+// FIX: Define the User type to be used across modules.
+export interface User {
+  uid: string;
+  email: string | null;
+  name: string;
+  phone?: string | null;
+  address?: string;
+  role: 'super-admin' | 'admin' | 'sub-admin' | 'driver' | 'customer';
+  customDeliveryFee?: number;
+}
 
 export interface Item {
   id: string;

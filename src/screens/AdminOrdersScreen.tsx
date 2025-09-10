@@ -1,6 +1,6 @@
 import React, { useState, useMemo, useEffect } from "react";
 import { useSearchParams } from "react-router-dom";
-import { AdminOrder, OrderStatus, Driver, User } from "../types";
+import { AdminOrder, OrderStatus, Driver } from "../types";
 import OrderDetailsModal from "../components/OrderDetailsModal";
 import ConfirmationModal from "../components/ConfirmationModal";
 import { db } from "../firebase/config";
@@ -176,12 +176,68 @@ const AdminOrdersScreen: React.FC = () => {
     }
   };
 
-  const handleStatusChange = (orderId: string, newStatus: OrderStatus) => {
-    updateOrderWithLog(
-      orderId,
-      { status: newStatus },
-      `تم تغيير الحالة إلى: ${newStatus}`
-    );
+  const handleStatusChange = async (
+    orderId: string,
+    newStatus: OrderStatus
+  ) => {
+    if (!adminUser) return;
+
+    if (newStatus === OrderStatus.Delivered) {
+      const order = filteredOrders.find((o) => o.id === orderId);
+      if (!order) {
+        showToast("Could not find order details to update stock.", "error");
+        return;
+      }
+
+      try {
+        await db.runTransaction(async (transaction) => {
+          const orderRef = db.collection("orders").doc(orderId);
+          const orderDoc = await transaction.get(orderRef);
+
+          if (orderDoc.data()?.status === OrderStatus.Delivered) {
+            return; // Already processed
+          }
+
+          for (const item of order.items) {
+            const productCollection =
+              item.productType === "item" ? "items" : "bundles";
+            const productRef = db
+              .collection(productCollection)
+              .doc(item.productId);
+            const productDoc = await transaction.get(productRef);
+            if (productDoc.exists) {
+              const currentStock = productDoc.data()?.stock ?? 0;
+              transaction.update(productRef, {
+                stock: currentStock - item.quantity,
+              });
+            }
+          }
+
+          transaction.update(orderRef, {
+            status: newStatus,
+            paymentStatus: "paid",
+          });
+        });
+
+        await addOrderLog(
+          orderId,
+          adminUser,
+          `Status changed to: ${newStatus} and stock updated.`,
+          "system_log",
+          "internal"
+        );
+        showToast("Order delivered and stock levels updated!", "success");
+      } catch (error) {
+        console.error("Error during stock deduction transaction: ", error);
+        showToast("Failed to update stock. Order status not changed.", "error");
+      }
+    } else {
+      updateOrderWithLog(
+        orderId,
+        { status: newStatus },
+        `Status changed to: ${newStatus}`
+      );
+    }
   };
 
   const handleDriverAssign = (orderId: string, driverId: string | null) => {

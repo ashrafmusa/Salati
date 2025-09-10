@@ -72,82 +72,61 @@ const CheckoutScreen: React.FC = () => {
     setErrors({});
 
     try {
-      const newOrderId = await db.runTransaction(async (transaction) => {
-        const itemsToUpdate: { ref: any; newStock: number }[] = [];
+      // Perform a pre-flight check to ensure stock is available before creating the order.
+      // This gives the user immediate feedback without needing a transaction.
+      for (const item of state.items) {
+        const productCollection =
+          item.productType === "item" ? "items" : "bundles";
+        const productRef = db.collection(productCollection).doc(item.productId);
+        const productDoc = await productRef.get();
 
-        for (const item of state.items) {
-          const productCollection =
-            item.productType === "item" ? "items" : "bundles";
-          const productRef = db
-            .collection(productCollection)
-            .doc(item.productId);
-          const productDoc = await transaction.get(productRef);
-
-          // FIX: Replaced the `productDoc.exists()` method call with the `productDoc.exists` property to align with Firebase v8 compat syntax, resolving a "not callable" error during transaction validation.
-          if (!productDoc.exists) {
-            throw new Error(`المنتج "${item.arabicName}" لم يعد متوفراً.`);
-          }
-
-          const currentStock = productDoc.data()?.stock ?? 0;
-          if (currentStock < item.quantity) {
-            throw new Error(
-              `عذراً، الكمية المطلوبة من "${item.arabicName}" غير متوفرة في المخزون.`
-            );
-          }
-
-          itemsToUpdate.push({
-            ref: productRef,
-            newStock: currentStock - item.quantity,
-          });
+        if (!productDoc.exists) {
+          throw new Error(`المنتج "${item.arabicName}" لم يعد متوفراً.`);
         }
 
-        itemsToUpdate.forEach((itemUpdate) => {
-          transaction.update(itemUpdate.ref, { stock: itemUpdate.newStock });
-        });
-
-        const newOrderRef = db.collection("orders").doc();
-        const newOrderData: Omit<Order, "id"> = {
-          userId: user.uid,
-          date: new Date().toISOString(),
-          items: state.items,
-          subtotal,
-          deliveryFee,
-          total,
-          discountAmount,
-          appliedOfferIds,
-          status:
-            deliveryMethod === "pickup"
-              ? OrderStatus.ReadyForPickup
-              : OrderStatus.Preparing,
-          paymentStatus: "unpaid",
-          deliveryMethod,
-          deliveryInfo: {
-            name,
-            phone,
-            address:
-              deliveryMethod === "delivery"
-                ? address
-                : settings?.storeAddress || "Store Pickup",
-          },
-          driverId: null,
-        };
-        transaction.set(newOrderRef, newOrderData);
-
-        return newOrderRef.id;
-      });
-
-      if (!newOrderId) {
-        throw new Error("Failed to create order. Please try again.");
+        const currentStock = productDoc.data()?.stock ?? 0;
+        if (currentStock < item.quantity) {
+          throw new Error(
+            `عذراً، الكمية المطلوبة من "${item.arabicName}" غير متوفرة في المخزون.`
+          );
+        }
       }
 
-      await db.collection("notifications").add({
-        message: `طلب جديد #${newOrderId
-          .slice(0, 7)
-          .toUpperCase()} من ${name}.`,
-        timestamp: new Date().toISOString(),
-        read: false,
-        link: `/orders`,
-      });
+      // Create the order document. This is the only write operation the customer performs.
+      const newOrderRef = db.collection("orders").doc();
+      const newOrderData: Omit<Order, "id"> = {
+        userId: user.uid,
+        date: new Date().toISOString(),
+        items: state.items,
+        subtotal,
+        deliveryFee,
+        total,
+        discountAmount,
+        appliedOfferIds,
+        status:
+          deliveryMethod === "pickup"
+            ? OrderStatus.ReadyForPickup
+            : OrderStatus.Preparing,
+        paymentStatus: "unpaid",
+        deliveryMethod,
+        deliveryInfo: {
+          name,
+          phone,
+          address:
+            deliveryMethod === "delivery"
+              ? address
+              : settings?.storeAddress || "Store Pickup",
+        },
+        driverId: null,
+        lastUpdatedBy: { id: user.uid, name: user.name },
+        lastUpdatedAt: new Date().toISOString(),
+      };
+      await newOrderRef.set(newOrderData);
+
+      const newOrderId = newOrderRef.id;
+
+      // NOTE: Stock update and admin notification are removed.
+      // Stock will be decremented by an admin upon marking the order as "Delivered".
 
       clearCart();
       navigate(`/order-success/${newOrderId}`);
