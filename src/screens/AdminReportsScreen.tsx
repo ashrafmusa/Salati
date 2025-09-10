@@ -1,6 +1,5 @@
 import React, { useState, useEffect, useMemo } from "react";
 import { db } from "../firebase/config";
-// FIX: Refactored Firebase imports to use the v8 compat library to resolve module errors.
 import { Order, OrderStatus, Item } from "../types";
 import { exportToCsv } from "../utils/helpers";
 import { SpinnerIcon } from "../assets/adminIcons";
@@ -23,7 +22,6 @@ const AdminReportsScreen: React.FC = () => {
     const endDate = new Date(dateRange.end);
     endDate.setHours(23, 59, 59, 999);
 
-    // FIX: Refactored Firestore query to use v8 compat syntax.
     const ordersQuery = db
       .collection("orders")
       .where("date", ">=", startDate.toISOString())
@@ -89,14 +87,10 @@ const AdminReportsScreen: React.FC = () => {
     const itemsWithStock = items.map((item) => ({
       name: item.arabicName,
       stock: item.stock,
+      id: item.id,
     }));
     const slowestMoving = itemsWithStock
-      .filter(
-        (item) =>
-          !productSales.has(
-            items.find((i) => i.arabicName === item.name)?.id || ""
-          )
-      )
+      .filter((item) => !productSales.has(item.id))
       .sort((a, b) => a.stock - b.stock)
       .slice(0, 5);
 
@@ -203,11 +197,11 @@ const AdminReportsScreen: React.FC = () => {
               <h3 className="text-lg font-bold text-slate-800 dark:text-slate-100 mb-4">
                 أفضل 5 منتجات مبيعاً
               </h3>
-              <ul className="space-y-2">
+              <div className="space-y-2">
                 {productPerformance.bestSelling.map((item) => (
-                  <li
+                  <div
                     key={item.name}
-                    className="flex justify-between p-2 bg-slate-50 dark:bg-slate-700/50 rounded"
+                    className="flex justify-between p-3 bg-slate-50 dark:bg-slate-700/50 rounded-md"
                   >
                     <span className="font-semibold text-slate-700 dark:text-slate-200">
                       {item.name}
@@ -215,19 +209,19 @@ const AdminReportsScreen: React.FC = () => {
                     <span className="text-slate-500 dark:text-slate-400">
                       {item.quantity} مبيعات
                     </span>
-                  </li>
+                  </div>
                 ))}
-              </ul>
+              </div>
             </div>
             <div className="bg-white dark:bg-slate-800 p-6 rounded-lg shadow-md">
               <h3 className="text-lg font-bold text-slate-800 dark:text-slate-100 mb-4">
                 أبطأ 5 منتجات حركة
               </h3>
-              <ul className="space-y-2">
+              <div className="space-y-2">
                 {productPerformance.slowestMoving.map((item) => (
-                  <li
+                  <div
                     key={item.name}
-                    className="flex justify-between p-2 bg-slate-50 dark:bg-slate-700/50 rounded"
+                    className="flex justify-between p-3 bg-slate-50 dark:bg-slate-700/50 rounded-md"
                   >
                     <span className="font-semibold text-slate-700 dark:text-slate-200">
                       {item.name}
@@ -235,9 +229,9 @@ const AdminReportsScreen: React.FC = () => {
                     <span className="text-slate-500 dark:text-slate-400">
                       المخزون: {item.stock}
                     </span>
-                  </li>
+                  </div>
                 ))}
-              </ul>
+              </div>
             </div>
           </div>
         </>
