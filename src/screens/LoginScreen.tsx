@@ -1,4 +1,4 @@
-import React, { useState, useRef, useEffect } from "react";
+import React, { useState, useRef, useEffect, useMemo } from "react";
 import { useNavigate, Navigate, useLocation } from "react-router-dom";
 import { useAuth } from "../hooks/useAuth";
 import {
@@ -13,6 +13,8 @@ import {
 } from "../assets/icons";
 import Logo from "../components/Logo";
 import OTPInput from "../components/OTPInput";
+import { useSettings } from "../contexts/SettingsContext";
+import fallbackIllustration from "/login-illustration.svg";
 
 type AuthStep = "phone" | "otp" | "details";
 type AuthMethod = "phone" | "email";
@@ -49,11 +51,26 @@ const LoginScreen: React.FC = () => {
     signInWithPhone,
     verifyOTP,
   } = useAuth();
+  const { settings } = useSettings();
   const navigate = useNavigate();
   const location = useLocation();
   const recaptchaContainerRef = useRef<HTMLDivElement>(null);
 
   const from = location.state?.from?.pathname || "/";
+
+  const illustrationSrc = useMemo(() => {
+    if (settings?.loginIllustrationSvg) {
+      try {
+        return `data:image/svg+xml;base64,${btoa(
+          settings.loginIllustrationSvg
+        )}`;
+      } catch (e) {
+        console.error("Error encoding custom SVG, using fallback.", e);
+        return fallbackIllustration;
+      }
+    }
+    return fallbackIllustration;
+  }, [settings]);
 
   useEffect(() => {
     if (recaptchaContainerRef.current) {
@@ -330,7 +347,7 @@ const LoginScreen: React.FC = () => {
       {/* Illustration Side */}
       <div className="hidden lg:flex lg:w-1/2 items-center justify-center p-8 bg-primary/5 dark:bg-slate-900">
         <img
-          src="/login-illustration.svg"
+          src={illustrationSrc}
           alt="Salati Shopping Illustration"
           className="w-full max-w-lg"
         />

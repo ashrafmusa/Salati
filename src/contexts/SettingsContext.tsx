@@ -43,6 +43,7 @@ const DEFAULT_SETTINGS: StoreSettings = {
   announcementText: "",
   isAnnouncementActive: false,
   theme: DEFAULT_THEME,
+  loginIllustrationSvg: "",
 };
 
 export const SettingsProvider: React.FC<{ children: ReactNode }> = ({
@@ -71,6 +72,9 @@ export const SettingsProvider: React.FC<{ children: ReactNode }> = ({
               data.isAnnouncementActive ||
               DEFAULT_SETTINGS.isAnnouncementActive,
             theme: { ...DEFAULT_THEME, ...data.theme },
+            loginIllustrationSvg:
+              data.loginIllustrationSvg ||
+              DEFAULT_SETTINGS.loginIllustrationSvg,
           });
         } else {
           setSettings(DEFAULT_SETTINGS);

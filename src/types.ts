@@ -1,12 +1,5 @@
-export interface User {
-  uid: string;
-  phone: string | null;
-  name: string;
-  address?: string;
-  role: 'customer' | 'sub-admin' | 'admin' | 'super-admin' | 'driver';
-  email?: string | null;
-  customDeliveryFee?: number;
-}
+// FIX: Export the User type so it can be imported by other modules.
+export type { User } from './auth';
 
 export interface Item {
   id: string;
@@ -169,6 +162,7 @@ export interface StoreSettings {
   announcementText?: string;
   isAnnouncementActive?: boolean;
   theme: ThemeSettings;
+  loginIllustrationSvg?: string;
 }
 
 export interface AuditLog {
