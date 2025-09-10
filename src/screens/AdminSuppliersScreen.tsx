@@ -1,95 +1,115 @@
-
-
-import React, { useState, useMemo } from 'react';
-import { db } from '../firebase/config';
-// FIX: Refactored Firebase imports to use the v8 compat library to resolve module errors.
-import { Supplier } from '../types';
-import AdminScreenHeader from '../components/AdminScreenHeader';
-import ConfirmationModal from '../components/ConfirmationModal';
-import { useToast } from '../contexts/ToastContext';
-import { usePaginatedFirestore } from '../hooks/usePaginatedFirestore';
-import Pagination from '../components/Pagination';
-import TableSkeleton from '../components/TableSkeleton';
-import { useAuth } from '../hooks/useAuth';
-import { logAdminAction } from '../utils/auditLogger';
-import SupplierFormModal from '../components/SupplierFormModal';
+import React, { useState, useMemo } from "react";
+import { db } from "../firebase/config";
+import { Supplier } from "../types";
+import AdminScreenHeader from "../components/AdminScreenHeader";
+import ConfirmationModal from "../components/ConfirmationModal";
+import { useToast } from "../contexts/ToastContext";
+import { usePaginatedFirestore } from "../hooks/usePaginatedFirestore";
+import Pagination from "../components/Pagination";
+import TableSkeleton from "../components/TableSkeleton";
+import { useAuth } from "../hooks/useAuth";
+import { logAdminAction } from "../utils/auditLogger";
+import SupplierFormModal from "../components/SupplierFormModal";
+import AdminEmptyState from "../components/AdminEmptyState";
+import { BuildingStorefrontIcon } from "../assets/adminIcons";
 
 const AdminSuppliersScreen: React.FC = () => {
-    const { user: adminUser } = useAuth();
-    const [searchTerm, setSearchTerm] = useState('');
-    const [isModalOpen, setIsModalOpen] = useState(false);
-    const [editingSupplier, setEditingSupplier] = useState<Supplier | null>(null);
-    const [supplierToDelete, setSupplierToDelete] = useState<Supplier | null>(null);
-    const [isSaving, setIsSaving] = useState(false);
-    const { showToast } = useToast();
+  const { user: adminUser } = useAuth();
+  const [searchTerm, setSearchTerm] = useState("");
+  const [isModalOpen, setIsModalOpen] = useState(false);
+  const [editingSupplier, setEditingSupplier] = useState<Supplier | null>(null);
+  const [supplierToDelete, setSupplierToDelete] = useState<Supplier | null>(
+    null
+  );
+  const [isSaving, setIsSaving] = useState(false);
+  const { showToast } = useToast();
 
-    const initialSort = useMemo(() => ({ key: 'name' as const, direction: 'ascending' as const }), []);
-    const { documents: suppliers, loading, nextPage, prevPage, hasNextPage, hasPrevPage } = usePaginatedFirestore<Supplier>('suppliers', initialSort);
+  const initialSort = useMemo(
+    () => ({ key: "name" as const, direction: "ascending" as const }),
+    []
+  );
+  const {
+    documents: suppliers,
+    loading,
+    nextPage,
+    prevPage,
+    hasNextPage,
+    hasPrevPage,
+  } = usePaginatedFirestore<Supplier>("suppliers", initialSort);
 
-    const filteredSuppliers = useMemo(() => {
-        if (!searchTerm) return suppliers;
-        return suppliers.filter(s => s.name.toLowerCase().includes(searchTerm.toLowerCase()));
-    }, [suppliers, searchTerm]);
+  const filteredSuppliers = useMemo(() => {
+    if (!searchTerm) return suppliers;
+    return suppliers.filter((s) =>
+      s.name.toLowerCase().includes(searchTerm.toLowerCase())
+    );
+  }, [suppliers, searchTerm]);
 
-    const handleOpenModal = (supplier: Supplier | null = null) => {
-        setEditingSupplier(supplier);
-        setIsModalOpen(true);
-    };
+  const handleOpenModal = (supplier: Supplier | null = null) => {
+    setEditingSupplier(supplier);
+    setIsModalOpen(true);
+  };
 
-    const handleSave = async (supplierData: Supplier) => {
-        setIsSaving(true);
-        try {
-            if (editingSupplier) {
-                const { id, ...data } = supplierData;
-                // FIX: Refactored Firestore updateDoc call to use v8 compat syntax.
-                await db.collection('suppliers').doc(id).update(data);
-                showToast('Supplier updated!', 'success');
-            } else {
-                // FIX: When creating a document, the object passed to addDoc should not contain an `id` field,
-                // as Firestore generates it. Destructuring `id` out ensures a clean data object is sent.
-                const { id, ...data } = supplierData;
-                // FIX: Refactored Firestore addDoc call to use v8 compat syntax.
-                await db.collection('suppliers').add(data);
-                showToast('Supplier added!', 'success');
-            }
-            logAdminAction(adminUser, editingSupplier ? 'Updated Supplier' : 'Created Supplier', `Name: ${supplierData.name}`);
-            setIsModalOpen(false);
-        } catch (error) {
-            console.error("Error saving supplier:", error);
-            showToast('Failed to save supplier.', 'error');
-        } finally {
-            setIsSaving(false);
-        }
-    };
-    
-    const confirmDelete = async () => {
-        if (!supplierToDelete) return;
-        try {
-            // FIX: Refactored Firestore deleteDoc call to use v8 compat syntax.
-            await db.collection('suppliers').doc(supplierToDelete.id).delete();
-            logAdminAction(adminUser, 'Deleted Supplier', `Name: ${supplierToDelete.name}`);
-            showToast('Supplier deleted.', 'success');
-        } catch (error) {
-            showToast('Failed to delete supplier.', 'error');
-        } finally {
-            setSupplierToDelete(null);
-        }
-    };
+  const handleSave = async (supplierData: Supplier) => {
+    setIsSaving(true);
+    try {
+      if (editingSupplier) {
+        const { id, ...data } = supplierData;
+        await db.collection("suppliers").doc(id).update(data);
+        showToast("Supplier updated!", "success");
+      } else {
+        const { id, ...data } = supplierData;
+        await db.collection("suppliers").add(data);
+        showToast("Supplier added!", "success");
+      }
+      logAdminAction(
+        adminUser,
+        editingSupplier ? "Updated Supplier" : "Created Supplier",
+        `Name: ${supplierData.name}`
+      );
+      setIsModalOpen(false);
+    } catch (error) {
+      console.error("Error saving supplier:", error);
+      showToast("Failed to save supplier.", "error");
+    } finally {
+      setIsSaving(false);
+    }
+  };
 
-    return (
-      <div className="h-full flex flex-col bg-white dark:bg-slate-800 p-6 rounded-lg shadow-md">
-        <AdminScreenHeader
-          title="إدارة الموردين"
-          buttonText="إضافة مورد"
-          onButtonClick={() => handleOpenModal()}
-          searchTerm={searchTerm}
-          onSearchChange={setSearchTerm}
-          searchPlaceholder="ابحث عن مورد..."
-        />
+  const confirmDelete = async () => {
+    if (!supplierToDelete) return;
+    try {
+      await db.collection("suppliers").doc(supplierToDelete.id).delete();
+      logAdminAction(
+        adminUser,
+        "Deleted Supplier",
+        `Name: ${supplierToDelete.name}`
+      );
+      showToast("Supplier deleted.", "success");
+    } catch (error) {
+      showToast("Failed to delete supplier.", "error");
+    } finally {
+      setSupplierToDelete(null);
+    }
+  };
 
-        <div className="flex-grow overflow-y-auto">
-          {loading ? <TableSkeleton /> : (
-            <div className="overflow-x-auto">
+  return (
+    <div className="h-full flex flex-col bg-white dark:bg-slate-800 p-6 rounded-lg shadow-md">
+      <AdminScreenHeader
+        title="إدارة الموردين"
+        buttonText="إضافة مورد"
+        onButtonClick={() => handleOpenModal()}
+        searchTerm={searchTerm}
+        onSearchChange={setSearchTerm}
+        searchPlaceholder="ابحث عن مورد..."
+      />
+
+      <div className="flex-grow overflow-y-auto">
+        {loading ? (
+          <TableSkeleton />
+        ) : filteredSuppliers.length > 0 ? (
+          <>
+            {/* Desktop Table View */}
+            <div className="overflow-x-auto hidden md:block">
               <table className="w-full text-right">
                 <thead className="border-b-2 border-slate-100 dark:border-slate-700">
                   <tr>
@@ -100,34 +120,111 @@ const AdminSuppliersScreen: React.FC = () => {
                   </tr>
                 </thead>
                 <tbody>
-                  {filteredSuppliers.map(s => (
-                    <tr key={s.id} className="border-b dark:border-slate-700 hover:bg-slate-50 dark:hover:bg-slate-700/50">
+                  {filteredSuppliers.map((s) => (
+                    <tr
+                      key={s.id}
+                      className="border-b dark:border-slate-700 hover:bg-slate-50 dark:hover:bg-slate-700/50"
+                    >
                       <td className="p-3 font-medium">{s.name}</td>
                       <td className="p-3">{s.contactPerson}</td>
-                      <td className="p-3" dir="ltr">{s.phone}</td>
-                      <td className="p-3 space-x-4">
-                        <button onClick={() => handleOpenModal(s)} className="text-admin-primary hover:underline">تعديل</button>
-                        <button onClick={() => setSupplierToDelete(s)} className="text-red-500 hover:underline">حذف</button>
+                      <td className="p-3" dir="ltr">
+                        {s.phone}
+                      </td>
+                      <td className="p-3 space-x-4 space-x-reverse">
+                        <button
+                          onClick={() => handleOpenModal(s)}
+                          className="text-admin-primary hover:underline"
+                        >
+                          تعديل
+                        </button>
+                        <button
+                          onClick={() => setSupplierToDelete(s)}
+                          className="text-red-500 hover:underline"
+                        >
+                          حذف
+                        </button>
                       </td>
                     </tr>
                   ))}
                 </tbody>
               </table>
             </div>
-          )}
-        </div>
-        <Pagination onNext={nextPage} onPrev={prevPage} hasNextPage={hasNextPage} hasPrevPage={hasPrevPage} />
 
-        {isModalOpen && <SupplierFormModal supplier={editingSupplier} onClose={() => setIsModalOpen(false)} onSave={handleSave} isSaving={isSaving}/>}
-        <ConfirmationModal 
-            isOpen={!!supplierToDelete} 
-            onClose={() => setSupplierToDelete(null)} 
-            onConfirm={confirmDelete} 
-            title="تأكيد الحذف" 
-            message={`هل أنت متأكد من حذف المورد "${supplierToDelete?.name}"؟`} 
-            isDestructive 
-        />
+            {/* Mobile Card View */}
+            <div className="space-y-4 md:hidden">
+              {filteredSuppliers.map((s) => (
+                <div
+                  key={s.id}
+                  className="bg-slate-50 dark:bg-slate-800/50 p-4 rounded-lg shadow-sm border dark:border-slate-700"
+                >
+                  <div className="flex justify-between items-start">
+                    <div>
+                      <p className="font-bold text-slate-800 dark:text-slate-100">
+                        {s.name}
+                      </p>
+                      <p className="text-sm text-slate-500 dark:text-slate-400">
+                        {s.contactPerson}
+                      </p>
+                    </div>
+                    <p
+                      className="text-sm text-slate-600 dark:text-slate-300 font-semibold"
+                      dir="ltr"
+                    >
+                      {s.phone}
+                    </p>
+                  </div>
+                  <div className="flex justify-end gap-4 mt-4 pt-2 border-t dark:border-slate-600">
+                    <button
+                      onClick={() => handleOpenModal(s)}
+                      className="text-admin-primary font-semibold"
+                    >
+                      تعديل
+                    </button>
+                    <button
+                      onClick={() => setSupplierToDelete(s)}
+                      className="text-red-500 font-semibold"
+                    >
+                      حذف
+                    </button>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </>
+        ) : (
+          <AdminEmptyState
+            icon={BuildingStorefrontIcon}
+            title="لا يوجد موردون"
+            message="ابدأ بإضافة الموردين الذين تتعامل معهم."
+            buttonText="إضافة المورد الأول"
+            onButtonClick={() => handleOpenModal()}
+          />
+        )}
       </div>
-    );
+      <Pagination
+        onNext={nextPage}
+        onPrev={prevPage}
+        hasNextPage={hasNextPage}
+        hasPrevPage={hasPrevPage}
+      />
+
+      {isModalOpen && (
+        <SupplierFormModal
+          supplier={editingSupplier}
+          onClose={() => setIsModalOpen(false)}
+          onSave={handleSave}
+          isSaving={isSaving}
+        />
+      )}
+      <ConfirmationModal
+        isOpen={!!supplierToDelete}
+        onClose={() => setSupplierToDelete(null)}
+        onConfirm={confirmDelete}
+        title="تأكيد الحذف"
+        message={`هل أنت متأكد من حذف المورد "${supplierToDelete?.name}"؟`}
+        isDestructive
+      />
+    </div>
+  );
 };
 export default AdminSuppliersScreen;

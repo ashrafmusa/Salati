@@ -1,8 +1,10 @@
-import { StoreProduct, ExtraItem, CartItem, Offer, Bundle, Item } from '../types';
+import { StoreProduct, ExtraItem, CartItem, Offer, Bundle, Item, Discount } from '../types';
 
 // --- CLOUDINARY CONFIGURATION ---
-const CLOUDINARY_CLOUD_NAME = import.meta.env.VITE_CLOUDINARY_CLOUD_NAME;
-const CLOUDINARY_UPLOAD_PRESET = import.meta.env.VITE_CLOUDINARY_UPLOAD_PRESET;
+// FIX: Replaced direct `import.meta.env` access with `(import.meta as any).env` to resolve TypeScript typing errors.
+const CLOUDINARY_CLOUD_NAME = (import.meta as any).env.VITE_CLOUDINARY_CLOUD_NAME;
+// FIX: Replaced direct `import.meta.env` access with `(import.meta as any).env` to resolve TypeScript typing errors.
+const CLOUDINARY_UPLOAD_PRESET = (import.meta as any).env.VITE_CLOUDINARY_UPLOAD_PRESET;
 
 /**
  * Uploads a file directly to Cloudinary from the client-side.
@@ -116,28 +118,40 @@ export const applyDiscounts = (
 
     const calculatedDiscounts = activeOffers.map(offer => {
         const discountInfo = offer.discount!;
-        let discountableAmount = 0;
+        let discountValue = 0;
 
-        if (discountInfo.appliesTo === 'all') {
-            discountableAmount = subtotal;
-        } else if (discountInfo.appliesTo === 'category') {
-            discountableAmount = cartItems
-                .filter(item => item.category === discountInfo.target)
-                .reduce((sum, item) => sum + calculateTotal(item), 0);
-        } else if (discountInfo.appliesTo === 'product') {
-            discountableAmount = cartItems
-                .filter(item => item.productId === discountInfo.target)
-                .reduce((sum, item) => sum + calculateTotal(item), 0);
-        }
+        if (discountInfo.type === 'percentage' || discountInfo.type === 'fixed') {
+            let discountableAmount = 0;
+            if (discountInfo.appliesTo === 'all') {
+                discountableAmount = subtotal;
+            } else if (discountInfo.appliesTo === 'category') {
+                discountableAmount = cartItems
+                    .filter(item => item.category === discountInfo.target)
+                    .reduce((sum, item) => sum + calculateTotal(item), 0);
+            } else if (discountInfo.appliesTo === 'product') {
+                discountableAmount = cartItems
+                    .filter(item => item.productId === discountInfo.target)
+                    .reduce((sum, item) => sum + calculateTotal(item), 0);
+            }
 
-        if (discountableAmount > 0) {
-            if (discountInfo.type === 'percentage') {
-                return { id: offer.id, discountValue: discountableAmount * (discountInfo.value / 100) };
-            } else { // fixed
-                return { id: offer.id, discountValue: Math.min(discountInfo.value, discountableAmount) };
+            if (discountableAmount > 0) {
+                if (discountInfo.type === 'percentage') {
+                    discountValue = discountableAmount * (discountInfo.value / 100);
+                } else { // fixed
+                    discountValue = Math.min(discountInfo.value, discountableAmount);
+                }
+            }
+        } else if (discountInfo.type === 'buyXgetY') {
+            const targetItem = cartItems.find(item => item.productId === discountInfo.target);
+            if (targetItem && targetItem.quantity >= discountInfo.buyQuantity) {
+                const numApplications = Math.floor(targetItem.quantity / discountInfo.buyQuantity);
+                const freeItemsCount = numApplications * discountInfo.getQuantity;
+                discountValue = freeItemsCount * targetItem.unitPrice;
             }
         }
-        return { id: offer.id, discountValue: 0 };
+
+        return { id: offer.id, discountValue };
+
     }).filter(d => d.discountValue > 0);
 
     if (calculatedDiscounts.length === 0) {

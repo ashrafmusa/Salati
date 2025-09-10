@@ -94,6 +94,8 @@ export interface Order {
   deliveryInfo: DeliveryInfo;
   driverId?: string | null;
   deliveryMethod: 'delivery' | 'pickup';
+  lastUpdatedBy?: { id: string; name: string };
+  lastUpdatedAt?: string;
 }
 
 export interface DeliveryInfo {
@@ -102,12 +104,30 @@ export interface DeliveryInfo {
   address: string;
 }
 
-export interface Discount {
-  type: 'percentage' | 'fixed';
-  value: number;
+export interface PercentageDiscount {
+  type: 'percentage';
+  value: number; // e.g., 15 for 15%
   appliesTo: 'all' | 'category' | 'product';
-  target?: string; // category name or product ID (can be item or bundle id)
+  target?: string;
 }
+
+export interface FixedDiscount {
+  type: 'fixed';
+  value: number; // e.g., 500 for 500 currency units
+  appliesTo: 'all' | 'category' | 'product';
+  target?: string;
+}
+
+export interface BuyXGetYDiscount {
+  type: 'buyXgetY';
+  buyQuantity: number; // e.g., 10
+  getQuantity: number; // e.g., 1 or 2
+  appliesTo: 'product'; // This offer type is product-specific
+  target: string; // The ID of the product
+}
+
+export type Discount = PercentageDiscount | FixedDiscount | BuyXGetYDiscount;
+
 
 export interface Offer {
   id: string;
@@ -136,19 +156,19 @@ export interface Category {
 }
 
 export interface ThemeSettings {
-    primaryColor: string;
-    secondaryColor: string;
-    sansFont: string;
-    displayFont: string;
+  primaryColor: string;
+  secondaryColor: string;
+  sansFont: string;
+  displayFont: string;
 }
 
 export interface StoreSettings {
-    deliveryFee: number;
-    logoUrl: string;
-    storeAddress: string;
-    announcementText?: string;
-    isAnnouncementActive?: boolean;
-    theme: ThemeSettings;
+  deliveryFee: number;
+  logoUrl: string;
+  storeAddress: string;
+  announcementText?: string;
+  isAnnouncementActive?: boolean;
+  theme: ThemeSettings;
 }
 
 export interface AuditLog {
@@ -181,40 +201,40 @@ export interface PurchaseOrderItem {
 }
 
 export enum PurchaseOrderStatus {
-    Draft = "مسودة",
-    Sent = "مرسل للمورد",
-    PartiallyReceived = "تم الاستلام جزئياً",
-    FullyReceived = "تم الاستلام بالكامل",
-    Cancelled = "ملغي",
+  Draft = "مسودة",
+  Sent = "مرسل للمورد",
+  PartiallyReceived = "تم الاستلام جزئياً",
+  FullyReceived = "تم الاستلام بالكامل",
+  Cancelled = "ملغي",
 }
 
 export interface PurchaseOrder {
-    id: string;
-    supplierId: string;
-    supplierName: string; // Denormalized for display
-    createdDate: string; // ISO date string
-    expectedDate: string; // ISO date string
-    items: PurchaseOrderItem[];
-    totalCost: number;
-    status: PurchaseOrderStatus;
+  id: string;
+  supplierId: string;
+  supplierName: string; // Denormalized for display
+  createdDate: string; // ISO date string
+  expectedDate: string; // ISO date string
+  items: PurchaseOrderItem[];
+  totalCost: number;
+  status: PurchaseOrderStatus;
 }
 
 
 // Admin Panel Specific Types
 export interface Customer extends User {
-    joinDate: string; // ISO date string
-    orderHistory: string[]; // array of order IDs
+  joinDate: string; // ISO date string
+  orderHistory: string[]; // array of order IDs
 }
 
 export interface Driver {
-    id: string;
-    name: string;
-    phone: string;
-    status: 'Available' | 'On-Delivery' | 'Offline';
+  id: string;
+  name: string;
+  phone: string;
+  status: 'Available' | 'On-Delivery' | 'Offline';
 }
 
 export interface AdminOrder extends Order {
-    customer?: Omit<User, 'role'>;
+  customer?: Omit<User, 'role'>;
 }
 
 export interface AdminNotification {
@@ -223,4 +243,15 @@ export interface AdminNotification {
   timestamp: string; // ISO date string
   read: boolean;
   link?: string;
+}
+
+// Collaboration Feature Types
+export interface ActivityLogEntry {
+  id: string;
+  timestamp: string; // ISO date string
+  authorId: string;
+  authorName: string;
+  message: string;
+  type: 'status_change' | 'customer_message' | 'driver_note' | 'admin_message' | 'internal_note' | 'issue' | 'system_log';
+  visibility: 'public' | 'internal';
 }

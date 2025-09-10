@@ -1,15 +1,20 @@
 import React, { useState, useEffect } from "react";
 import { db } from "../firebase/config";
-// FIX: Refactored Firebase imports to use the v8 compat library to resolve module errors.
 import { useAuth } from "../hooks/useAuth";
 import { AdminOrder, OrderStatus } from "../types";
+// FIX: Moved ExclamationTriangleIcon import to the correct file ('../assets/adminIcons').
 import { SpinnerIcon, CheckCircleIcon } from "../assets/icons";
+import { MessageIcon, ExclamationTriangleIcon } from "../assets/adminIcons";
 import ConfirmationModal from "../components/ConfirmationModal";
+import { addOrderLog } from "../utils/orderLogger";
+import DriverNoteModal from "../components/DriverNoteModal";
+import { useToast } from "../contexts/ToastContext";
 
 type ActiveTab = "available" | "mine";
 
 const DriverDashboardScreen: React.FC = () => {
   const { user } = useAuth();
+  const { showToast } = useToast();
   const [myDeliveries, setMyDeliveries] = useState<AdminOrder[]>([]);
   const [availableOrders, setAvailableOrders] = useState<AdminOrder[]>([]);
   const [loading, setLoading] = useState<Record<ActiveTab, boolean>>({
@@ -21,9 +26,15 @@ const DriverDashboardScreen: React.FC = () => {
   const [confirmingOrder, setConfirmingOrder] = useState<AdminOrder | null>(
     null
   );
-  const [isSubmitting, setIsSubmitting] = useState<Record<string, boolean>>({}); // For accept/confirm buttons
+  const [isSubmitting, setIsSubmitting] = useState<Record<string, boolean>>({});
 
-  // Fetch driver's assigned orders
+  // State for note-taking modal
+  const [noteModal, setNoteModal] = useState<{
+    isOpen: boolean;
+    order: AdminOrder | null;
+    type: "note" | "issue";
+  }>({ isOpen: false, order: null, type: "note" });
+
   useEffect(() => {
     if (!user) return;
     setLoading((prev) => ({ ...prev, mine: true }));
@@ -31,56 +42,39 @@ const DriverDashboardScreen: React.FC = () => {
       .collection("orders")
       .where("driverId", "==", user.uid)
       .where("status", "==", OrderStatus.OutForDelivery);
-    const unsubscribe = q.onSnapshot(
-      (snapshot) => {
-        const fetchedOrders = snapshot.docs.map(
-          (doc) => ({ id: doc.id, ...doc.data() } as AdminOrder)
-        );
-        setMyDeliveries(fetchedOrders);
-        setLoading((prev) => ({ ...prev, mine: false }));
-      },
-      (err) => {
-        console.error("Error fetching assigned orders:", err);
-        setLoading((prev) => ({ ...prev, mine: false }));
-      }
-    );
-
+    const unsubscribe = q.onSnapshot((snapshot) => {
+      const fetchedOrders = snapshot.docs.map(
+        (doc) => ({ id: doc.id, ...doc.data() } as AdminOrder)
+      );
+      setMyDeliveries(fetchedOrders);
+      setLoading((prev) => ({ ...prev, mine: false }));
+    });
     return () => unsubscribe();
   }, [user]);
 
-  // Fetch available orders for pickup
   useEffect(() => {
     setLoading((prev) => ({ ...prev, available: true }));
     const q = db
       .collection("orders")
       .where("status", "==", OrderStatus.ReadyForPickup)
       .where("deliveryMethod", "==", "delivery");
-    const unsubscribe = q.onSnapshot(
-      (snapshot) => {
-        const fetchedOrders = snapshot.docs.map(
-          (doc) => ({ id: doc.id, ...doc.data() } as AdminOrder)
-        );
-        setAvailableOrders(fetchedOrders);
-        setLoading((prev) => ({ ...prev, available: false }));
-      },
-      (err) => {
-        console.error("Error fetching available orders:", err);
-        setLoading((prev) => ({ ...prev, available: false }));
-      }
-    );
-
+    const unsubscribe = q.onSnapshot((snapshot) => {
+      const fetchedOrders = snapshot.docs.map(
+        (doc) => ({ id: doc.id, ...doc.data() } as AdminOrder)
+      );
+      setAvailableOrders(fetchedOrders);
+      setLoading((prev) => ({ ...prev, available: false }));
+    });
     return () => unsubscribe();
   }, []);
 
   const handleAcceptOrder = async (order: AdminOrder) => {
     if (!user) return;
     setIsSubmitting((prev) => ({ ...prev, [order.id]: true }));
-
     const orderRef = db.collection("orders").doc(order.id);
     try {
       await db.runTransaction(async (transaction) => {
         const orderDoc = await transaction.get(orderRef);
-        // FIX: Replaced the `orderDoc.exists()` method call with the `orderDoc.exists` property to align with Firebase v8 compat syntax, resolving a "not callable" error during transaction validation.
         if (
           !orderDoc.exists ||
           orderDoc.data()?.status !== OrderStatus.ReadyForPickup
@@ -92,59 +86,63 @@ const DriverDashboardScreen: React.FC = () => {
           driverId: user.uid,
         });
       });
-    } catch (error: any) {
-      console.error("Error accepting order:", error);
-      alert(
-        error.message ||
-          "Failed to accept order. It may have been taken by another driver."
+      await addOrderLog(
+        order.id,
+        user,
+        `السائق استلم الطلب وهو في طريقه للتوصيل.`,
+        "system_log",
+        "internal"
       );
+    } catch (error: any) {
+      showToast(error.message || "Failed to accept order.", "error");
     } finally {
       setIsSubmitting((prev) => ({ ...prev, [order.id]: false }));
     }
   };
 
   const handleConfirmDelivery = async () => {
-    if (!confirmingOrder) return;
+    if (!confirmingOrder || !user) return;
     setIsSubmitting((prev) => ({ ...prev, [confirmingOrder.id]: true }));
     try {
       await db.collection("orders").doc(confirmingOrder.id).update({
         status: OrderStatus.Delivered,
         paymentStatus: "paid",
       });
+      await addOrderLog(
+        confirmingOrder.id,
+        user,
+        `تم توصيل الطلب بنجاح.`,
+        "system_log",
+        "internal"
+      );
     } catch (error) {
-      console.error("Error confirming delivery:", error);
-      alert("Failed to confirm delivery. Please try again.");
+      showToast("Failed to confirm delivery.", "error");
     } finally {
       setIsSubmitting((prev) => ({ ...prev, [confirmingOrder.id]: false }));
       setConfirmingOrder(null);
     }
   };
 
-  const TabButton: React.FC<{
-    tab: ActiveTab;
-    label: string;
-    count: number;
-  }> = ({ tab, label, count }) => (
-    <button
-      onClick={() => setActiveTab(tab)}
-      className={`flex-1 py-3 text-center font-bold transition-all duration-300 border-b-2 ${
-        activeTab === tab
-          ? "text-admin-primary border-admin-primary"
-          : "text-slate-500 border-transparent hover:text-slate-800 dark:hover:text-slate-200"
-      }`}
-    >
-      {label}{" "}
-      <span
-        className={`text-xs px-2 py-0.5 rounded-full ${
-          activeTab === tab
-            ? "bg-admin-primary text-white"
-            : "bg-slate-200 dark:bg-slate-700 text-slate-600 dark:text-slate-300"
-        }`}
-      >
-        {count}
-      </span>
-    </button>
-  );
+  const handleAddNote = async (note: string) => {
+    if (!noteModal.order || !user) return;
+    const { order, type } = noteModal;
+    const logType = type === "note" ? "driver_note" : "issue";
+    const notification =
+      type === "issue"
+        ? {
+            message: `مشكلة عاجلة بخصوص الطلب #${order.id.slice(
+              0,
+              7
+            )}: ${note}`,
+            link: `/orders?view=${order.id}`,
+          }
+        : undefined;
+    await addOrderLog(order.id, user, note, logType, "internal", notification);
+    showToast(
+      type === "note" ? "تمت إضافة الملاحظة" : "تم إرسال المشكلة للإدارة",
+      "success"
+    );
+  };
 
   const OrderCard: React.FC<{ order: AdminOrder; isAvailable?: boolean }> = ({
     order,
@@ -153,9 +151,6 @@ const DriverDashboardScreen: React.FC = () => {
     <div className="bg-white dark:bg-slate-800 p-5 rounded-lg shadow-md border-r-4 border-admin-primary">
       <div className="flex flex-col sm:flex-row justify-between sm:items-center gap-4">
         <div className="flex-grow">
-          <p className="text-sm text-slate-500 dark:text-slate-400">
-            طلب #{order.id.slice(0, 7).toUpperCase()}
-          </p>
           <p className="text-xl font-bold text-slate-800 dark:text-slate-100">
             {order.deliveryInfo.name}
           </p>
@@ -173,17 +168,17 @@ const DriverDashboardScreen: React.FC = () => {
           <p className="text-sm text-slate-500 dark:text-slate-400">
             المبلغ المطلوب
           </p>
-          <p className="text-3xl font-bold text-status-delivered">
+          <p className="text-3xl font-bold text-green-500">
             {order.total.toLocaleString()} ج.س
           </p>
         </div>
       </div>
-      <div className="mt-4 pt-4 border-t dark:border-slate-700">
+      <div className="mt-4 pt-4 border-t dark:border-slate-700 space-y-2">
         {isAvailable ? (
           <button
             onClick={() => handleAcceptOrder(order)}
             disabled={isSubmitting[order.id]}
-            className="w-full bg-blue-600 hover:bg-blue-700 text-white font-bold py-3 rounded-lg transition-colors shadow-lg flex items-center justify-center gap-2"
+            className="w-full bg-blue-600 hover:bg-blue-700 text-white font-bold py-3 rounded-lg flex items-center justify-center"
           >
             {isSubmitting[order.id] ? (
               <SpinnerIcon className="w-6 h-6 animate-spin" />
@@ -192,28 +187,36 @@ const DriverDashboardScreen: React.FC = () => {
             )}
           </button>
         ) : (
-          <button
-            onClick={() => setConfirmingOrder(order)}
-            className="w-full bg-admin-primary hover:bg-admin-primary-hover text-white font-bold py-3 rounded-lg transition-colors shadow-lg flex items-center justify-center gap-2"
-          >
-            <CheckCircleIcon className="w-6 h-6" />
-            تأكيد التوصيل والدفع
-          </button>
+          <>
+            <button
+              onClick={() => setConfirmingOrder(order)}
+              className="w-full bg-admin-primary hover:bg-admin-primary-hover text-white font-bold py-3 rounded-lg flex items-center justify-center gap-2"
+            >
+              <CheckCircleIcon className="w-6 h-6" /> تأكيد التوصيل والدفع
+            </button>
+            <div className="flex gap-2">
+              <button
+                onClick={() =>
+                  setNoteModal({ isOpen: true, order, type: "note" })
+                }
+                className="flex-1 bg-slate-200 dark:bg-slate-700 font-semibold py-2 rounded-md flex items-center justify-center gap-2"
+              >
+                <MessageIcon className="w-5 h-5" />
+                إضافة ملاحظة
+              </button>
+              <button
+                onClick={() =>
+                  setNoteModal({ isOpen: true, order, type: "issue" })
+                }
+                className="flex-1 bg-red-100 dark:bg-red-900/50 text-red-700 dark:text-red-200 font-semibold py-2 rounded-md flex items-center justify-center gap-2"
+              >
+                <ExclamationTriangleIcon className="w-5 h-5" />
+                إبلاغ عن مشكلة
+              </button>
+            </div>
+          </>
         )}
       </div>
-    </div>
-  );
-
-  const EmptyState: React.FC<{ title: string; message: string }> = ({
-    title,
-    message,
-  }) => (
-    <div className="text-center py-16 bg-white dark:bg-slate-800 rounded-lg shadow-sm">
-      <CheckCircleIcon className="w-24 h-24 text-green-500 mx-auto" />
-      <h2 className="mt-4 text-2xl font-bold text-slate-800 dark:text-slate-100">
-        {title}
-      </h2>
-      <p className="mt-2 text-slate-500 dark:text-slate-400">{message}</p>
     </div>
   );
 
@@ -221,38 +224,47 @@ const DriverDashboardScreen: React.FC = () => {
     <div className="h-full flex flex-col">
       <div className="bg-white dark:bg-slate-800 rounded-lg shadow-md mb-6 flex-shrink-0">
         <div className="flex border-b dark:border-slate-700">
-          <TabButton
-            tab="available"
-            label="الطلبات المتاحة"
-            count={availableOrders.length}
-          />
-          <TabButton tab="mine" label="توصيلاتي" count={myDeliveries.length} />
+          <button
+            onClick={() => setActiveTab("available")}
+            className={`flex-1 py-3 font-bold border-b-2 ${
+              activeTab === "available"
+                ? "text-admin-primary border-admin-primary"
+                : "text-slate-500 border-transparent"
+            }`}
+          >
+            الطلبات المتاحة{" "}
+            <span className="text-xs px-2 py-0.5 rounded-full bg-slate-200 dark:bg-slate-700">
+              {availableOrders.length}
+            </span>
+          </button>
+          <button
+            onClick={() => setActiveTab("mine")}
+            className={`flex-1 py-3 font-bold border-b-2 ${
+              activeTab === "mine"
+                ? "text-admin-primary border-admin-primary"
+                : "text-slate-500 border-transparent"
+            }`}
+          >
+            توصيلاتي{" "}
+            <span className="text-xs px-2 py-0.5 rounded-full bg-slate-200 dark:bg-slate-700">
+              {myDeliveries.length}
+            </span>
+          </button>
         </div>
       </div>
 
-      <div className="flex-grow overflow-y-auto space-y-6">
+      <div className="flex-grow overflow-y-auto space-y-6 pb-4">
         {activeTab === "available" &&
           (loading.available ? (
             <SpinnerIcon className="w-8 h-8 text-admin-primary animate-spin mx-auto mt-10" />
-          ) : availableOrders.length === 0 ? (
-            <EmptyState
-              title="لا توجد طلبات متاحة"
-              message="تحقق مرة أخرى قريبًا للحصول على مهام توصيل جديدة."
-            />
           ) : (
             availableOrders.map((order) => (
               <OrderCard key={order.id} order={order} isAvailable />
             ))
           ))}
-
         {activeTab === "mine" &&
           (loading.mine ? (
             <SpinnerIcon className="w-8 h-8 text-admin-primary animate-spin mx-auto mt-10" />
-          ) : myDeliveries.length === 0 ? (
-            <EmptyState
-              title="لا توجد طلبات للتوصيل"
-              message="يمكنك قبول الطلبات من قسم 'الطلبات المتاحة'."
-            />
           ) : (
             myDeliveries.map((order) => (
               <OrderCard key={order.id} order={order} />
@@ -273,7 +285,14 @@ const DriverDashboardScreen: React.FC = () => {
             ? "جارِ التأكيد..."
             : "نعم، أؤكد"
         }
-        cancelText="إلغاء"
+      />
+      <DriverNoteModal
+        isOpen={noteModal.isOpen}
+        onClose={() =>
+          setNoteModal({ isOpen: false, order: null, type: "note" })
+        }
+        onSubmit={handleAddNote}
+        title={noteModal.type === "note" ? "إضافة ملاحظة" : "الإبلاغ عن مشكلة"}
       />
     </div>
   );

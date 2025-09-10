@@ -27,6 +27,8 @@ interface AuthContextType {
   user: User | null;
   firebaseUser: FirebaseUser | null;
   loading: boolean;
+  showWelcomeModal: boolean;
+  setShowWelcomeModal: (show: boolean) => void;
   registerWithEmail: (
     email: string,
     password: string,
@@ -66,6 +68,7 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({
   const [loading, setLoading] = useState(true);
   const [confirmationResult, setConfirmationResult] =
     useState<ConfirmationResult | null>(null);
+  const [showWelcomeModal, setShowWelcomeModal] = useState(false);
 
   useEffect(() => {
     // FIX: Refactored onAuthStateChanged to use v8 compat syntax.
@@ -109,6 +112,7 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({
           // FIX: Refactored Firestore setDoc call to use v8 compat syntax.
           await userRef.set(newUser);
           setUser(newUser);
+          setShowWelcomeModal(true); // Show welcome modal for new users
         }
       } else {
         setUser(null);
@@ -228,6 +232,8 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({
       user,
       firebaseUser,
       loading,
+      showWelcomeModal,
+      setShowWelcomeModal,
       registerWithEmail,
       loginWithEmail,
       signInWithPhone,
@@ -239,6 +245,7 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({
       user,
       firebaseUser,
       loading,
+      showWelcomeModal,
       registerWithEmail,
       loginWithEmail,
       signInWithPhone,
