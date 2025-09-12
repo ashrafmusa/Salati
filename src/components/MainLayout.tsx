@@ -19,8 +19,16 @@ const MainLayout: React.FC = () => {
     location.pathname.startsWith(path)
   );
 
+  // Dynamically set the CSS variable for the WhatsApp button's resting position
+  const mainLayoutStyle = {
+    "--whatsapp-bottom": showNavBarOnPage ? "calc(76px + 1.25rem)" : "1.25rem",
+  } as React.CSSProperties;
+
   return (
-    <div className="bg-slate-50 dark:bg-slate-950 text-charcoal dark:text-slate-200 min-h-screen font-sans flex flex-col max-w-full overflow-x-hidden">
+    <div
+      className="bg-slate-50 dark:bg-slate-950 text-charcoal dark:text-slate-200 min-h-screen font-sans flex flex-col max-w-full overflow-x-hidden"
+      style={mainLayoutStyle}
+    >
       <AnnouncementBanner />
       <div
         className={`flex-grow flex flex-col ${
@@ -36,9 +44,7 @@ const MainLayout: React.FC = () => {
       </div>
 
       {showNavBarOnPage && <NavigationBar />}
-      {showWhatsAppButtonOnPage && (
-        <WhatsAppButton isNavBarVisibleOnPage={showNavBarOnPage} />
-      )}
+      {showWhatsAppButtonOnPage && <WhatsAppButton />}
     </div>
   );
 };

@@ -1,37 +1,13 @@
-import React, { useState, useEffect, useRef } from "react";
+import React, { useState, useEffect } from "react";
 import { WhatsAppIcon } from "../assets/icons";
+import { useScrollDirection } from "../hooks/useScrollDirection";
 
-interface WhatsAppButtonProps {
-  isNavBarVisibleOnPage: boolean;
-}
-
-const WhatsAppButton: React.FC<WhatsAppButtonProps> = ({
-  isNavBarVisibleOnPage,
-}) => {
-  // FIX: Replaced direct `import.meta.env` access with `(import.meta as any).env` to resolve TypeScript typing errors.
+const WhatsAppButton: React.FC = () => {
   const phoneNumber = (import.meta as any).env.VITE_WHATSAPP_PHONE_NUMBER;
   const whatsappUrl = `https://wa.me/${phoneNumber}`;
   const [nudge, setNudge] = useState(false);
   const text = "تواصل معنا";
-
-  // Scroll-aware logic to match the navigation bar's behavior
-  const [isNavShowing, setIsNavShowing] = useState(true);
-  const lastScrollY = useRef(0);
-
-  useEffect(() => {
-    const controlVisibility = () => {
-      if (window.scrollY > lastScrollY.current && window.scrollY > 100) {
-        setIsNavShowing(false);
-      } else {
-        setIsNavShowing(true);
-      }
-      lastScrollY.current = window.scrollY;
-    };
-    window.addEventListener("scroll", controlVisibility);
-    return () => {
-      window.removeEventListener("scroll", controlVisibility);
-    };
-  }, []);
+  const isVisible = useScrollDirection();
 
   useEffect(() => {
     // Start the nudge animation loop
@@ -49,17 +25,15 @@ const WhatsAppButton: React.FC<WhatsAppButtonProps> = ({
     return null;
   }
 
-  // The button should be higher only if the navbar is supposed to be on the page AND it's currently visible from scrolling
-  const isEffectivelyVisible = isNavBarVisibleOnPage && isNavShowing;
-
   return (
     <a
       href={whatsappUrl}
       target="_blank"
       rel="noopener noreferrer"
-      className={`fixed ${
-        isEffectivelyVisible ? "bottom-24" : "bottom-5"
-      } right-5 z-30 flex items-center group transition-all duration-300`}
+      className={`fixed right-5 z-30 flex items-center group transition-transform duration-300 ease-in-out ${
+        isVisible ? "translate-y-0" : "translate-y-[calc(100%+1.25rem)]"
+      }`}
+      style={{ bottom: "var(--whatsapp-bottom)" }}
       aria-label="Contact us on WhatsApp"
     >
       {/* Text Label */}

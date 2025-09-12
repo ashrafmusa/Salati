@@ -2,6 +2,7 @@ import React, { useState, useEffect, useRef } from "react";
 import { NavLink, useLocation } from "react-router-dom";
 import { HomeIcon, CartIcon, UserIcon, HeartIcon } from "../assets/icons";
 import { useCart } from "../hooks/useCart";
+import { useScrollDirection } from "../hooks/useScrollDirection";
 
 // A simple event bus to communicate cart updates to the nav bar
 const cartUpdateEvents = new EventTarget();
@@ -15,8 +16,7 @@ const NavigationBar: React.FC = () => {
   const navRef = useRef<HTMLElement>(null);
   const [activePillStyle, setActivePillStyle] = useState({});
   const [isCartBumping, setIsCartBumping] = useState(false);
-  const [isVisible, setIsVisible] = useState(true);
-  const lastScrollY = useRef(0);
+  const isVisible = useScrollDirection();
 
   const navItems = [
     { path: "/", icon: HomeIcon, label: "الرئيسية" },
@@ -48,25 +48,6 @@ const NavigationBar: React.FC = () => {
       });
     }
   }, [location.pathname]);
-
-  // Handle scroll-aware visibility
-  useEffect(() => {
-    const controlNavbar = () => {
-      // If scrolling down past a threshold, hide the navbar. If scrolling up, show it.
-      if (window.scrollY > lastScrollY.current && window.scrollY > 100) {
-        setIsVisible(false);
-      } else {
-        setIsVisible(true);
-      }
-      // Remember current scroll position for the next move
-      lastScrollY.current = window.scrollY;
-    };
-
-    window.addEventListener("scroll", controlNavbar);
-    return () => {
-      window.removeEventListener("scroll", controlNavbar);
-    };
-  }, []);
 
   return (
     <nav
