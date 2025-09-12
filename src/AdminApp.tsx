@@ -34,6 +34,9 @@ const DriverDashboardScreen = lazy(
 );
 const AdminReportsScreen = lazy(() => import("./screens/AdminReportsScreen"));
 const AdminAuditLogScreen = lazy(() => import("./screens/AdminAuditLogScreen"));
+const SupplierDashboardScreen = lazy(
+  () => import("./screens/SupplierDashboardScreen")
+);
 // --- SCM Components ---
 const AdminSuppliersScreen = lazy(
   () => import("./screens/AdminSuppliersScreen")
@@ -62,6 +65,17 @@ const ProtectedAdminRoutes: React.FC = () => {
       <AdminLayout>
         <Routes>
           <Route path="/" element={<DriverDashboardScreen />} />
+          <Route path="*" element={<Navigate to="/" replace />} />
+        </Routes>
+      </AdminLayout>
+    );
+  }
+
+  if (user.role === "supplier") {
+    return (
+      <AdminLayout>
+        <Routes>
+          <Route path="/" element={<SupplierDashboardScreen />} />
           <Route path="*" element={<Navigate to="/" replace />} />
         </Routes>
       </AdminLayout>

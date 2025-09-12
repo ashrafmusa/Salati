@@ -85,6 +85,7 @@ Secure your database by defining who can read and write data. These rules are cr
         function isSuperAdmin() { return getRole() == 'super-admin'; }
         function isAdmin() { return getRole() == 'admin'; }
         function isSubAdmin() { return getRole() == 'sub-admin'; }
+        function isSupplier() { return getRole() == 'supplier'; }
         function isAnyAdmin() { return isSuperAdmin() || isAdmin() || isSubAdmin(); }
         function isFullAdmin() { return isSuperAdmin() || isAdmin(); }
     
@@ -100,17 +101,24 @@ Secure your database by defining who can read and write data. These rules are cr
         match /notifications/{docId} { allow read, write: if isAnyAdmin(); }
         match /categories/{docId} { allow read: if true; allow write: if isSuperAdmin(); }
         
+        // Store settings are public to read, but only super admins can change them.
+        match /settings/{docId} { allow read: if true; allow write: if isSuperAdmin(); }
+        
         // --- SCM & AUDITING COLLECTIONS ---
-        match /suppliers/{docId} { allow read, write: if isFullAdmin(); }
-        match /purchaseOrders/{docId} { allow read, write: if isFullAdmin(); }
+        match /suppliers/{docId} { 
+            allow read: if isFullAdmin() || (isSupplier() && resource.data.userId == request.auth.uid); 
+            allow write: if isFullAdmin();
+        }
+        match /purchaseOrders/{docId} { 
+            allow read: if isFullAdmin() || (isSupplier() && resource.data.supplierId == get(/databases/$(database)/documents/users/$(request.auth.uid)).data.supplierId);
+            allow create, delete: if isFullAdmin();
+            allow update: if isFullAdmin() || (isSupplier() && resource.data.supplierId == get(/databases/$(database)/documents/users/$(request.auth.uid)).data.supplierId);
+        }
         match /auditLogs/{logId} {
           allow read: if isSuperAdmin();
           allow create: if isAnyAdmin();
         }
         
-        // Store settings are public to read, but only super admins can change them.
-        match /settings/{docId} { allow read: if true; allow write: if isSuperAdmin(); }
-    
         // Reviews can be read by anyone, created by any logged-in user, and deleted by full admins.
         match /reviews/{docId} {
           allow read: if true;

@@ -5,8 +5,9 @@ export interface User {
   name: string;
   phone?: string | null;
   address?: string;
-  role: 'super-admin' | 'admin' | 'sub-admin' | 'driver' | 'customer';
+  role: 'super-admin' | 'admin' | 'sub-admin' | 'driver' | 'customer' | 'supplier';
   customDeliveryFee?: number;
+  supplierId?: string;
 }
 
 export interface Item {
@@ -193,6 +194,7 @@ export interface Supplier {
   address: string;
   paymentTerms: string;
   bankDetails: string;
+  userId?: string;
 }
 
 export interface PurchaseOrderItem {
