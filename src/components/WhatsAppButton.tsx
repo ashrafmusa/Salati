@@ -1,56 +1,82 @@
-import React, { useState, useEffect } from 'react';
-import { WhatsAppIcon } from '../assets/icons';
+import React, { useState, useEffect, useRef } from "react";
+import { WhatsAppIcon } from "../assets/icons";
 
 interface WhatsAppButtonProps {
-  isNavBarVisible: boolean;
+  isNavBarVisibleOnPage: boolean;
 }
 
-const WhatsAppButton: React.FC<WhatsAppButtonProps> = ({ isNavBarVisible }) => {
-    // FIX: Replaced direct `import.meta.env` access with `(import.meta as any).env` to resolve TypeScript typing errors.
-    const phoneNumber = (import.meta as any).env.VITE_WHATSAPP_PHONE_NUMBER;
-    const whatsappUrl = `https://wa.me/${phoneNumber}`;
-    const [nudge, setNudge] = useState(false);
-    const text = "تواصل معنا";
+const WhatsAppButton: React.FC<WhatsAppButtonProps> = ({
+  isNavBarVisibleOnPage,
+}) => {
+  // FIX: Replaced direct `import.meta.env` access with `(import.meta as any).env` to resolve TypeScript typing errors.
+  const phoneNumber = (import.meta as any).env.VITE_WHATSAPP_PHONE_NUMBER;
+  const whatsappUrl = `https://wa.me/${phoneNumber}`;
+  const [nudge, setNudge] = useState(false);
+  const text = "تواصل معنا";
 
-    useEffect(() => {
-        // Start the nudge animation loop
-        const intervalId = setInterval(() => {
-            setNudge(true);
-            // Reset the state after the animation duration (4s)
-            setTimeout(() => setNudge(false), 4000);
-        }, 10000); // Nudge every 10 seconds
+  // Scroll-aware logic to match the navigation bar's behavior
+  const [isNavShowing, setIsNavShowing] = useState(true);
+  const lastScrollY = useRef(0);
 
-        return () => clearInterval(intervalId);
-    }, []);
+  useEffect(() => {
+    const controlVisibility = () => {
+      if (window.scrollY > lastScrollY.current && window.scrollY > 100) {
+        setIsNavShowing(false);
+      } else {
+        setIsNavShowing(true);
+      }
+      lastScrollY.current = window.scrollY;
+    };
+    window.addEventListener("scroll", controlVisibility);
+    return () => {
+      window.removeEventListener("scroll", controlVisibility);
+    };
+  }, []);
 
-    // Do not render the button if the phone number is not configured in the environment variables.
-    if (!phoneNumber) {
-        return null;
-    }
+  useEffect(() => {
+    // Start the nudge animation loop
+    const intervalId = setInterval(() => {
+      setNudge(true);
+      // Reset the state after the animation duration (4s)
+      setTimeout(() => setNudge(false), 4000);
+    }, 10000); // Nudge every 10 seconds
 
-    return (
-        <a
-            href={whatsappUrl}
-            target="_blank"
-            rel="noopener noreferrer"
-            className={`fixed ${isNavBarVisible ? 'bottom-24' : 'bottom-5'} right-5 z-30 flex items-center group transition-all duration-300`}
-            aria-label="Contact us on WhatsApp"
-        >
-            {/* Text Label */}
-            <div 
-                className={`bg-white dark:bg-slate-900 text-slate-700 dark:text-slate-200 font-bold py-2 px-5 rounded-l-full shadow-lg transition-transform duration-300 ease-in-out transform origin-right whitespace-nowrap ${
-                    nudge ? 'animate-nudge-reveal' : 'scale-x-0 group-hover:scale-x-100'
-                }`}
-            >
-              <span>{text}</span>
-            </div>
+    return () => clearInterval(intervalId);
+  }, []);
 
-            {/* Icon Button */}
-            <div className="bg-green-500 text-white w-16 h-16 rounded-full flex items-center justify-center shadow-lg transform transition-transform duration-300 group-hover:scale-110 animate-whatsapp-pulse">
-                <WhatsAppIcon className="w-8 h-8" />
-            </div>
-        </a>
-    );
+  // Do not render the button if the phone number is not configured in the environment variables.
+  if (!phoneNumber) {
+    return null;
+  }
+
+  // The button should be higher only if the navbar is supposed to be on the page AND it's currently visible from scrolling
+  const isEffectivelyVisible = isNavBarVisibleOnPage && isNavShowing;
+
+  return (
+    <a
+      href={whatsappUrl}
+      target="_blank"
+      rel="noopener noreferrer"
+      className={`fixed ${
+        isEffectivelyVisible ? "bottom-24" : "bottom-5"
+      } right-5 z-30 flex items-center group transition-all duration-300`}
+      aria-label="Contact us on WhatsApp"
+    >
+      {/* Text Label */}
+      <div
+        className={`bg-white dark:bg-slate-900 text-slate-700 dark:text-slate-200 font-bold py-2 px-5 rounded-l-full shadow-lg transition-transform duration-300 ease-in-out transform origin-right whitespace-nowrap ${
+          nudge ? "animate-nudge-reveal" : "scale-x-0 group-hover:scale-x-100"
+        }`}
+      >
+        <span>{text}</span>
+      </div>
+
+      {/* Icon Button */}
+      <div className="bg-green-500 text-white w-16 h-16 rounded-full flex items-center justify-center shadow-lg transform transition-transform duration-300 group-hover:scale-110 animate-whatsapp-pulse">
+        <WhatsAppIcon className="w-8 h-8" />
+      </div>
+    </a>
+  );
 };
 
 export default WhatsAppButton;
