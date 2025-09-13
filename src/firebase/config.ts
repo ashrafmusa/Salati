@@ -18,11 +18,8 @@ const firebaseConfig = {
 // A check to ensure all required environment variables are present during development.
 // FIX: Cast `import.meta` to `any` to resolve TypeScript error "Property 'env' does not exist on type 'ImportMeta'" when accessing environment variables in Vite.
 if ((import.meta as any).env.DEV && Object.values(firebaseConfig).some(value => !value)) {
-<<<<<<< HEAD
   console.error("Firebase configuration is missing. Make sure you have a .env file with all the required VITE_FIREBASE_ variables.");
-=======
-    console.error("Firebase configuration is missing. Make sure you have a .env file with all the required VITE_FIREBASE_ variables.");
->>>>>>> 1be854a41b7c6357b5fc47489714087963f002b1
+  console.error("Firebase configuration is missing. Make sure you have a .env file with all the required VITE_FIREBASE_ variables.");
 }
 
 // FIX: Refactored Firebase initialization to use v8 compat syntax.
