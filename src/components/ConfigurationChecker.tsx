@@ -12,7 +12,8 @@ const firebaseConfigKeys = [
 const otherConfigKeys = [
   "VITE_CLOUDINARY_CLOUD_NAME",
   "VITE_CLOUDINARY_UPLOAD_PRESET",
-  "VITE_GEMINI_API_KEY",
+  // FIX: Per guidelines, Gemini API key should be `API_KEY`.
+  "API_KEY",
 ];
 
 const ConfigurationChecker: React.FC<{ children: React.ReactNode }> = ({
@@ -20,8 +21,8 @@ const ConfigurationChecker: React.FC<{ children: React.ReactNode }> = ({
 }) => {
   const missingKeys = [...firebaseConfigKeys, ...otherConfigKeys].filter(
     (key) => {
-      // Vite replaces import.meta.env.* at build time.
-      return !(import.meta as any).env[key];
+      // Check process.env instead of import.meta.env
+      return !process.env[key];
     }
   );
 

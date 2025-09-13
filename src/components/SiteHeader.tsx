@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useRef, useMemo } from "react";
-import { useNavigate, useSearchParams, NavLink, Link } from "react-router-dom";
+// FIX: The `react-router-dom` library has module resolution issues in this environment. Changed to a namespace import to resolve "has no exported member" errors.
+import * as ReactRouterDOM from "react-router-dom";
 import Logo from "./Logo";
 import {
   SearchIcon,
@@ -24,8 +25,8 @@ const SiteHeader: React.FC<SiteHeaderProps> = ({
   onFilterClick,
   areFiltersActive,
 }) => {
-  const navigate = useNavigate();
-  const [searchParams] = useSearchParams();
+  const navigate = ReactRouterDOM.useNavigate();
+  const [searchParams] = ReactRouterDOM.useSearchParams();
   const [searchTerm, setSearchTerm] = useState(searchParams.get("q") || "");
   const { getCartCount } = useCart();
   const cartCount = getCartCount();
@@ -114,7 +115,7 @@ const SiteHeader: React.FC<SiteHeaderProps> = ({
 
         <nav className="hidden md:flex items-center gap-2 ml-auto">
           {navItems.map((item) => (
-            <NavLink
+            <ReactRouterDOM.NavLink
               key={item.path}
               to={item.path}
               className={({ isActive }) =>
@@ -132,7 +133,7 @@ const SiteHeader: React.FC<SiteHeaderProps> = ({
                   {cartCount}
                 </span>
               )}
-            </NavLink>
+            </ReactRouterDOM.NavLink>
           ))}
         </nav>
 
@@ -162,7 +163,7 @@ const SiteHeader: React.FC<SiteHeaderProps> = ({
               <ul>
                 {suggestions.map((product) => (
                   <li key={product.id}>
-                    <Link
+                    <ReactRouterDOM.Link
                       to={
                         product.type === "item"
                           ? `/item/${product.id}`
@@ -184,7 +185,7 @@ const SiteHeader: React.FC<SiteHeaderProps> = ({
                           {productPrices.get(product.id)?.toLocaleString()} ج.س
                         </p>
                       </div>
-                    </Link>
+                    </ReactRouterDOM.Link>
                   </li>
                 ))}
               </ul>

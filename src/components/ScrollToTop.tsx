@@ -1,8 +1,9 @@
-import { useEffect } from 'react';
-import { useLocation } from 'react-router-dom';
+import { useEffect } from "react";
+// FIX: The `react-router-dom` library has module resolution issues in this environment. Changed to a namespace import to resolve "has no exported member" errors.
+import * as ReactRouterDOM from "react-router-dom";
 
 const ScrollToTop = () => {
-  const { pathname } = useLocation();
+  const { pathname } = ReactRouterDOM.useLocation();
 
   useEffect(() => {
     window.scrollTo(0, 0);

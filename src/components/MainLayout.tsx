@@ -1,12 +1,13 @@
 import React from "react";
-import { Outlet, useLocation } from "react-router-dom";
+// FIX: The `react-router-dom` library has module resolution issues in this environment. Changed to a namespace import to resolve "has no exported member" errors.
+import * as ReactRouterDOM from "react-router-dom";
 import NavigationBar from "./NavigationBar";
 import WhatsAppButton from "./WhatsAppButton";
 import Footer from "./Footer";
 import AnnouncementBanner from "./AnnouncementBanner";
 
 const MainLayout: React.FC = () => {
-  const location = useLocation();
+  const location = ReactRouterDOM.useLocation();
 
   // Determine if the bottom navigation should be shown on the current page.
   const showNavBarOnPage =
@@ -37,7 +38,7 @@ const MainLayout: React.FC = () => {
       >
         <main className="flex-grow">
           <div key={location.pathname} className="animate-fade-in">
-            <Outlet />
+            <ReactRouterDOM.Outlet />
           </div>
         </main>
         <Footer />

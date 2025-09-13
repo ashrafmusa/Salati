@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useRef } from "react";
-import { NavLink, useLocation } from "react-router-dom";
+// FIX: The `react-router-dom` library has module resolution issues in this environment. Changed to a namespace import to resolve "has no exported member" errors.
+import * as ReactRouterDOM from "react-router-dom";
 import { HomeIcon, CartIcon, UserIcon, HeartIcon } from "../assets/icons";
 import { useCart } from "../hooks/useCart";
 import { useScrollDirection } from "../hooks/useScrollDirection";
@@ -12,7 +13,7 @@ export const dispatchCartUpdate = () =>
 const NavigationBar: React.FC = () => {
   const { getCartCount } = useCart();
   const cartCount = getCartCount();
-  const location = useLocation();
+  const location = ReactRouterDOM.useLocation();
   const navRef = useRef<HTMLElement>(null);
   const [activePillStyle, setActivePillStyle] = useState({});
   const [isCartBumping, setIsCartBumping] = useState(false);
@@ -62,7 +63,7 @@ const NavigationBar: React.FC = () => {
           style={activePillStyle}
         />
         {navItems.map((item) => (
-          <NavLink
+          <ReactRouterDOM.NavLink
             key={item.path}
             to={item.path}
             aria-label={item.label}
@@ -91,7 +92,7 @@ const NavigationBar: React.FC = () => {
               )}
             </div>
             <span className="text-xs mt-1 font-semibold">{item.label}</span>
-          </NavLink>
+          </ReactRouterDOM.NavLink>
         ))}
       </div>
     </nav>

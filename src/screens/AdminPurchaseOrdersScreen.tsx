@@ -1,5 +1,6 @@
 import React, { useState, useMemo } from "react";
-import { useNavigate } from "react-router-dom";
+// FIX: The `react-router-dom` library has module resolution issues in this environment. Changed to a namespace import to resolve "has no exported member" errors.
+import * as ReactRouterDOM from "react-router-dom";
 import { PurchaseOrder, PurchaseOrderStatus } from "../types";
 import AdminScreenHeader from "../components/AdminScreenHeader";
 import { usePaginatedFirestore } from "../hooks/usePaginatedFirestore";
@@ -27,7 +28,7 @@ const getStatusPillClasses = (status: PurchaseOrderStatus) => {
 
 const AdminPurchaseOrdersScreen: React.FC = () => {
   const [searchTerm, setSearchTerm] = useState("");
-  const navigate = useNavigate();
+  const navigate = ReactRouterDOM.useNavigate();
 
   const initialSort = useMemo(
     () => ({ key: "createdDate" as const, direction: "descending" as const }),

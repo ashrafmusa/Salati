@@ -1,3 +1,6 @@
+
+
+
 import { GoogleGenAI, Type } from "@google/genai";
 import { Item } from '../types';
 
@@ -7,14 +10,8 @@ export interface BundleIdea {
     itemNames: string[];
 }
 
-const API_KEY = (import.meta as any).env.VITE_GEMINI_API_KEY;
-
-if (!API_KEY) {
-    console.error("Gemini API key is missing. Please add VITE_GEMINI_API_KEY to your .env file to use AI features.");
-}
-
-// FIX: Correctly initialize GoogleGenAI with a named apiKey property.
-const ai = new GoogleGenAI({ apiKey: API_KEY! });
+// FIX: Per guidelines, initialize AI client directly with process.env.API_KEY.
+const ai = new GoogleGenAI({ apiKey: process.env.API_KEY! });
 
 const responseSchema = {
     type: Type.OBJECT,
@@ -35,12 +32,13 @@ const responseSchema = {
 
 /**
  * Generates bundle ideas by calling the Google Gemini API directly from the client.
- * Requires the VITE_GEMINI_API_KEY environment variable to be set.
+ * The API key is expected to be available in the execution environment as process.env.API_KEY.
  * @param items - A list of available individual items.
  * @returns A promise that resolves to an array of bundle ideas.
  */
 export const generateBundleIdeas = async (items: Item[]): Promise<BundleIdea[]> => {
-    if (!API_KEY) {
+    // FIX: Per guidelines, the API key must come from process.env.API_KEY.
+    if (!process.env.API_KEY) {
         throw new Error("Gemini API key is not configured. AI features are disabled.");
     }
     if (items.length === 0) {

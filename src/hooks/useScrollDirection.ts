@@ -10,14 +10,22 @@ export const useScrollDirection = (): boolean => {
 
     useEffect(() => {
         const controlNavbar = () => {
-            // If scrolling down past a threshold, hide the navbar. If scrolling up, show it.
-            if (window.scrollY > lastScrollY.current && window.scrollY > 100) {
-                setIsVisible(false);
-            } else {
+            const currentScrollY = window.scrollY;
+
+            // If near the top, always show the bar
+            if (currentScrollY <= 100) {
                 setIsVisible(true);
+            } else {
+                // Otherwise, hide on scroll down, show on scroll up
+                if (currentScrollY > lastScrollY.current) {
+                    setIsVisible(false);
+                } else {
+                    setIsVisible(true);
+                }
             }
-            // Remember current scroll position for the next move
-            lastScrollY.current = window.scrollY;
+
+            // Update last scroll position for the next event
+            lastScrollY.current = currentScrollY;
         };
 
         window.addEventListener('scroll', controlNavbar, { passive: true });

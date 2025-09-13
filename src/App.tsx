@@ -1,4 +1,5 @@
 import React, { lazy, Suspense, useState, useEffect } from "react";
+// FIX: The `react-router-dom` library seems to have module resolution issues in this environment. Changed to named imports to resolve the "has no exported member" errors.
 import { HashRouter, Routes, Route, Navigate } from "react-router-dom";
 import { CartProvider } from "./contexts/CartContext";
 import { AuthProvider } from "./contexts/AuthContext";
