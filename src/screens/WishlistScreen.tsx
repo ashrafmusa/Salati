@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useMemo } from 'react';
-import { Link } from 'react-router-dom';
+// FIX: Switched to a namespace import for react-router-dom to fix module resolution errors in the build environment.
+import * as ReactRouterDOM from 'react-router-dom';
 import { useWishlist } from '../hooks/useWishlist';
 import { useCart } from '../hooks/useCart';
 import SubPageHeader from '../components/SubPageHeader';
@@ -124,9 +125,9 @@ const WishlistScreen: React.FC = () => {
             </div>
             <h2 className="text-xl sm:text-3xl font-bold text-slate-800 dark:text-slate-100 mb-3">قائمة المفضلة فارغة!</h2>
             <p className="text-slate-500 dark:text-slate-400 mb-8 max-w-xs">أضف المنتجات التي تعجبك لتعود إليها لاحقاً.</p>
-            <Link to="/" className="bg-primary text-white font-bold py-3 px-8 rounded-lg hover:bg-secondary transition-all duration-200 transform active:scale-95 shadow-lg hover:shadow-xl">
+            <ReactRouterDOM.Link to="/" className="bg-primary text-white font-bold py-3 px-8 rounded-lg hover:bg-secondary transition-all duration-200 transform active:scale-95 shadow-lg hover:shadow-xl">
                 اكتشف المنتجات
-            </Link>
+            </ReactRouterDOM.Link>
           </div>
         ) : (
           <div className="p-4 max-w-4xl mx-auto">

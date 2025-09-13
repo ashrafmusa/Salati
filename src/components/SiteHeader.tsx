@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useRef, useMemo } from 'react';
-// FIX: Replaced react-router-dom namespace import with named imports (Link, NavLink, useNavigate, useSearchParams) and removed the namespace prefix to resolve build errors.
-import { Link, NavLink, useNavigate, useSearchParams } from 'react-router-dom';
+// FIX: Switched to a namespace import for react-router-dom to fix module resolution errors in the build environment.
+import * as ReactRouterDOM from 'react-router-dom';
 import Logo from './Logo';
 import { SearchIcon, FilterIcon, HomeIcon, HeartIcon, CartIcon, UserIcon } from '../assets/icons';
 import { useCart } from '../hooks/useCart';
@@ -15,8 +15,8 @@ interface SiteHeaderProps {
 }
 
 const SiteHeader: React.FC<SiteHeaderProps> = ({ onFilterClick, areFiltersActive }) => {
-    const navigate = useNavigate();
-    const [searchParams] = useSearchParams();
+    const navigate = ReactRouterDOM.useNavigate();
+    const [searchParams] = ReactRouterDOM.useSearchParams();
     const [searchTerm, setSearchTerm] = useState(searchParams.get('q') || '');
     const { getCartCount } = useCart();
     const cartCount = getCartCount();
@@ -98,7 +98,7 @@ const SiteHeader: React.FC<SiteHeaderProps> = ({ onFilterClick, areFiltersActive
                 
                 <nav className="hidden md:flex items-center gap-2 ml-auto">
                     {navItems.map((item) => (
-                        <NavLink
+                        <ReactRouterDOM.NavLink
                             key={item.path}
                             to={item.path}
                             className={({ isActive }) =>
@@ -116,7 +116,7 @@ const SiteHeader: React.FC<SiteHeaderProps> = ({ onFilterClick, areFiltersActive
                                     {cartCount}
                                 </span>
                              )}
-                        </NavLink>
+                        </ReactRouterDOM.NavLink>
                     ))}
                 </nav>
 
@@ -139,7 +139,7 @@ const SiteHeader: React.FC<SiteHeaderProps> = ({ onFilterClick, areFiltersActive
                             <ul>
                                 {suggestions.map(product => (
                                     <li key={product.id}>
-                                        <Link
+                                        <ReactRouterDOM.Link
                                             to={product.type === 'item' ? `/item/${product.id}` : `/bundle/${product.id}`}
                                             onClick={() => setIsDropdownOpen(false)}
                                             className="flex items-center gap-3 p-3 hover:bg-slate-100 dark:hover:bg-slate-700 transition-colors"
@@ -149,7 +149,7 @@ const SiteHeader: React.FC<SiteHeaderProps> = ({ onFilterClick, areFiltersActive
                                                 <span className="font-semibold text-sm">{product.arabicName}</span>
                                                 <p className="text-xs text-primary font-bold">{productPrices.get(product.id)?.toLocaleString()} ج.س</p>
                                             </div>
-                                        </Link>
+                                        </ReactRouterDOM.Link>
                                     </li>
                                 ))}
                             </ul>

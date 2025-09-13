@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { useParams, Link } from 'react-router-dom';
+import * as ReactRouterDOM from 'react-router-dom';
 import { db } from '../firebase/config';
 import { useCart } from '../hooks/useCart';
 import { useWishlist } from '../hooks/useWishlist';
@@ -95,7 +95,7 @@ const WriteReviewForm: React.FC<{ productId: string }> = ({ productId }) => {
 
 
 const ItemDetailScreen: React.FC = () => {
-    const { id } = useParams<{ id: string }>();
+    const { id } = ReactRouterDOM.useParams<{ id: string }>();
     const { addToCart } = useCart();
     const { isInWishlist, addToWishlist, removeFromWishlist } = useWishlist();
     
@@ -162,7 +162,7 @@ const ItemDetailScreen: React.FC = () => {
                 <SubPageHeader title="خطأ" />
                 <div className="text-center p-8">
                     <h2 className="text-2xl font-bold mb-4">المنتج غير موجود</h2>
-                    <Link to="/" className="text-primary hover:underline">العودة إلى الرئيسية</Link>
+                    <ReactRouterDOM.Link to="/" className="text-primary hover:underline">العودة إلى الرئيسية</ReactRouterDOM.Link>
                 </div>
             </div>
         );
@@ -255,7 +255,7 @@ const ItemDetailScreen: React.FC = () => {
                                 <CheckCircleIcon className="w-8 h-8 ml-3" />
                                 <span className="font-bold text-lg">تمت الإضافة بنجاح!</span>
                             </div>
-                            <Link to="/cart" className="px-4 py-2.5 rounded-lg bg-primary text-white font-semibold">عرض العربة</Link>
+                            <ReactRouterDOM.Link to="/cart" className="px-4 py-2.5 rounded-lg bg-primary text-white font-semibold">عرض العربة</ReactRouterDOM.Link>
                         </div>
                     ) : (
                         <div className="flex justify-between items-center gap-4">

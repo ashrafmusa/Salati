@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useRef } from 'react';
-// FIX: Replaced react-router-dom namespace import with a named import (useNavigate) and removed the namespace prefix to resolve build errors.
-import { useNavigate } from "react-router-dom";
+// FIX: Switched to a namespace import for react-router-dom to fix module resolution errors in the build environment.
+import * as ReactRouterDOM from "react-router-dom";
 import { BellIcon } from '../assets/adminIcons';
 import { db } from '../firebase/config';
 // FIX: Refactored Firebase imports to use the v8 compat library to resolve module errors.
@@ -13,7 +13,7 @@ const AdminNotifications: React.FC = () => {
     const [notifications, setNotifications] = useState<AdminNotification[]>([]);
     const [unreadCount, setUnreadCount] = useState(0);
     const dropdownRef = useRef<HTMLDivElement>(null);
-    const navigate = useNavigate();
+    const navigate = ReactRouterDOM.useNavigate();
 
     useEffect(() => {
         // FIX: Refactored Firestore query to use v8 compat syntax.

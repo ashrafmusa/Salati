@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
-// FIX: Replaced react-router-dom namespace import with named imports (useParams, Link) and removed the namespace prefix to resolve build errors.
-import { useParams, Link } from 'react-router-dom';
+// FIX: Switched to a namespace import for react-router-dom to fix module resolution errors in the build environment.
+import * as ReactRouterDOM from 'react-router-dom';
 import { WhatsAppIcon, CheckCircleIcon, SpinnerIcon } from '../assets/icons';
 import { useAuth } from '../hooks/useAuth';
 import { Order } from '../types';
@@ -62,7 +62,7 @@ const SaveDetailsPrompt: React.FC<{ order: Order | null }> = ({ order }) => {
 
 
 const OrderSuccessScreen: React.FC = () => {
-    const { orderId } = useParams<{ orderId: string }>();
+    const { orderId } = ReactRouterDOM.useParams<{ orderId: string }>();
     const [order, setOrder] = useState<Order | null>(null);
 
     const phoneNumber = '96876702322'; // Company WhatsApp number
@@ -119,12 +119,12 @@ const OrderSuccessScreen: React.FC = () => {
                         تأكيد الطلب عبر واتساب
                     </a>
 
-                    <Link
+                    <ReactRouterDOM.Link
                         to="/"
                         className="mt-4 inline-block w-full bg-slate-200 text-slate-800 dark:bg-slate-700 dark:text-slate-200 font-bold py-3 px-6 rounded-lg hover:bg-slate-300 dark:hover:bg-slate-600 transition-colors"
                     >
                         العودة إلى الرئيسية
-                    </Link>
+                    </ReactRouterDOM.Link>
                 </div>
             </div>
         </div>

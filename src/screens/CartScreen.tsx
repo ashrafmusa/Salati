@@ -1,6 +1,6 @@
 import React from 'react';
-// FIX: Replaced react-router-dom namespace import with named imports (Link, useNavigate) and removed the namespace prefix to resolve build errors.
-import { Link, useNavigate } from "react-router-dom";
+// FIX: Switched to a namespace import for react-router-dom to fix module resolution errors in the build environment.
+import * as ReactRouterDOM from 'react-router-dom';
 import { useCart } from '../hooks/useCart';
 import { useAuth } from '../hooks/useAuth';
 import SubPageHeader from '../components/SubPageHeader';
@@ -11,7 +11,7 @@ import MetaTagManager from '../components/MetaTagManager';
 const CartScreen: React.FC = () => {
   const { state, deliveryFee, getCartSubtotal, getDiscountDetails, getFinalTotal, getCartCount } = useCart();
   const { user } = useAuth();
-  const navigate = useNavigate();
+  const navigate = ReactRouterDOM.useNavigate();
 
   const cartItemCount = getCartCount();
 
@@ -72,16 +72,16 @@ const CartScreen: React.FC = () => {
             </div>
             <h2 className="text-xl sm:text-3xl font-bold text-slate-800 dark:text-slate-100 mb-3">عربتك فارغة!</h2>
             <p className="text-slate-500 dark:text-slate-400 mb-8 max-w-xs">أضف بعض المنتجات لتبدأ رحلة التسوق الخاصة بك.</p>
-            <Link to="/" className="bg-primary text-white font-bold py-3 px-8 rounded-lg hover:bg-secondary transition-all duration-200 transform active:scale-95 shadow-lg hover:shadow-xl">
+            <ReactRouterDOM.Link to="/" className="bg-primary text-white font-bold py-3 px-8 rounded-lg hover:bg-secondary transition-all duration-200 transform active:scale-95 shadow-lg hover:shadow-xl">
                 اكتشف المنتجات
-            </Link>
+            </ReactRouterDOM.Link>
           </div>
         ) : (
           <div className="pb-48 lg:pb-0">
              <div className="flex justify-end items-center mb-6">
-                <Link to="/" className="text-sm font-semibold text-primary hover:underline">
+                <ReactRouterDOM.Link to="/" className="text-sm font-semibold text-primary hover:underline">
                     متابعة التسوق &rarr;
-                </Link>
+                </ReactRouterDOM.Link>
             </div>
             <div className="lg:grid lg:grid-cols-3 lg:gap-8 items-start">
               {/* Item List (Left Column on Desktop) */}

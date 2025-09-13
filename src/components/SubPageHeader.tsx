@@ -1,6 +1,6 @@
 import React from 'react';
-// FIX: Replaced react-router-dom namespace import with a named import (useNavigate) and removed the namespace prefix to resolve build errors.
-import { useNavigate } from "react-router-dom";
+// FIX: Switched to a namespace import for react-router-dom to fix module resolution errors in the build environment.
+import * as ReactRouterDOM from "react-router-dom";
 import { ChevronRightIcon } from '../assets/icons';
 
 interface SubPageHeaderProps {
@@ -10,7 +10,7 @@ interface SubPageHeaderProps {
 }
 
 const SubPageHeader: React.FC<SubPageHeaderProps> = ({ title, backPath, itemCount }) => {
-  const navigate = useNavigate();
+  const navigate = ReactRouterDOM.useNavigate();
 
   const handleBack = () => {
     if (backPath) {

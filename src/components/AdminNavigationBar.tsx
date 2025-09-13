@@ -1,5 +1,6 @@
 import React from 'react';
-import { NavLink } from 'react-router-dom';
+// FIX: Switched to a namespace import for react-router-dom to fix module resolution errors in the build environment.
+import * as ReactRouterDOM from 'react-router-dom';
 import { DashboardIcon, OrdersIcon, PackageIcon, MenuIcon } from '../assets/adminIcons';
 import { useAuth } from '../hooks/useAuth';
 
@@ -12,42 +13,32 @@ const AdminNavigationBar: React.FC<AdminNavigationBarProps> = ({ onMenuClick }) 
   if (!user) return null;
 
   const navItems = [
-    { path: '/', icon: DashboardIcon, label: 'الرئيسية', roles: ['sub-admin', 'admin', 'super-admin'] },
+    { path: '/', icon: DashboardIcon, label: 'الرئيسية', roles: ['sub-admin', 'admin', 'super-admin', 'driver', 'supplier'] },
     { path: '/orders', icon: OrdersIcon, label: 'الطلبات', roles: ['sub-admin', 'admin', 'super-admin'] },
     { path: '/products', icon: PackageIcon, label: 'المنتجات', roles: ['admin', 'super-admin'] },
   ];
   
-  const accessibleNavItems = navItems.filter(item => user && user.role !== 'customer' && user.role !== 'driver' && item.roles.includes(user.role));
+  const filteredNavItems = navItems.filter(item => item.roles.includes(user.role as any));
 
   return (
-    <nav className="md:hidden fixed bottom-0 left-0 right-0 bg-white/80 dark:bg-slate-900/80 backdrop-blur-lg border-t border-slate-200 dark:border-slate-800 shadow-lg-up z-30">
-      <div className="flex justify-around max-w-md mx-auto p-1">
-        {accessibleNavItems.map((item) => (
-          <NavLink
-            key={item.path}
-            to={item.path}
-            end={item.path === '/'}
-            className={({ isActive }) =>
-              `relative flex flex-col items-center justify-center w-full py-2 rounded-lg transition-all duration-300 group transform active:scale-90 ${
-                isActive 
-                  ? 'bg-admin-primary/10 text-admin-primary scale-105' 
-                  : 'text-slate-500 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800'
-              }`
-            }
-          >
-            <item.icon className="w-7 h-7" />
-            <span className="text-xs mt-1 font-semibold">{item.label}</span>
-          </NavLink>
-        ))}
-        <button
-          onClick={onMenuClick}
-          className="relative flex flex-col items-center justify-center w-full py-2 rounded-lg transition-all duration-300 group transform active:scale-90 text-slate-500 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800"
-          aria-label="Open menu"
+    <nav className="md:hidden fixed bottom-0 left-0 right-0 bg-white dark:bg-slate-800 border-t dark:border-slate-700 shadow-lg-up z-30 flex justify-around p-1">
+      {filteredNavItems.map(item => (
+        <ReactRouterDOM.NavLink
+          key={item.path}
+          to={item.path}
+          end={item.path === '/'}
+          className={({ isActive }) =>
+            `flex flex-col items-center justify-center w-full py-2 transition-colors ${isActive ? 'text-admin-primary' : 'text-slate-500 dark:text-slate-400'}`
+          }
         >
-          <MenuIcon className="w-7 h-7" />
-          <span className="text-xs mt-1 font-semibold">القائمة</span>
-        </button>
-      </div>
+          <item.icon className="w-6 h-6" />
+          <span className="text-xs mt-1">{item.label}</span>
+        </ReactRouterDOM.NavLink>
+      ))}
+      <button onClick={onMenuClick} className="flex flex-col items-center justify-center w-full py-2 text-slate-500 dark:text-slate-400">
+        <MenuIcon className="w-6 h-6" />
+        <span className="text-xs mt-1">القائمة</span>
+      </button>
     </nav>
   );
 };

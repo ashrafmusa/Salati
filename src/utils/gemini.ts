@@ -8,7 +8,11 @@ export interface BundleIdea {
 }
 
 // FIX: Cast `import.meta` to `any` to resolve TypeScript error "Property 'env' does not exist on type 'ImportMeta'" when accessing environment variables in Vite.
-const ai = new GoogleGenAI({ apiKey: (import.meta as any).env.VITE_GEMINI_API_KEY! });
+const apiKey = (import.meta as any).env.VITE_GEMINI_API_KEY;
+if (!apiKey) {
+    console.error("Gemini API key is not configured. AI features are disabled.");
+}
+const ai = new GoogleGenAI({ apiKey: apiKey! });
 
 const responseSchema = {
     type: Type.OBJECT,
@@ -34,8 +38,7 @@ const responseSchema = {
  * @returns A promise that resolves to an array of bundle ideas.
  */
 export const generateBundleIdeas = async (items: Item[]): Promise<BundleIdea[]> => {
-    // FIX: Cast `import.meta` to `any` to resolve TypeScript error "Property 'env' does not exist on type 'ImportMeta'" when accessing environment variables in Vite.
-    if (!(import.meta as any).env.VITE_GEMINI_API_KEY) {
+    if (!apiKey) {
         throw new Error("Gemini API key is not configured. AI features are disabled.");
     }
     if (items.length === 0) {

@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
-// FIX: Replaced react-router-dom namespace import with named imports (Link, useNavigate) and removed the namespace prefix to resolve build errors.
-import { Link, useNavigate } from 'react-router-dom';
+// FIX: Switched to a namespace import for react-router-dom to fix module resolution errors in the build environment.
+import * as ReactRouterDOM from 'react-router-dom';
 import { useAuth } from '../hooks/useAuth';
 import SubPageHeader from '../components/SubPageHeader';
 import { LogoutIcon, HistoryIcon, HeartIcon, ChevronLeftIcon, WarningIcon, KeyIcon } from '../assets/icons';
@@ -22,7 +22,7 @@ const ProfileScreen: React.FC = () => {
     });
     const [isSaving, setIsSaving] = useState(false);
     const [error, setError] = useState('');
-    const navigate = useNavigate();
+    const navigate = ReactRouterDOM.useNavigate();
 
     useEffect(() => {
         if (user && !isEditing) {
@@ -142,8 +142,8 @@ const ProfileScreen: React.FC = () => {
 
                 <div className="bg-white dark:bg-slate-800 p-4 rounded-lg shadow-sm">
                     <ul className="divide-y dark:divide-slate-700">
-                        <li className="p-2"><Link to="/orders" className="flex justify-between items-center w-full text-right hover:text-primary"><span className="flex items-center gap-3"><HistoryIcon className="w-6 h-6"/>طلباتي</span><ChevronLeftIcon className="w-5 h-5"/></Link></li>
-                        <li className="p-2"><Link to="/wishlist" className="flex justify-between items-center w-full text-right hover:text-primary"><span className="flex items-center gap-3"><HeartIcon className="w-6 h-6"/>المفضلة</span><ChevronLeftIcon className="w-5 h-5"/></Link></li>
+                        <li className="p-2"><ReactRouterDOM.Link to="/orders" className="flex justify-between items-center w-full text-right hover:text-primary"><span className="flex items-center gap-3"><HistoryIcon className="w-6 h-6"/>طلباتي</span><ChevronLeftIcon className="w-5 h-5"/></ReactRouterDOM.Link></li>
+                        <li className="p-2"><ReactRouterDOM.Link to="/wishlist" className="flex justify-between items-center w-full text-right hover:text-primary"><span className="flex items-center gap-3"><HeartIcon className="w-6 h-6"/>المفضلة</span><ChevronLeftIcon className="w-5 h-5"/></ReactRouterDOM.Link></li>
                         {!signedUpWithPhone && <li className="p-2"><button className="flex justify-between items-center w-full text-right hover:text-primary"><span className="flex items-center gap-3"><KeyIcon className="w-6 h-6"/>تغيير كلمة المرور</span><ChevronLeftIcon className="w-5 h-5"/></button></li>}
                     </ul>
                 </div>

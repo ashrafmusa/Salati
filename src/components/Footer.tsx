@@ -1,5 +1,6 @@
 import React from 'react';
-import { Link } from 'react-router-dom';
+// FIX: Switched to a namespace import for react-router-dom to fix module resolution errors in the build environment.
+import * as ReactRouterDOM from 'react-router-dom';
 import Logo from './Logo';
 import { EmailIcon, WhatsAppIcon, FacebookIcon, InstagramIcon } from '../assets/icons';
 
@@ -62,10 +63,10 @@ const Footer: React.FC = () => {
           <div>
             <h3 className="text-sm font-semibold text-slate-500 dark:text-slate-400 tracking-wider uppercase">روابط سريعة</h3>
             <ul className="mt-4 space-y-2">
-              <li><Link to="/profile" className="text-base text-slate-600 dark:text-slate-300 hover:text-primary dark:hover:text-primary">حسابي</Link></li>
-              <li><Link to="/orders" className="text-base text-slate-600 dark:text-slate-300 hover:text-primary dark:hover:text-primary">طلباتي</Link></li>
-              <li><Link to="/terms" className="text-base text-slate-600 dark:text-slate-300 hover:text-primary dark:hover:text-primary">الشروط والأحكام</Link></li>
-              <li><Link to="/privacy" className="text-base text-slate-600 dark:text-slate-300 hover:text-primary dark:hover:text-primary">سياسة الخصوصية</Link></li>
+              <li><ReactRouterDOM.Link to="/profile" className="text-base text-slate-600 dark:text-slate-300 hover:text-primary dark:hover:text-primary">حسابي</ReactRouterDOM.Link></li>
+              <li><ReactRouterDOM.Link to="/orders" className="text-base text-slate-600 dark:text-slate-300 hover:text-primary dark:hover:text-primary">طلباتي</ReactRouterDOM.Link></li>
+              <li><ReactRouterDOM.Link to="/terms" className="text-base text-slate-600 dark:text-slate-300 hover:text-primary dark:hover:text-primary">الشروط والأحكام</ReactRouterDOM.Link></li>
+              <li><ReactRouterDOM.Link to="/privacy" className="text-base text-slate-600 dark:text-slate-300 hover:text-primary dark:hover:text-primary">سياسة الخصوصية</ReactRouterDOM.Link></li>
             </ul>
           </div>
 

@@ -18,13 +18,12 @@ const firebaseConfig = {
 // A check to ensure all required environment variables are present during development.
 // FIX: Cast `import.meta` to `any` to resolve TypeScript error "Property 'env' does not exist on type 'ImportMeta'" when accessing environment variables in Vite.
 if ((import.meta as any).env.DEV && Object.values(firebaseConfig).some(value => !value)) {
-  console.error("Firebase configuration is missing. Make sure you have a .env file with all the required VITE_FIREBASE_ variables.");
-  console.error("Firebase configuration is missing. Make sure you have a .env file with all the required VITE_FIREBASE_ variables.");
+    console.error("Firebase configuration is missing. Make sure you have a .env file with all the required VITE_FIREBASE_ variables.");
 }
 
 // FIX: Refactored Firebase initialization to use v8 compat syntax.
 if (!firebase.apps.length) {
-  firebase.initializeApp(firebaseConfig);
+    firebase.initializeApp(firebaseConfig);
 }
 
 // FIX: Refactored Firebase service exports to use v8 compat syntax.
@@ -39,11 +38,11 @@ export const initializeFirebase = async () => {
     await db.enablePersistence();
   } catch (err: any) {
     if (err.code == 'failed-precondition') {
-      // This can happen if multiple tabs are open.
-      console.warn('Firestore persistence failed: Multiple tabs open.');
+        // This can happen if multiple tabs are open.
+        console.warn('Firestore persistence failed: Multiple tabs open.');
     } else if (err.code == 'unimplemented') {
-      // The current browser does not support all of the features required to enable persistence.
-      console.warn('Firestore persistence is not supported in this browser.');
+        // The current browser does not support all of the features required to enable persistence.
+        console.warn('Firestore persistence is not supported in this browser.');
     }
   }
   // The automatic seeding call has been removed from here to prevent permission errors on startup.

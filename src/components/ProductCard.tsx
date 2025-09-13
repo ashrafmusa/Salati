@@ -1,6 +1,6 @@
 import React from 'react';
-// FIX: Replaced react-router-dom namespace import with a named import (Link) and removed the namespace prefix to resolve build errors.
-import { Link } from 'react-router-dom';
+// FIX: Switched to a namespace import for react-router-dom to fix module resolution errors in the build environment.
+import * as ReactRouterDOM from 'react-router-dom';
 import { StoreProduct } from '../types';
 import { useCart } from '../hooks/useCart';
 import { useWishlist } from '../hooks/useWishlist';
@@ -43,7 +43,7 @@ const StoreProductCard: React.FC<StoreProductCardProps> = ({ product, price }) =
   };
   
   return (
-    <Link to={linkPath} className="block bg-white dark:bg-slate-900 rounded-xl shadow-md overflow-hidden group transition-all duration-300 transform hover:-translate-y-1.5 active:translate-y-0 hover:shadow-glow-primary dark:hover:shadow-glow-primary/50 border dark:border-slate-800">
+    <ReactRouterDOM.Link to={linkPath} className="block bg-white dark:bg-slate-900 rounded-xl shadow-md overflow-hidden group transition-all duration-300 transform hover:-translate-y-1.5 active:translate-y-0 hover:shadow-glow-primary dark:hover:shadow-glow-primary/50 border dark:border-slate-800">
       <div className="relative overflow-hidden">
         <img 
           src={getOptimizedImageUrl(product.imageUrl, 400)} 
@@ -102,7 +102,7 @@ const StoreProductCard: React.FC<StoreProductCardProps> = ({ product, price }) =
           </button>
         </div>
       </div>
-    </Link>
+    </ReactRouterDOM.Link>
   );
 };
 

@@ -1,5 +1,6 @@
 import React, { useState, useMemo, useEffect } from 'react';
-import { useSearchParams } from 'react-router-dom';
+// FIX: Switched to a namespace import for react-router-dom to fix module resolution errors in the build environment.
+import * as ReactRouterDOM from 'react-router-dom';
 import { StoreProduct, Item, Bundle } from '../types';
 import { db } from '../firebase/config';
 import StoreProductCard from '../components/ProductCard';
@@ -10,7 +11,7 @@ import MetaTagManager from '../components/MetaTagManager';
 import ProductCardSkeleton from '../components/ProductCardSkeleton';
 
 const SearchResultsScreen: React.FC = () => {
-  const [searchParams] = useSearchParams();
+  const [searchParams] = ReactRouterDOM.useSearchParams();
   const query = searchParams.get('q') || '';
   
   const [loading, setLoading] = useState(true);

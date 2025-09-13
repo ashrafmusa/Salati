@@ -1,6 +1,6 @@
 import React from 'react';
-// FIX: Replaced react-router-dom namespace import with a named import (Link) and removed the namespace prefix to resolve build errors.
-import { Link } from "react-router-dom";
+// FIX: Switched to a namespace import for react-router-dom to fix module resolution errors in the build environment.
+import * as ReactRouterDOM from "react-router-dom";
 
 interface StatCardProps {
   title: string;
@@ -12,7 +12,7 @@ interface StatCardProps {
 
 const StatCard: React.FC<StatCardProps> = ({ title, value, icon, textColor, to }) => {
   return (
-    <Link 
+    <ReactRouterDOM.Link 
       to={to}
       className="group block bg-white dark:bg-slate-800 p-5 rounded-xl shadow-sm border border-slate-200 dark:border-slate-700 flex items-center gap-5 transition-all duration-300 hover:-translate-y-1 hover:shadow-lg hover:border-primary/30"
     >
@@ -23,7 +23,7 @@ const StatCard: React.FC<StatCardProps> = ({ title, value, icon, textColor, to }
             <p className="text-sm font-medium text-slate-500 dark:text-slate-400 uppercase tracking-wider">{title}</p>
             <p className="text-3xl font-bold text-slate-800 dark:text-slate-100 mt-1">{value}</p>
         </div>
-    </Link>
+    </ReactRouterDOM.Link>
   );
 };
 

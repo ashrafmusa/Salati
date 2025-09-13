@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useMemo } from 'react';
-// FIX: Replaced react-router-dom namespace import with a named import (useNavigate) and removed the namespace prefix to resolve build errors.
-import { useNavigate } from "react-router-dom";
+// FIX: Switched to a namespace import for react-router-dom to fix module resolution errors in the build environment.
+import * as ReactRouterDOM from "react-router-dom";
 import StatCard from '../components/StatCard';
 import { OrdersIcon, PackageIcon, CustomersIcon, CurrencyDollarIcon } from '../assets/adminIcons';
 import { AdminOrder, OrderStatus, Item, Bundle, StoreSettings } from '../types';
@@ -135,7 +135,7 @@ const RecentOrders: React.FC<{ orders: AdminOrder[], loading: boolean }> = ({ or
 
 const AdminDashboardScreen: React.FC = () => {
     const { user } = useAuth();
-    const navigate = useNavigate();
+    const navigate = ReactRouterDOM.useNavigate();
     const [orders, setOrders] = useState<AdminOrder[]>([]);
     const [allUsersCount, setAllUsersCount] = useState(0);
     const [allLowStockItems, setAllLowStockItems] = useState(0);

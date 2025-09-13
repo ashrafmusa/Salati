@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useCallback, useRef } from 'react';
-// FIX: Replaced react-router-dom namespace import with a named import (useNavigate) and removed the namespace prefix to resolve build errors.
-import { useNavigate } from "react-router-dom";
+// FIX: Switched to a namespace import for react-router-dom to fix module resolution errors in the build environment.
+import * as ReactRouterDOM from "react-router-dom";
 import { db } from '../firebase/config';
 import { Offer, Discount } from '../types';
 import { ChevronLeftIcon, ChevronRightIcon, TagIcon } from '../assets/icons';
@@ -47,7 +47,7 @@ const PromotionalBanner: React.FC = () => {
     const [loading, setLoading] = useState(true);
     const [isPaused, setIsPaused] = useState(false);
     const touchStartX = useRef(0);
-    const navigate = useNavigate();
+    const navigate = ReactRouterDOM.useNavigate();
 
     useEffect(() => {
         // FIX: Refactored Firestore query to use v8 compat syntax.
