@@ -1,6 +1,3 @@
-
-
-
 import { GoogleGenAI, Type } from "@google/genai";
 import { Item } from '../types';
 
@@ -10,8 +7,9 @@ export interface BundleIdea {
     itemNames: string[];
 }
 
-// FIX: Per guidelines, initialize AI client directly with process.env.API_KEY.
-const ai = new GoogleGenAI({ apiKey: process.env.API_KEY! });
+// FIX: Switched to process.env to fix runtime errors in the execution environment.
+const GEMINI_API_KEY = process.env.VITE_GEMINI_API_KEY;
+const ai = new GoogleGenAI({ apiKey: GEMINI_API_KEY! });
 
 const responseSchema = {
     type: Type.OBJECT,
@@ -32,13 +30,12 @@ const responseSchema = {
 
 /**
  * Generates bundle ideas by calling the Google Gemini API directly from the client.
- * The API key is expected to be available in the execution environment as process.env.API_KEY.
+ * The API key is expected to be available in the execution environment as VITE_GEMINI_API_KEY.
  * @param items - A list of available individual items.
  * @returns A promise that resolves to an array of bundle ideas.
  */
 export const generateBundleIdeas = async (items: Item[]): Promise<BundleIdea[]> => {
-    // FIX: Per guidelines, the API key must come from process.env.API_KEY.
-    if (!process.env.API_KEY) {
+    if (!GEMINI_API_KEY) {
         throw new Error("Gemini API key is not configured. AI features are disabled.");
     }
     if (items.length === 0) {
@@ -47,7 +44,7 @@ export const generateBundleIdeas = async (items: Item[]): Promise<BundleIdea[]> 
 
     const itemNames = items.map(item => item.arabicName).join(', ');
     const prompt = `Based on the following list of grocery and food items, generate 3 creative and appealing bundle ideas. For each bundle, provide a catchy Arabic name (bundleName), a short Arabic description, and a list of 2 to 4 item names (itemNames) from the provided list that would fit well together. The items are: ${itemNames}`;
-
+    
     try {
         const response = await ai.models.generateContent({
             model: "gemini-2.5-flash",

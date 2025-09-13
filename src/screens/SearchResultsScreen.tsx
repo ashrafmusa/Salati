@@ -1,4 +1,5 @@
 import React, { useState, useMemo, useEffect } from 'react';
+// FIX: The `react-router-dom` component `useSearchParams` was not found on the namespace import. Changed to a direct import to resolve the error.
 import { useSearchParams } from 'react-router-dom';
 import { StoreProduct, Review, Item, Bundle } from '../types';
 import { db } from '../firebase/config';

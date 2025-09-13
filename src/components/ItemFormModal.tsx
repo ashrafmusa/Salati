@@ -35,32 +35,24 @@ const ItemFormModal: React.FC<ItemFormModalProps> = ({ item, onClose, onSave, is
         }
     }, [item]);
     
-    const validate = (field?: keyof Item, value?: any) => {
+    const validate = (field?: keyof Item) => {
         const newErrors = { ...errors };
-        const currentData = field ? { ...formData, [field]: value } : formData;
+        const currentData = formData;
 
-        if (field === 'arabicName' || !field) {
-            if (!currentData.arabicName?.trim()) newErrors.arabicName = "اسم الصنف مطلوب";
-            else delete newErrors.arabicName;
-        }
-        if (field === 'price' || !field) {
-            if ((currentData.price ?? 0) <= 0) newErrors.price = "السعر يجب أن يكون أكبر من صفر";
-            else delete newErrors.price;
-        }
-        if (field === 'stock' || !field) {
-             if ((currentData.stock ?? -1) < 0) newErrors.stock = "المخزون لا يمكن أن يكون سالباً";
-             else delete newErrors.stock;
-        }
-         if (field === 'category' || !field) {
-            if (!currentData.category) newErrors.category = "يجب اختيار فئة";
-            else delete newErrors.category;
-        }
-        if (field === 'costPrice' || !field) {
-            if ((currentData.costPrice ?? -1) < 0) newErrors.costPrice = "سعر التكلفة لا يمكن أن يكون سالباً";
-            else delete newErrors.costPrice;
-        }
+        const checkField = (fieldName: keyof Item, condition: boolean, message: string) => {
+            if (condition) newErrors[fieldName] = message;
+            else delete newErrors[fieldName];
+        };
+
+        if (field === 'arabicName' || !field) checkField('arabicName', !currentData.arabicName?.trim(), "اسم الصنف مطلوب");
+        if (field === 'price' || !field) checkField('price', (currentData.price ?? 0) <= 0, "السعر يجب أن يكون أكبر من صفر");
+        if (field === 'stock' || !field) checkField('stock', (currentData.stock ?? -1) < 0, "المخزون لا يمكن أن يكون سالباً");
+        if (field === 'category' || !field) checkField('category', !currentData.category, "يجب اختيار فئة");
+        if (field === 'costPrice' || !field) checkField('costPrice', (currentData.costPrice ?? -1) < 0, "سعر التكلفة لا يمكن أن يكون سالباً");
+        
         setErrors(newErrors);
-        return Object.keys(newErrors).length === 0;
+        // Return false if there are any errors
+        return Object.values(newErrors).every(x => x === undefined || x === '');
     };
 
     const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) => {
@@ -71,7 +63,10 @@ const ItemFormModal: React.FC<ItemFormModalProps> = ({ item, onClose, onSave, is
         if (type === 'checkbox') finalValue = (e.target as HTMLInputElement).checked;
 
         setFormData(prev => ({ ...prev, [name]: finalValue }));
-        validate(name as keyof Item, finalValue);
+    };
+
+    const handleBlur = (e: React.FocusEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) => {
+        validate(e.target.name as keyof Item);
     };
 
     const handleImageChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -91,8 +86,7 @@ const ItemFormModal: React.FC<ItemFormModalProps> = ({ item, onClose, onSave, is
     
     const handleSubmit = (e: React.FormEvent) => {
         e.preventDefault();
-        const fullValidationResult = validate();
-        if (fullValidationResult && formData.imageUrl) {
+        if (validate() && formData.imageUrl) {
             onSave(formData as Item);
         } else if (!formData.imageUrl) {
             showToast("Please upload an image for the item.", "error");
@@ -111,39 +105,39 @@ const ItemFormModal: React.FC<ItemFormModalProps> = ({ item, onClose, onSave, is
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                         <div>
                             <label htmlFor="arabicName" className="block text-sm font-medium">الاسم بالعربي</label>
-                            <input id="arabicName" name="arabicName" value={formData.arabicName || ''} onChange={handleChange} className={`${inputClasses('arabicName')} mt-1`} />
+                            <input id="arabicName" name="arabicName" value={formData.arabicName || ''} onChange={handleChange} onBlur={handleBlur} className={`${inputClasses('arabicName')} mt-1`} />
                             {errors.arabicName && <p className="text-red-500 text-xs mt-1">{errors.arabicName}</p>}
                         </div>
                         <div>
                            <label htmlFor="name" className="block text-sm font-medium">الاسم بالانجليزي (اختياري)</label>
-                           <input id="name" name="name" value={formData.name || ''} onChange={handleChange} className={`${inputClasses('name')} mt-1`} />
+                           <input id="name" name="name" value={formData.name || ''} onChange={handleChange} onBlur={handleBlur} className={`${inputClasses('name')} mt-1`} />
                         </div>
                     </div>
                      <div>
                         <label htmlFor="description" className="block text-sm font-medium">الوصف</label>
-                        <textarea id="description" name="description" value={formData.description || ''} onChange={handleChange} className={`${inputClasses('description')} mt-1`} rows={3} />
+                        <textarea id="description" name="description" value={formData.description || ''} onChange={handleChange} onBlur={handleBlur} className={`${inputClasses('description')} mt-1`} rows={3} />
                     </div>
                     <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                         <div>
                            <label htmlFor="price" className="block text-sm font-medium">سعر البيع</label>
-                           <input id="price" type="number" name="price" value={formData.price ?? ''} onChange={handleChange} className={`${inputClasses('price')} mt-1`} />
+                           <input id="price" type="number" name="price" value={formData.price ?? ''} onChange={handleChange} onBlur={handleBlur} className={`${inputClasses('price')} mt-1`} />
                            {errors.price && <p className="text-red-500 text-xs mt-1">{errors.price}</p>}
                         </div>
                         <div>
                            <label htmlFor="costPrice" className="block text-sm font-medium">سعر التكلفة</label>
-                           <input id="costPrice" type="number" name="costPrice" value={formData.costPrice ?? ''} onChange={handleChange} className={`${inputClasses('costPrice')} mt-1`} />
+                           <input id="costPrice" type="number" name="costPrice" value={formData.costPrice ?? ''} onChange={handleChange} onBlur={handleBlur} className={`${inputClasses('costPrice')} mt-1`} />
                            {errors.costPrice && <p className="text-red-500 text-xs mt-1">{errors.costPrice}</p>}
                         </div>
                         <div>
                            <label htmlFor="stock" className="block text-sm font-medium">المخزون</label>
-                           <input id="stock" type="number" name="stock" value={formData.stock ?? ''} onChange={handleChange} className={`${inputClasses('stock')} mt-1`} />
+                           <input id="stock" type="number" name="stock" value={formData.stock ?? ''} onChange={handleChange} onBlur={handleBlur} className={`${inputClasses('stock')} mt-1`} />
                            {errors.stock && <p className="text-red-500 text-xs mt-1">{errors.stock}</p>}
                         </div>
                     </div>
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                          <div>
                            <label htmlFor="category" className="block text-sm font-medium">الفئة</label>
-                           <select id="category" name="category" value={formData.category || ''} onChange={handleChange} className={`${inputClasses('category')} mt-1`}>
+                           <select id="category" name="category" value={formData.category || ''} onChange={handleChange} onBlur={handleBlur} className={`${inputClasses('category')} mt-1`}>
                                 <option value="">اختر فئة</option>
                                 {categories.map(c => <option key={c.id} value={c.name}>{c.name}</option>)}
                            </select>
@@ -151,7 +145,7 @@ const ItemFormModal: React.FC<ItemFormModalProps> = ({ item, onClose, onSave, is
                         </div>
                         <div>
                            <label htmlFor="supplierId" className="block text-sm font-medium">المورد</label>
-                           <select id="supplierId" name="supplierId" value={formData.supplierId || ''} onChange={handleChange} className={`${inputClasses('supplierId')} mt-1`}>
+                           <select id="supplierId" name="supplierId" value={formData.supplierId || ''} onChange={handleChange} onBlur={handleBlur} className={`${inputClasses('supplierId')} mt-1`}>
                                 <option value="">اختر مورد</option>
                                 {suppliers.map(s => <option key={s.id} value={s.id}>{s.name}</option>)}
                            </select>

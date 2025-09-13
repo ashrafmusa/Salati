@@ -12,49 +12,49 @@ import { User, ActivityLogEntry } from '../types';
  * @param notification (Optional) An object to create a notification for admins.
  */
 export const addOrderLog = async (
-    orderId: string,
-    author: User,
-    message: string,
-    type: ActivityLogEntry['type'],
-    visibility: ActivityLogEntry['visibility'],
-    notification?: { message: string; link: string }
+  orderId: string,
+  author: User,
+  message: string,
+  type: ActivityLogEntry['type'],
+  visibility: ActivityLogEntry['visibility'],
+  notification?: { message: string; link: string }
 ) => {
-    try {
-        const logEntry = {
+  try {
+    const logEntry = {
+      timestamp: new Date().toISOString(),
+      authorId: author.uid,
+      authorName: author.name,
+      message,
+      type,
+      visibility,
+    };
+    
+    const orderRef = db.collection('orders').doc(orderId);
+    
+    // Use a batch to perform both writes atomically
+    const batch = db.batch();
+
+    const logRef = orderRef.collection('activityLog').doc();
+    batch.set(logRef, logEntry);
+
+    batch.update(orderRef, {
+        lastUpdatedBy: { id: author.uid, name: author.name },
+        lastUpdatedAt: new Date().toISOString(),
+    });
+    
+    if (notification) {
+        const notifRef = db.collection('notifications').doc();
+        batch.set(notifRef, {
+            ...notification,
             timestamp: new Date().toISOString(),
-            authorId: author.uid,
-            authorName: author.name,
-            message,
-            type,
-            visibility,
-        };
-
-        const orderRef = db.collection('orders').doc(orderId);
-
-        // Use a batch to perform both writes atomically
-        const batch = db.batch();
-
-        const logRef = orderRef.collection('activityLog').doc();
-        batch.set(logRef, logEntry);
-
-        batch.update(orderRef, {
-            lastUpdatedBy: { id: author.uid, name: author.name },
-            lastUpdatedAt: new Date().toISOString(),
+            read: false,
         });
-
-        if (notification) {
-            const notifRef = db.collection('notifications').doc();
-            batch.set(notifRef, {
-                ...notification,
-                timestamp: new Date().toISOString(),
-                read: false,
-            });
-        }
-
-        await batch.commit();
-
-    } catch (error) {
-        console.error("Failed to add order log:", error);
-        // Optionally re-throw or handle the error
     }
+
+    await batch.commit();
+
+  } catch (error) {
+    console.error("Failed to add order log:", error);
+    // Optionally re-throw or handle the error
+  }
 };

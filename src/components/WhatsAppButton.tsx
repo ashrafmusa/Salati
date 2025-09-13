@@ -1,56 +1,54 @@
-import React, { useState, useEffect } from "react";
-import { WhatsAppIcon } from "../assets/icons";
-import { useScrollDirection } from "../hooks/useScrollDirection";
+import React, { useState, useEffect } from 'react';
+import { WhatsAppIcon } from '../assets/icons';
+import { useScrollDirection } from '../hooks/useScrollDirection';
 
 const WhatsAppButton: React.FC = () => {
-  const phoneNumber = (import.meta as any).env.VITE_WHATSAPP_PHONE_NUMBER;
-  const whatsappUrl = `https://wa.me/${phoneNumber}`;
-  const [nudge, setNudge] = useState(false);
-  const text = "تواصل معنا";
-  const isVisible = useScrollDirection();
+    const phoneNumber = process.env.VITE_WHATSAPP_PHONE_NUMBER;
+    const whatsappUrl = `https://wa.me/${phoneNumber}`;
+    const [nudge, setNudge] = useState(false);
+    const text = "تواصل معنا";
+    const isVisible = useScrollDirection();
 
-  useEffect(() => {
-    // Start the nudge animation loop
-    const intervalId = setInterval(() => {
-      setNudge(true);
-      // Reset the state after the animation duration (4s)
-      setTimeout(() => setNudge(false), 4000);
-    }, 10000); // Nudge every 10 seconds
+    useEffect(() => {
+        // Start the nudge animation loop
+        const intervalId = setInterval(() => {
+            setNudge(true);
+            // Reset the state after the animation duration (4s)
+            setTimeout(() => setNudge(false), 4000);
+        }, 10000); // Nudge every 10 seconds
 
-    return () => clearInterval(intervalId);
-  }, []);
+        return () => clearInterval(intervalId);
+    }, []);
 
-  // Do not render the button if the phone number is not configured in the environment variables.
-  if (!phoneNumber) {
-    return null;
-  }
+    // Do not render the button if the phone number is not configured in the environment variables.
+    if (!phoneNumber) {
+        return null;
+    }
 
-  return (
-    <a
-      href={whatsappUrl}
-      target="_blank"
-      rel="noopener noreferrer"
-      className={`fixed right-5 z-30 flex items-center group transition-transform duration-300 ease-in-out ${
-        isVisible ? "translate-y-0" : "translate-y-[calc(100%+1.25rem)]"
-      }`}
-      style={{ bottom: "var(--whatsapp-bottom)" }}
-      aria-label="Contact us on WhatsApp"
-    >
-      {/* Text Label */}
-      <div
-        className={`bg-white dark:bg-slate-900 text-slate-700 dark:text-slate-200 font-bold py-2 px-5 rounded-l-full shadow-lg transition-transform duration-300 ease-in-out transform origin-right whitespace-nowrap ${
-          nudge ? "animate-nudge-reveal" : "scale-x-0 group-hover:scale-x-100"
-        }`}
-      >
-        <span>{text}</span>
-      </div>
+    return (
+        <a
+            href={whatsappUrl}
+            target="_blank"
+            rel="noopener noreferrer"
+            className={`fixed right-5 z-30 flex items-center group transition-transform duration-300 ease-in-out ${isVisible ? 'translate-y-0' : 'translate-y-[calc(100%+1.25rem)]'}`}
+            style={{ bottom: 'var(--whatsapp-bottom)' }}
+            aria-label="Contact us on WhatsApp"
+        >
+            {/* Text Label */}
+            <div 
+                className={`bg-white dark:bg-slate-900 text-slate-700 dark:text-slate-200 font-bold py-2 px-5 rounded-l-full shadow-lg transition-transform duration-300 ease-in-out transform origin-right whitespace-nowrap ${
+                    nudge ? 'animate-nudge-reveal' : 'scale-x-0 group-hover:scale-x-100'
+                }`}
+            >
+              <span>{text}</span>
+            </div>
 
-      {/* Icon Button */}
-      <div className="bg-green-500 text-white w-16 h-16 rounded-full flex items-center justify-center shadow-lg transform transition-transform duration-300 group-hover:scale-110 animate-whatsapp-pulse">
-        <WhatsAppIcon className="w-8 h-8" />
-      </div>
-    </a>
-  );
+            {/* Icon Button */}
+            <div className="bg-green-500 text-white w-16 h-16 rounded-full flex items-center justify-center shadow-lg transform transition-transform duration-300 group-hover:scale-110 animate-whatsapp-pulse">
+                <WhatsAppIcon className="w-8 h-8" />
+            </div>
+        </a>
+    );
 };
 
 export default WhatsAppButton;

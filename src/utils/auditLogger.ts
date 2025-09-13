@@ -11,24 +11,24 @@ import { User } from '../types';
  * @param details - Optional additional details about the action (e.g., "Order #12345 -> Delivered").
  */
 export const logAdminAction = async (
-    adminUser: User | null,
-    action: string,
-    details?: string
+  adminUser: User | null,
+  action: string,
+  details?: string
 ) => {
-    if (!adminUser || adminUser.role === 'customer' || adminUser.role === 'driver') {
-        // Only log actions for admin-level users
-        return;
-    }
-    try {
-        // FIX: Refactored Firestore addDoc call to use v8 compat syntax.
-        await db.collection('auditLogs').add({
-            timestamp: new Date().toISOString(),
-            adminId: adminUser.uid,
-            adminName: adminUser.name,
-            action,
-            details: details || '',
-        });
-    } catch (error) {
-        console.error("Failed to write to audit log:", error);
-    }
+  if (!adminUser || adminUser.role === 'customer' || adminUser.role === 'driver') {
+    // Only log actions for admin-level users
+    return;
+  }
+  try {
+    // FIX: Refactored Firestore addDoc call to use v8 compat syntax.
+    await db.collection('auditLogs').add({
+      timestamp: new Date().toISOString(),
+      adminId: adminUser.uid,
+      adminName: adminUser.name,
+      action,
+      details: details || '',
+    });
+  } catch (error) {
+    console.error("Failed to write to audit log:", error);
+  }
 };

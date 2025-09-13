@@ -42,7 +42,7 @@ export const validateData = (
       linkText: 'تحديث الإعدادات',
     });
   }
-
+  
   // Return a unique list of issues to avoid duplicate messages for the same problem type
   const uniqueMessages = new Set(issues.map(issue => issue.message));
   return Array.from(uniqueMessages).map(message => issues.find(issue => issue.message === message)!);

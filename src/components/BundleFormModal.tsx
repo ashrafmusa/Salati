@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect, useRef } from 'react';
 import { Bundle, Item, Category, BundleContent } from '../types';
 import { uploadToCloudinary, getOptimizedImageUrl } from '../utils/helpers';
@@ -40,35 +39,32 @@ const BundleFormModal: React.FC<BundleFormModalProps> = ({ bundle, onClose, onSa
         }
     }, [bundle]);
 
-    const validate = (field?: keyof Bundle, value?: any) => {
+    const validate = (field?: keyof Bundle) => {
         const newErrors = { ...errors };
-        const currentData = field ? { ...formData, [field]: value } : formData;
+        const currentData = formData;
 
-        if (field === 'arabicName' || !field) {
-            if (!currentData.arabicName?.trim()) newErrors.arabicName = "اسم الحزمة مطلوب";
-            else delete newErrors.arabicName;
-        }
-        if (field === 'stock' || !field) {
-            if ((currentData.stock ?? -1) < 0) newErrors.stock = "المخزون لا يمكن أن يكون سالباً";
-            else delete newErrors.stock;
-        }
-        if (field === 'category' || !field) {
-            if (!currentData.category) newErrors.category = "يجب اختيار فئة";
-            else delete newErrors.category;
-        }
-        if (field === 'contents' || !field) {
-            if (!currentData.contents || currentData.contents.length === 0) newErrors.contents = "يجب أن تحتوي الحزمة على صنف واحد على الأقل";
-            else delete newErrors.contents;
-        }
+        const checkField = (fieldName: keyof Bundle, condition: boolean, message: string) => {
+            if (condition) newErrors[fieldName] = message;
+            else delete newErrors[fieldName];
+        };
+
+        if (field === 'arabicName' || !field) checkField('arabicName', !currentData.arabicName?.trim(), "اسم الحزمة مطلوب");
+        if (field === 'stock' || !field) checkField('stock', (currentData.stock ?? -1) < 0, "المخزون لا يمكن أن يكون سالباً");
+        if (field === 'category' || !field) checkField('category', !currentData.category, "يجب اختيار فئة");
+        if (field === 'contents' || !field) checkField('contents', !currentData.contents || currentData.contents.length === 0, "يجب أن تحتوي الحزمة على صنف واحد على الأقل");
+        
         setErrors(newErrors);
-        return Object.keys(newErrors).length === 0;
+        return Object.values(newErrors).every(x => x === undefined || x === '');
     };
     
     const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) => {
         const { name, value, type } = e.target;
         const finalValue = type === 'number' ? Number(value) : value;
         setFormData(prev => ({ ...prev, [name]: finalValue }));
-        validate(name as keyof Bundle, finalValue);
+    };
+
+    const handleBlur = (e: React.FocusEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) => {
+        validate(e.target.name as keyof Bundle);
     };
 
     const handleImageChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -89,7 +85,7 @@ const BundleFormModal: React.FC<BundleFormModalProps> = ({ bundle, onClose, onSa
     const handleAddItem = (item: Item) => {
         const newContents = [...(formData.contents || []), { itemId: item.id, quantity: 1 }];
         setFormData(prev => ({ ...prev, contents: newContents }));
-        validate('contents', newContents);
+        validate('contents');
         setSearchTerm('');
         setIsDropdownOpen(false);
     };
@@ -97,7 +93,7 @@ const BundleFormModal: React.FC<BundleFormModalProps> = ({ bundle, onClose, onSa
     const handleRemoveItem = (itemId: string) => {
         const newContents = (formData.contents || []).filter(c => c.itemId !== itemId);
         setFormData(prev => ({ ...prev, contents: newContents }));
-        validate('contents', newContents);
+        validate('contents');
     };
 
     const handleQuantityChange = (itemId: string, quantity: number) => {
@@ -130,12 +126,12 @@ const BundleFormModal: React.FC<BundleFormModalProps> = ({ bundle, onClose, onSa
                 <h2 className="text-2xl font-bold mb-6 text-slate-800 dark:text-slate-100">{bundle ? 'تعديل حزمة' : 'إنشاء حزمة جديدة'}</h2>
                 <form onSubmit={handleSubmit} className="space-y-4">
                     {/* Basic Info */}
-                    <input id="arabicName" name="arabicName" value={formData.arabicName || ''} onChange={handleChange} placeholder="اسم الحزمة بالعربي" className={inputClasses('arabicName')} />
+                    <input id="arabicName" name="arabicName" value={formData.arabicName || ''} onChange={handleChange} onBlur={handleBlur} placeholder="اسم الحزمة بالعربي" className={inputClasses('arabicName')} />
                     {errors.arabicName && <p className="text-red-500 text-xs mt-1">{errors.arabicName}</p>}
-                    <textarea id="description" name="description" value={formData.description || ''} onChange={handleChange} placeholder="الوصف" className={inputClasses('description')} rows={2} />
+                    <textarea id="description" name="description" value={formData.description || ''} onChange={handleChange} onBlur={handleBlur} placeholder="الوصف" className={inputClasses('description')} rows={2} />
                     <div className="grid grid-cols-2 gap-4">
-                        <input id="stock" type="number" name="stock" value={formData.stock ?? ''} onChange={handleChange} placeholder="المخزون" className={inputClasses('stock')} />
-                        <select id="category" name="category" value={formData.category || ''} onChange={handleChange} className={inputClasses('category')}>
+                        <input id="stock" type="number" name="stock" value={formData.stock ?? ''} onChange={handleChange} onBlur={handleBlur} placeholder="المخزون" className={inputClasses('stock')} />
+                        <select id="category" name="category" value={formData.category || ''} onChange={handleChange} onBlur={handleBlur} className={inputClasses('category')}>
                             <option value="">اختر فئة</option>
                             {categories.map(c => <option key={c.id} value={c.name}>{c.name}</option>)}
                         </select>
