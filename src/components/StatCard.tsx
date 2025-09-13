@@ -1,5 +1,5 @@
 import React from 'react';
-// FIX: The `react-router-dom` component `Link` was not found on the namespace import. Changed to a direct import to resolve the error.
+// FIX: Replaced react-router-dom namespace import with a named import (Link) and removed the namespace prefix to resolve build errors.
 import { Link } from "react-router-dom";
 
 interface StatCardProps {

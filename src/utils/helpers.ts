@@ -1,9 +1,10 @@
 import { StoreProduct, ExtraItem, CartItem, Offer, Bundle, Item, Discount } from '../types';
 
 // --- CLOUDINARY CONFIGURATION ---
-// FIX: Switched to process.env to fix runtime errors in the execution environment where `import.meta.env` is not available.
-const CLOUDINARY_CLOUD_NAME = process.env.VITE_CLOUDINARY_CLOUD_NAME;
-const CLOUDINARY_UPLOAD_PRESET = process.env.VITE_CLOUDINARY_UPLOAD_PRESET;
+// FIX: Cast `import.meta` to `any` to resolve TypeScript error "Property 'env' does not exist on type 'ImportMeta'" when accessing environment variables in Vite.
+const CLOUDINARY_CLOUD_NAME = (import.meta as any).env.VITE_CLOUDINARY_CLOUD_NAME;
+// FIX: Cast `import.meta` to `any` to resolve TypeScript error "Property 'env' does not exist on type 'ImportMeta'" when accessing environment variables in Vite.
+const CLOUDINARY_UPLOAD_PRESET = (import.meta as any).env.VITE_CLOUDINARY_UPLOAD_PRESET;
 
 /**
  * Uploads a file directly to Cloudinary from the client-side.

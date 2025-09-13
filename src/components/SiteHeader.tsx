@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useRef, useMemo } from 'react';
-// FIX: The `react-router-dom` components were not found on the namespace import. Changed to a direct import of `useNavigate`, `useSearchParams`, `NavLink`, and `Link` to resolve the errors.
-import { useNavigate, useSearchParams, NavLink, Link } from 'react-router-dom';
+// FIX: Replaced react-router-dom namespace import with named imports (Link, NavLink, useNavigate, useSearchParams) and removed the namespace prefix to resolve build errors.
+import { Link, NavLink, useNavigate, useSearchParams } from 'react-router-dom';
 import Logo from './Logo';
 import { SearchIcon, FilterIcon, HomeIcon, HeartIcon, CartIcon, UserIcon } from '../assets/icons';
 import { useCart } from '../hooks/useCart';

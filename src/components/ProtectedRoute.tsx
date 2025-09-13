@@ -1,6 +1,6 @@
 import React from 'react';
-// FIX: The `react-router-dom` components `useLocation`, `Navigate`, and `Outlet` were not found on the namespace import. Changed to a direct import to resolve the errors.
-import { useLocation, Navigate, Outlet } from "react-router-dom";
+// FIX: Replaced react-router-dom namespace import with named imports (Navigate, Outlet, useLocation) and removed the namespace prefix to resolve build errors.
+import { Navigate, Outlet, useLocation } from "react-router-dom";
 import { useAuth } from '../hooks/useAuth';
 
 const ProtectedRoute: React.FC = () => {

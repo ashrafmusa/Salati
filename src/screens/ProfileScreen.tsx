@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
-// FIX: The `react-router-dom` components `useNavigate` and `Link` were not found on the namespace import. Changed to a direct import to resolve the errors.
-import { useNavigate, Link } from 'react-router-dom';
+// FIX: Replaced react-router-dom namespace import with named imports (Link, useNavigate) and removed the namespace prefix to resolve build errors.
+import { Link, useNavigate } from 'react-router-dom';
 import { useAuth } from '../hooks/useAuth';
 import SubPageHeader from '../components/SubPageHeader';
 import { LogoutIcon, HistoryIcon, HeartIcon, ChevronLeftIcon, WarningIcon, KeyIcon } from '../assets/icons';

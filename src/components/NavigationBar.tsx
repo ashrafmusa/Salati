@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useRef } from 'react';
-// FIX: The `react-router-dom` components `useLocation` and `NavLink` were not found on the namespace import. Changed to a direct import to resolve the errors.
-import { useLocation, NavLink } from "react-router-dom";
+// FIX: Replaced react-router-dom namespace import with named imports (NavLink, useLocation) and removed the namespace prefix to resolve build errors.
+import { NavLink, useLocation } from "react-router-dom";
 import { HomeIcon, CartIcon, UserIcon, HeartIcon } from '../assets/icons';
 import { useCart } from '../hooks/useCart';
 import { useScrollDirection } from '../hooks/useScrollDirection';

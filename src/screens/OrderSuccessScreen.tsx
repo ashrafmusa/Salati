@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-// FIX: The `react-router-dom` components `useParams` and `Link` were not found on the namespace import. Changed to a direct import to resolve the errors.
+// FIX: Replaced react-router-dom namespace import with named imports (useParams, Link) and removed the namespace prefix to resolve build errors.
 import { useParams, Link } from 'react-router-dom';
 import { WhatsAppIcon, CheckCircleIcon, SpinnerIcon } from '../assets/icons';
 import { useAuth } from '../hooks/useAuth';

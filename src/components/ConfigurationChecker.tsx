@@ -12,14 +12,13 @@ const firebaseConfigKeys = [
 const otherConfigKeys = [
     'VITE_CLOUDINARY_CLOUD_NAME',
     'VITE_CLOUDINARY_UPLOAD_PRESET',
-    // FIX: Changed to VITE_GEMINI_API_KEY to align with README and user's config.
     'VITE_GEMINI_API_KEY',
 ];
 
 const ConfigurationChecker: React.FC<{ children: React.ReactNode }> = ({ children }) => {
-  // FIX: Switched to process.env to fix runtime errors in the execution environment where `import.meta.env` is not available.
+  // FIX: Cast `import.meta` to `any` to resolve TypeScript error "Property 'env' does not exist on type 'ImportMeta'" when accessing environment variables in Vite.
   const missingKeys = [...firebaseConfigKeys, ...otherConfigKeys].filter(key => {
-    return !process.env[key];
+    return !(import.meta as any).env[key];
   });
 
   if (missingKeys.length > 0) {

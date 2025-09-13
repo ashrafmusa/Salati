@@ -3,7 +3,8 @@ import { WhatsAppIcon } from '../assets/icons';
 import { useScrollDirection } from '../hooks/useScrollDirection';
 
 const WhatsAppButton: React.FC = () => {
-    const phoneNumber = process.env.VITE_WHATSAPP_PHONE_NUMBER;
+    // FIX: Cast `import.meta` to `any` to resolve TypeScript error "Property 'env' does not exist on type 'ImportMeta'" when accessing environment variables in Vite.
+    const phoneNumber = (import.meta as any).env.VITE_WHATSAPP_PHONE_NUMBER;
     const whatsappUrl = `https://wa.me/${phoneNumber}`;
     const [nudge, setNudge] = useState(false);
     const text = "تواصل معنا";

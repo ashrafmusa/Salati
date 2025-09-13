@@ -1,13 +1,12 @@
 import React from 'react';
-// FIX: The `react-router-dom` component `Link` was not found on the namespace import. Changed to a direct import to resolve the error.
 import { Link } from 'react-router-dom';
 import Logo from './Logo';
 import { EmailIcon, WhatsAppIcon, FacebookIcon, InstagramIcon } from '../assets/icons';
 
 const Footer: React.FC = () => {
   const currentYear = new Date().getFullYear();
-  // FIX: Switched to process.env to fix runtime errors in the execution environment.
-  const phoneNumber = process.env.VITE_WHATSAPP_PHONE_NUMBER;
+  // FIX: Cast `import.meta` to `any` to resolve TypeScript error "Property 'env' does not exist on type 'ImportMeta'" when accessing environment variables in Vite.
+  const phoneNumber = (import.meta as any).env.VITE_WHATSAPP_PHONE_NUMBER;
   const emailAddress = "salati.sudan@gmail.com";
   const whatsappUrl = `https://wa.me/${phoneNumber}`;
 

@@ -1,5 +1,4 @@
 import React from 'react';
-// FIX: The `react-router-dom` component `NavLink` was not found on the namespace import. Changed to a direct import to resolve the error.
 import { NavLink } from 'react-router-dom';
 import { DashboardIcon, OrdersIcon, PackageIcon, MenuIcon } from '../assets/adminIcons';
 import { useAuth } from '../hooks/useAuth';

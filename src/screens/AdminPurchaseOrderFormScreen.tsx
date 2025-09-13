@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useMemo, useRef } from 'react';
-// FIX: The `react-router-dom` components `useParams` and `useNavigate` were not found on the namespace import. Changed to a direct import to resolve the errors.
+// FIX: Replaced react-router-dom namespace import with named imports (`useParams`, `useNavigate`) to resolve build errors.
 import { useParams, useNavigate } from 'react-router-dom';
 import { db } from '../firebase/config';
 // FIX: Refactored Firebase imports to use the v8 compat library to resolve module errors.

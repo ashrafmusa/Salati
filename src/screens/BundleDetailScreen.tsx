@@ -1,6 +1,6 @@
 import React, { useState, useMemo, useEffect } from 'react';
-// FIX: The `react-router-dom` library seems to have module resolution issues in this environment. Changed to a namespace import to resolve the "has no exported member" errors.
-import * as ReactRouterDOM from 'react-router-dom';
+// FIX: Replaced react-router-dom namespace import with named imports (useParams, Link) and removed the namespace prefix to resolve build errors.
+import { useParams, Link } from 'react-router-dom';
 import { db } from '../firebase/config';
 import firebase from 'firebase/compat/app';
 import 'firebase/compat/firestore';
@@ -97,7 +97,7 @@ const WriteReviewForm: React.FC<{ productId: string }> = ({ productId }) => {
 };
 
 const BundleDetailScreen: React.FC = () => {
-  const { id } = ReactRouterDOM.useParams<{ id: string }>();
+  const { id } = useParams<{ id: string }>();
   const { addToCart, areAllItemsLoaded } = useCart();
   const { isInWishlist, addToWishlist, removeFromWishlist } = useWishlist();
   
@@ -184,7 +184,7 @@ const BundleDetailScreen: React.FC = () => {
         <SubPageHeader title="خطأ" />
         <div className="text-center p-8">
             <h2 className="text-2xl font-bold mb-4">الحزمة غير موجودة</h2>
-            <ReactRouterDOM.Link to="/" className="text-primary hover:underline">العودة إلى الرئيسية</ReactRouterDOM.Link>
+            <Link to="/" className="text-primary hover:underline">العودة إلى الرئيسية</Link>
         </div>
       </div>
     );
@@ -244,109 +244,3 @@ const BundleDetailScreen: React.FC = () => {
                 <HeartIcon className={`w-6 h-6 ${isFavorited ? 'text-red-500' : 'text-slate-500'}`} filled={isFavorited} />
                 {isFavorited ? 'إزالة من المفضلة' : 'إضافة للمفضلة'}
               </button>
-            </div>
-            <div className="space-y-6">
-              <div className="flex items-center gap-2">
-                <PackageIcon className="w-6 h-6 text-primary" />
-                <span className="font-bold text-primary text-lg">حزمة منتجات</span>
-              </div>
-              <h1 className="text-3xl md:text-4xl font-bold text-slate-900 dark:text-slate-50">{bundle.arabicName}</h1>
-              {isOutOfStock ? (
-                  <div className="px-3 py-1 bg-red-100 text-red-800 dark:bg-red-900/50 dark:text-red-300 font-bold rounded-full inline-block">نفدت الكمية</div>
-              ) : isLowStock && (
-                  <div className="px-3 py-1 bg-amber-100 text-amber-800 dark:bg-amber-900/50 dark:text-amber-300 font-bold rounded-full inline-block">تبقى {bundle.stock} فقط!</div>
-              )}
-              {reviews.length > 0 && <StarRating rating={averageRating} reviewCount={reviews.length} />}
-              <p className="text-slate-600 dark:text-slate-300 text-lg">{bundle.description}</p>
-              
-              <div className="bg-white dark:bg-slate-800 p-4 rounded-lg shadow-sm">
-                <h3 className="font-bold text-xl mb-3 text-slate-800 dark:text-slate-100">مكونات الحزمة</h3>
-                <ul className="space-y-2">
-                  {bundleItems.map(item => {
-                      const content = bundle.contents.find(c => c.itemId === item.id);
-                      return (
-                          <li key={item.id} className="flex justify-between items-center gap-3">
-                              <div className="flex items-center gap-3">
-                                  <img src={getOptimizedImageUrl(item.imageUrl, 100)} alt={item.arabicName} className="w-12 h-12 rounded-md object-cover"/>
-                                  <div>
-                                      <p className="font-semibold text-slate-700 dark:text-slate-200">{item.arabicName}</p>
-                                      <p className="text-sm text-slate-500">الكمية: {content?.quantity}</p>
-                                  </div>
-                              </div>
-                              <p className="text-sm font-semibold text-slate-600 dark:text-slate-300">{item.price.toLocaleString()} ج.س</p>
-                          </li>
-                      )
-                  })}
-                </ul>
-              </div>
-
-              {availableExtras.length > 0 && (
-                 <div className="bg-white dark:bg-slate-800 p-4 rounded-lg shadow-sm">
-                    <h3 className="font-bold text-xl mb-3 text-slate-800 dark:text-slate-100">إضافات اختيارية</h3>
-                    <div className="space-y-3">
-                      {availableExtras.map(extra => (
-                        <div key={extra.id} onClick={() => handleExtraToggle(extra)} className={`flex items-center p-3 rounded-lg cursor-pointer border-2 transition ${selectedExtras.find(e => e.id === extra.id) ? 'border-primary bg-primary/10' : 'border-slate-200 dark:border-slate-700'}`}>
-                           <img src={getOptimizedImageUrl(extra.imageUrl, 100)} alt={extra.name} className="w-12 h-12 rounded-md object-cover"/>
-                           <div className="flex-grow mr-4">
-                             <p className="font-semibold text-slate-700 dark:text-slate-200">{extra.name}</p>
-                             <p className="text-sm text-primary font-bold">{extra.price} ج.س</p>
-                           </div>
-                           <div className={`w-6 h-6 rounded-full border-2 flex items-center justify-center ${selectedExtras.find(e => e.id === extra.id) ? 'bg-primary border-primary' : 'border-slate-300'}`}>
-                             {selectedExtras.find(e => e.id === extra.id) && <CheckCircleIcon className="w-4 h-4 text-white"/>}
-                           </div>
-                        </div>
-                      ))}
-                    </div>
-                 </div>
-              )}
-            </div>
-          </div>
-        </div>
-
-        <RelatedProducts category={bundle.category} currentProductId={bundle.id} allItems={allItems} />
-
-        <div className="p-4 mt-8">
-            <SectionHeader title="المراجعات والتقييمات" />
-            <div className="space-y-6">
-                {reviews.length > 0 ? (
-                    <>
-                        <ReviewSummary reviews={reviews} />
-                        <div className="space-y-4">
-                           {reviews.map(review => <ReviewCard key={review.id} review={review} />)}
-                        </div>
-                    </>
-                ) : (
-                    <p className="text-center text-slate-500 py-8">لا توجد مراجعات لهذا المنتج حتى الآن.</p>
-                )}
-                 <WriteReviewForm productId={bundle.id} />
-            </div>
-        </div>
-      </div>
-      <div className="fixed bottom-0 left-0 right-0 bg-white/80 dark:bg-slate-800/80 p-4 border-t dark:border-slate-700 shadow-inner backdrop-blur-sm z-20">
-        <div className="max-w-5xl mx-auto">
-          {isAdded ? (
-              <div className="flex items-center justify-between">
-                <div className="flex items-center text-green-600">
-                    <CheckCircleIcon className="w-8 h-8 ml-3" />
-                    <span className="font-bold text-lg">تمت الإضافة بنجاح!</span>
-                </div>
-                <ReactRouterDOM.Link to="/cart" className="px-4 py-2.5 rounded-lg bg-primary text-white font-semibold">عرض العربة</ReactRouterDOM.Link>
-            </div>
-          ) : (
-            <div className="flex justify-between items-center gap-4">
-              <div>
-                  <span className="text-sm text-slate-500">الإجمالي</span>
-                  <span className="text-3xl font-bold text-secondary block">{total.toLocaleString()} ج.س</span>
-              </div>
-              <button onClick={handleAddToCart} disabled={isAdding || isOutOfStock || !areAllItemsLoaded} className="flex-grow sm:flex-grow-0 sm:w-48 px-6 py-3 rounded-lg bg-primary text-white font-bold text-lg flex items-center justify-center transition-colors disabled:bg-slate-400 dark:disabled:bg-slate-600 disabled:cursor-not-allowed">
-                {getButtonContent()}
-              </button>
-            </div>
-          )}
-        </div>
-      </div>
-    </div>
-  );
-};
-
-export default BundleDetailScreen;

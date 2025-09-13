@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
-// FIX: The `react-router-dom` components were not found on the namespace import. Changed to a direct import of `useLocation` and `NavLink` to resolve the errors.
-import { useLocation, NavLink } from "react-router-dom";
+// FIX: Replaced react-router-dom namespace import with named imports (NavLink, useLocation) and removed the namespace prefix to resolve build errors.
+import { NavLink, useLocation } from "react-router-dom";
 import { DashboardIcon, OrdersIcon, CustomersIcon, LogoutIcon, MenuIcon, CloseIcon, GiftIcon, TruckIcon, EyeIcon, CategoryIcon, ShieldCheckIcon, BeakerIcon, CogIcon, PackageIcon, UserCircleIcon, ChartBarIcon, ClipboardListIcon, ChevronDoubleLeftIcon, BuildingStorefrontIcon, ClipboardDocumentListIcon } from '../assets/adminIcons';
 import AdminNotifications from './AdminNotifications';
 import ThemeToggle from './ThemeToggle';

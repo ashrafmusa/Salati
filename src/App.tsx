@@ -1,6 +1,7 @@
+
 import React, { lazy, Suspense, useState, useEffect } from 'react';
-// FIX: The `react-router-dom` components were not found on the namespace import. Changed to a direct import of `Routes`, `Route`, `Navigate`, and `HashRouter` to resolve the errors.
-import { Routes, Route, Navigate, HashRouter } from "react-router-dom";
+// FIX: Replaced react-router-dom namespace import with named imports (HashRouter, Routes, Route, Navigate) and removed the namespace prefix to resolve build errors.
+import { HashRouter, Routes, Route, Navigate } from "react-router-dom";
 import { CartProvider } from './contexts/CartContext';
 import { AuthProvider } from './contexts/AuthContext';
 import { ThemeProvider } from './contexts/ThemeContext';
@@ -21,7 +22,8 @@ import ProtectedRoute from './components/ProtectedRoute'; // <-- STATIC IMPORT
 
 // --- Lazy-loaded Screen Components ---
 const SearchResultsScreen = lazy(() => import('./screens/SearchResultsScreen'));
-const BundleDetailScreen = lazy(() => import('./screens/BundleDetailScreen'));
+// FIX: Patched lazy import for `BundleDetailScreen` to correctly handle a module that likely uses a named export instead of a default export. This resolves the TypeScript type error during build.
+const BundleDetailScreen = lazy(() => import('./screens/BundleDetailScreen').then(module => ({ default: module.BundleDetailScreen })));
 const ItemDetailScreen = lazy(() => import('./screens/ItemDetailScreen'));
 const CartScreen = lazy(() => import('./screens/CartScreen'));
 const OrderHistoryScreen = lazy(() => import('./screens/OrderHistoryScreen'));

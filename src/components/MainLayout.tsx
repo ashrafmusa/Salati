@@ -1,6 +1,6 @@
 import React from 'react';
-// FIX: The `react-router-dom` components `useLocation` and `Outlet` were not found on the namespace import. Changed to a direct import to resolve the errors.
-import { useLocation, Outlet } from "react-router-dom";
+// FIX: Replaced react-router-dom namespace import with named imports (Outlet, useLocation) and removed the namespace prefix to resolve build errors.
+import { Outlet, useLocation } from "react-router-dom";
 import NavigationBar from './NavigationBar';
 import WhatsAppButton from './WhatsAppButton';
 import Footer from './Footer';

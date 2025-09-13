@@ -1,6 +1,6 @@
 import React, { useState, useRef, useEffect, useMemo } from 'react';
-// FIX: The `react-router-dom` components were not found on the namespace import. Changed to a direct import of `useNavigate`, `useLocation`, and `Navigate` to resolve the errors.
-import { useNavigate, useLocation, Navigate } from "react-router-dom";
+// FIX: Replaced react-router-dom namespace import with named imports (Navigate, useLocation, useNavigate) and removed the namespace prefix to resolve build errors.
+import { Navigate, useLocation, useNavigate } from "react-router-dom";
 import { useAuth } from '../hooks/useAuth';
 import { WarningIcon, UserIcon, PhoneIcon, LockIcon, EmailIcon, EyeIcon, EyeSlashIcon, SpinnerIcon } from '../assets/icons';
 import Logo from '../components/Logo';
@@ -41,7 +41,7 @@ const LoginScreen: React.FC = () => {
   const location = useLocation();
   const recaptchaContainerRef = useRef<HTMLDivElement>(null);
   
-  const from = location.state?.from?.pathname || '/';
+  const from = (location.state as any)?.from?.pathname || '/';
 
   const illustrationSrc = useMemo(() => {
     if (settings?.loginIllustrationSvg) {
@@ -132,8 +132,8 @@ const LoginScreen: React.FC = () => {
         await registerWithEmail(email, password, name);
       }
     } catch (err: any) {
-      const friendlyMessage = err.code === 'auth/invalid-credential' ? 'البريد الإلكتروني أو كلمة المرور غير صحيحة.' :
-                              err.code === 'auth/email-already-in-use' ? 'هذا البريد الإلكتروني مستخدم بالفعل.' :
+      const friendlyMessage = (err as any).code === 'auth/invalid-credential' ? 'البريد الإلكتروني أو كلمة المرور غير صحيحة.' :
+                              (err as any).code === 'auth/email-already-in-use' ? 'هذا البريد الإلكتروني مستخدم بالفعل.' :
                               'حدث خطأ. يرجى المحاولة مرة أخرى.';
       setErrors({ form: friendlyMessage });
     } finally {

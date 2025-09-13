@@ -1,5 +1,5 @@
 import React, { useState, useMemo, useEffect } from 'react';
-// FIX: The `react-router-dom` component `useSearchParams` was not found on the namespace import. Changed to a direct import to resolve the error.
+// FIX: Replaced react-router-dom namespace import with a named import (useSearchParams) and removed the namespace prefix to resolve build errors.
 import { useSearchParams } from "react-router-dom";
 import { AdminOrder, OrderStatus, Driver } from '../types';
 import OrderDetailsModal from '../components/OrderDetailsModal';

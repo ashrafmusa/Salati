@@ -1,5 +1,5 @@
 import React from 'react';
-// FIX: The `react-router-dom` component `useNavigate` was not found on the namespace import. Changed to a direct import to resolve the error.
+// FIX: Replaced react-router-dom namespace import with a named import (useNavigate) and removed the namespace prefix to resolve build errors.
 import { useNavigate } from "react-router-dom";
 import { ChevronRightIcon } from '../assets/icons';
 

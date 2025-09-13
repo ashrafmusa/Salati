@@ -1,6 +1,6 @@
 import React, { lazy, Suspense, useState, useEffect } from 'react';
-// FIX: The `react-router-dom` components were not found on the namespace import. Changed to a direct import of `Routes`, `Route`, `Navigate`, and `HashRouter` to resolve the errors.
-import { Routes, Route, Navigate, HashRouter } from "react-router-dom";
+// FIX: Replaced react-router-dom namespace import with named imports (HashRouter, Routes, Route, Navigate) and removed the namespace prefix to resolve build errors.
+import { HashRouter, Routes, Route, Navigate } from "react-router-dom";
 import { AuthProvider } from './contexts/AuthContext';
 import { ThemeProvider } from './contexts/ThemeContext';
 import { useAuth } from './hooks/useAuth';
