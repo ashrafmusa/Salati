@@ -1,8 +1,6 @@
 import React, { useState, useEffect } from 'react';
-// FIX: Split react-router-dom imports to resolve module export errors.
-// FIX: Changed react-router import to react-router-dom to resolve module export errors.
-import { useLocation } from "react-router-dom";
-import { NavLink } from "react-router-dom";
+// FIX: Combined react-router-dom imports to resolve module export errors.
+import { useLocation, NavLink } from "react-router-dom";
 import { DashboardIcon, OrdersIcon, CustomersIcon, LogoutIcon, MenuIcon, CloseIcon, GiftIcon, TruckIcon, EyeIcon, CategoryIcon, ShieldCheckIcon, BeakerIcon, CogIcon, PackageIcon, UserCircleIcon, ChartBarIcon, ClipboardListIcon, ChevronDoubleLeftIcon, BuildingStorefrontIcon, ClipboardDocumentListIcon } from '../assets/adminIcons';
 import AdminNotifications from './AdminNotifications';
 import ThemeToggle from './ThemeToggle';

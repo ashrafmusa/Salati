@@ -1,13 +1,12 @@
 import React, { lazy, Suspense, useState, useEffect, ComponentType } from 'react';
-// FIX: Split react-router-dom imports to resolve module export errors.
-// FIX: Changed react-router import to react-router-dom to resolve module export errors.
-import { Navigate, Route, Routes } from 'react-router-dom';
-import { HashRouter } from 'react-router-dom';
+// FIX: Combined react-router-dom imports to resolve module export errors.
+import { Navigate, Route, Routes, HashRouter } from 'react-router-dom';
 import { CartProvider } from './contexts/CartContext';
 import { AuthProvider } from './contexts/AuthContext';
 import { ThemeProvider } from './contexts/ThemeContext';
 import { WishlistProvider } from './contexts/WishlistContext';
 import { SettingsProvider } from './contexts/SettingsContext';
+import { ToastProvider } from './contexts/ToastContext';
 import FullScreenLoader from './components/FullScreenLoader';
 import { initializeFirebase } from './firebase/config';
 import ScrollToTop from './components/ScrollToTop';
@@ -104,9 +103,11 @@ const App: React.FC = () => {
         <SettingsProvider>
           <CartProvider>
             <WishlistProvider>
-              <ConfigurationChecker>
-                <AppContent />
-              </ConfigurationChecker>
+              <ToastProvider>
+                <ConfigurationChecker>
+                  <AppContent />
+                </ConfigurationChecker>
+              </ToastProvider>
             </WishlistProvider>
           </CartProvider>
         </SettingsProvider>

@@ -1,5 +1,5 @@
 import React from 'react';
-// FIX: Changed react-router-dom import to fix module export error.
+// FIX: Corrected react-router-dom import to resolve module export error.
 import { Link } from 'react-router-dom';
 import { StoreProduct } from '../types';
 import { useCart } from '../hooks/useCart';

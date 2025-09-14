@@ -1,6 +1,5 @@
 import React from 'react';
-// FIX: Split react-router-dom imports to resolve module export errors.
-// FIX: Changed react-router import to react-router-dom to resolve module export errors.
+// FIX: Corrected react-router-dom import to resolve module export errors.
 import { useLocation, Navigate, Outlet } from "react-router-dom";
 import { useAuth } from '../hooks/useAuth';
 

@@ -1,8 +1,6 @@
 import React, { lazy, Suspense, useState, useEffect } from 'react';
-// FIX: Split react-router-dom imports to resolve module export errors.
-// FIX: Changed react-router import to react-router-dom to resolve module export errors.
-import { Navigate, Route, Routes } from 'react-router-dom';
-import { HashRouter } from 'react-router-dom';
+// FIX: Combined react-router-dom imports to resolve module export errors.
+import { Navigate, Route, Routes, HashRouter } from 'react-router-dom';
 import { AuthProvider } from './contexts/AuthContext';
 import { ThemeProvider } from './contexts/ThemeContext';
 import { useAuth } from './hooks/useAuth';

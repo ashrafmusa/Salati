@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useMemo } from 'react';
+// FIX: Corrected react-router-dom import to resolve module export error.
 import { Link } from 'react-router-dom';
 import { useWishlist } from '../hooks/useWishlist';
 import { useCart } from '../hooks/useCart';

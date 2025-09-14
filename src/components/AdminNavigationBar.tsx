@@ -1,5 +1,5 @@
 import React from 'react';
-// FIX: Changed react-router-dom import to fix module export error.
+// FIX: Corrected react-router-dom import to resolve module export error.
 import { NavLink } from 'react-router-dom';
 import { DashboardIcon, OrdersIcon, PackageIcon, MenuIcon } from '../assets/adminIcons';
 import { useAuth } from '../hooks/useAuth';

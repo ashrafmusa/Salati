@@ -1,8 +1,6 @@
 import React, { useState, useEffect, useRef } from 'react';
-// FIX: Split react-router-dom imports to resolve module export errors.
-// FIX: Changed react-router import to react-router-dom to resolve module export errors.
-import { useLocation } from "react-router-dom";
-import { NavLink } from "react-router-dom";
+// FIX: Combined react-router-dom imports to resolve module export errors.
+import { useLocation, NavLink } from "react-router-dom";
 import { HomeIcon, CartIcon, UserIcon, HeartIcon } from '../assets/icons';
 import { useCart } from '../hooks/useCart';
 import { useScrollDirection } from '../hooks/useScrollDirection';

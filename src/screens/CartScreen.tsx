@@ -1,5 +1,5 @@
 import React from 'react';
-// FIX: Split react-router-dom imports to resolve module export errors.
+// FIX: Corrected react-router-dom import to resolve module export errors.
 import { useNavigate, Link } from 'react-router-dom';
 import { useCart } from '../hooks/useCart';
 import { useAuth } from '../hooks/useAuth';

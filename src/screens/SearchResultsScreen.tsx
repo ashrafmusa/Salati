@@ -1,4 +1,5 @@
 import React, { useState, useMemo, useEffect } from 'react';
+// FIX: Corrected react-router-dom import to resolve module export error.
 import { useSearchParams } from 'react-router-dom';
 import { StoreProduct, Item, Bundle } from '../types';
 import { db } from '../firebase/config';

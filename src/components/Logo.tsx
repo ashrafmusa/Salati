@@ -1,5 +1,5 @@
 import React from 'react';
-// FIX: Changed react-router-dom import to fix module export error.
+// FIX: Corrected react-router-dom import to fix module export error.
 import { Link } from "react-router-dom";
 import { getOptimizedImageUrl } from '../utils/helpers';
 import { useSettings } from '../contexts/SettingsContext';
