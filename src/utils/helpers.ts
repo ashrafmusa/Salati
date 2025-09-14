@@ -1,4 +1,4 @@
-import { StoreProduct, ExtraItem, CartItem, Offer, Bundle, Item, Discount } from '../types';
+import { StoreProduct, ExtraItem, CartItem, Offer, Bundle, Item, StoreSettings } from '../types';
 
 // --- CLOUDINARY CONFIGURATION ---
 // FIX: Cast `import.meta` to `any` to resolve TypeScript error "Property 'env' does not exist on type 'ImportMeta'" when accessing environment variables in Vite.
@@ -62,27 +62,46 @@ export const getOptimizedImageUrl = (url: string, width: number): string => {
 };
 
 /**
- * Calculates the base price of a bundle by summing the prices of its constituent items.
+ * Calculates the final selling price of an item in SDG.
+ * @param item The item object.
+ * @param settings The current store settings containing the exchange rate.
+ * @returns The calculated price in SDG.
+ */
+export const calculateSdgPrice = (item: Item, settings: StoreSettings): number => {
+    if (!item || !settings) return 0;
+    const priceInSdg = item.costUSD * settings.usdToSdgRate;
+    const finalPrice = priceInSdg * (1 + item.markupPercentage / 100);
+    // Round to a sensible value for currency
+    return Math.round(finalPrice / 10) * 10;
+};
+
+
+/**
+ * Calculates the base price of a bundle in SDG by summing the final prices of its constituent items.
  * @param bundle The bundle product.
  * @param allItems A list of all available individual items to resolve prices.
- * @returns The total base price of the bundle.
+ * @param settings The current store settings containing the exchange rate.
+ * @returns The total base price of the bundle in SDG.
  */
-export const calculateBundlePrice = (bundle: Bundle, allItems: Item[]): number => {
-    if (!bundle || !bundle.contents) {
+export const calculateBundleSdgPrice = (bundle: Bundle, allItems: Item[], settings: StoreSettings): number => {
+    if (!bundle || !bundle.contents || !settings) {
         return 0;
     }
-    const itemMap = new Map(allItems.map(item => [item.id, item.price]));
+    const itemMap = new Map(allItems.map(item => [item.id, item]));
     return bundle.contents.reduce((total, contentItem) => {
-        const itemPrice = itemMap.get(contentItem.itemId) || 0;
-        return total + (itemPrice * contentItem.quantity);
+        const item = itemMap.get(contentItem.itemId);
+        if (!item) return total;
+        const itemSdgPrice = calculateSdgPrice(item, settings);
+        return total + (itemSdgPrice * contentItem.quantity);
     }, 0);
 };
 
-export const calculateStoreProductPrice = (product: StoreProduct, allItems: Item[]): number => {
+export const calculateStoreProductPrice = (product: StoreProduct, allItems: Item[], settings: StoreSettings | null): number => {
+    if (!settings) return 0;
     if (product.type === 'item') {
-        return product.price;
+        return calculateSdgPrice(product, settings);
     }
-    return calculateBundlePrice(product, allItems);
+    return calculateBundleSdgPrice(product, allItems, settings);
 }
 
 export const calculateItemAndExtrasTotal = (item: CartItem): number => {
@@ -109,7 +128,7 @@ export const applyDiscounts = (
     calculateTotal: (item: CartItem) => number
 ): DiscountCalculation => {
     const subtotal = cartItems.reduce((sum, item) => sum + calculateTotal(item), 0);
-    
+
     const activeOffers = offers.filter(o => new Date(o.expiryDate) > new Date() && o.discount);
 
     if (activeOffers.length === 0 || cartItems.length === 0) {
@@ -173,43 +192,43 @@ export const applyDiscounts = (
  * @param filename The desired filename for the downloaded file.
  */
 export const exportToCsv = <T extends object>(data: T[], filename: string): void => {
-  if (data.length === 0) {
-    alert("No data to export.");
-    return;
-  }
+    if (data.length === 0) {
+        alert("No data to export.");
+        return;
+    }
 
-  const headers = Object.keys(data[0]);
-  const csvRows = [headers.join(',')]; // Header row
+    const headers = Object.keys(data[0]);
+    const csvRows = [headers.join(',')]; // Header row
 
-  // Data rows
-  data.forEach(row => {
-    const values = headers.map(header => {
-      const value = (row as any)[header];
-      // Handle complex data types (like objects or arrays) by JSON stringifying them
-      if (typeof value === 'object' && value !== null) {
-        return `"${JSON.stringify(value).replace(/"/g, '""')}"`;
-      }
-      // Escape commas and quotes in string values
-      const stringValue = String(value);
-      if (stringValue.includes(',') || stringValue.includes('"') || stringValue.includes('\n')) {
-        return `"${stringValue.replace(/"/g, '""')}"`;
-      }
-      return stringValue;
+    // Data rows
+    data.forEach(row => {
+        const values = headers.map(header => {
+            const value = (row as any)[header];
+            // Handle complex data types (like objects or arrays) by JSON stringifying them
+            if (typeof value === 'object' && value !== null) {
+                return `"${JSON.stringify(value).replace(/"/g, '""')}"`;
+            }
+            // Escape commas and quotes in string values
+            const stringValue = String(value);
+            if (stringValue.includes(',') || stringValue.includes('"') || stringValue.includes('\n')) {
+                return `"${stringValue.replace(/"/g, '""')}"`;
+            }
+            return stringValue;
+        });
+        csvRows.push(values.join(','));
     });
-    csvRows.push(values.join(','));
-  });
 
-  const csvString = csvRows.join('\n');
-  const blob = new Blob([`\uFEFF${csvString}`], { type: 'text/csv;charset=utf-8;' }); // Add BOM for Excel compatibility
+    const csvString = csvRows.join('\n');
+    const blob = new Blob([`\uFEFF${csvString}`], { type: 'text/csv;charset=utf-8;' }); // Add BOM for Excel compatibility
 
-  const link = document.createElement('a');
-  if (link.download !== undefined) {
-    const url = URL.createObjectURL(blob);
-    link.setAttribute('href', url);
-    link.setAttribute('download', filename);
-    link.style.visibility = 'hidden';
-    document.body.appendChild(link);
-    link.click();
-    document.body.removeChild(link);
-  }
+    const link = document.createElement('a');
+    if (link.download !== undefined) {
+        const url = URL.createObjectURL(blob);
+        link.setAttribute('href', url);
+        link.setAttribute('download', filename);
+        link.style.visibility = 'hidden';
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+    }
 };
