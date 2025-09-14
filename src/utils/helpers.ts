@@ -1,9 +1,7 @@
 import { StoreProduct, ExtraItem, CartItem, Offer, Bundle, Item, StoreSettings } from '../types';
 
 // --- CLOUDINARY CONFIGURATION ---
-// FIX: Cast `import.meta` to `any` to resolve TypeScript error "Property 'env' does not exist on type 'ImportMeta'" when accessing environment variables in Vite.
 const CLOUDINARY_CLOUD_NAME = (import.meta as any).env.VITE_CLOUDINARY_CLOUD_NAME;
-// FIX: Cast `import.meta` to `any` to resolve TypeScript error "Property 'env' does not exist on type 'ImportMeta'" when accessing environment variables in Vite.
 const CLOUDINARY_UPLOAD_PRESET = (import.meta as any).env.VITE_CLOUDINARY_UPLOAD_PRESET;
 
 /**
@@ -128,7 +126,7 @@ export const applyDiscounts = (
     calculateTotal: (item: CartItem) => number
 ): DiscountCalculation => {
     const subtotal = cartItems.reduce((sum, item) => sum + calculateTotal(item), 0);
-
+    
     const activeOffers = offers.filter(o => new Date(o.expiryDate) > new Date() && o.discount);
 
     if (activeOffers.length === 0 || cartItems.length === 0) {
@@ -192,43 +190,43 @@ export const applyDiscounts = (
  * @param filename The desired filename for the downloaded file.
  */
 export const exportToCsv = <T extends object>(data: T[], filename: string): void => {
-    if (data.length === 0) {
-        alert("No data to export.");
-        return;
-    }
+  if (data.length === 0) {
+    alert("No data to export.");
+    return;
+  }
 
-    const headers = Object.keys(data[0]);
-    const csvRows = [headers.join(',')]; // Header row
+  const headers = Object.keys(data[0]);
+  const csvRows = [headers.join(',')]; // Header row
 
-    // Data rows
-    data.forEach(row => {
-        const values = headers.map(header => {
-            const value = (row as any)[header];
-            // Handle complex data types (like objects or arrays) by JSON stringifying them
-            if (typeof value === 'object' && value !== null) {
-                return `"${JSON.stringify(value).replace(/"/g, '""')}"`;
-            }
-            // Escape commas and quotes in string values
-            const stringValue = String(value);
-            if (stringValue.includes(',') || stringValue.includes('"') || stringValue.includes('\n')) {
-                return `"${stringValue.replace(/"/g, '""')}"`;
-            }
-            return stringValue;
-        });
-        csvRows.push(values.join(','));
+  // Data rows
+  data.forEach(row => {
+    const values = headers.map(header => {
+      const value = (row as any)[header];
+      // Handle complex data types (like objects or arrays) by JSON stringifying them
+      if (typeof value === 'object' && value !== null) {
+        return `"${JSON.stringify(value).replace(/"/g, '""')}"`;
+      }
+      // Escape commas and quotes in string values
+      const stringValue = String(value);
+      if (stringValue.includes(',') || stringValue.includes('"') || stringValue.includes('\n')) {
+        return `"${stringValue.replace(/"/g, '""')}"`;
+      }
+      return stringValue;
     });
+    csvRows.push(values.join(','));
+  });
 
-    const csvString = csvRows.join('\n');
-    const blob = new Blob([`\uFEFF${csvString}`], { type: 'text/csv;charset=utf-8;' }); // Add BOM for Excel compatibility
+  const csvString = csvRows.join('\n');
+  const blob = new Blob([`\uFEFF${csvString}`], { type: 'text/csv;charset=utf-8;' }); // Add BOM for Excel compatibility
 
-    const link = document.createElement('a');
-    if (link.download !== undefined) {
-        const url = URL.createObjectURL(blob);
-        link.setAttribute('href', url);
-        link.setAttribute('download', filename);
-        link.style.visibility = 'hidden';
-        document.body.appendChild(link);
-        link.click();
-        document.body.removeChild(link);
-    }
+  const link = document.createElement('a');
+  if (link.download !== undefined) {
+    const url = URL.createObjectURL(blob);
+    link.setAttribute('href', url);
+    link.setAttribute('download', filename);
+    link.style.visibility = 'hidden';
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+  }
 };

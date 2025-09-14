@@ -1,6 +1,8 @@
 import React, { useState, useEffect, useRef } from 'react';
-// FIX: Switched to a namespace import for react-router-dom to fix module resolution errors in the build environment.
-import * as ReactRouterDOM from "react-router-dom";
+// FIX: Split react-router-dom imports to resolve module export errors.
+// FIX: Changed react-router import to react-router-dom to resolve module export errors.
+import { useLocation } from "react-router-dom";
+import { NavLink } from "react-router-dom";
 import { HomeIcon, CartIcon, UserIcon, HeartIcon } from '../assets/icons';
 import { useCart } from '../hooks/useCart';
 import { useScrollDirection } from '../hooks/useScrollDirection';
@@ -13,7 +15,7 @@ export const dispatchCartUpdate = () => cartUpdateEvents.dispatchEvent(new Event
 const NavigationBar: React.FC = () => {
   const { getCartCount } = useCart();
   const cartCount = getCartCount();
-  const location = ReactRouterDOM.useLocation();
+  const location = useLocation();
   const navRef = useRef<HTMLElement>(null);
   const [activePillStyle, setActivePillStyle] = useState({});
   const [isCartBumping, setIsCartBumping] = useState(false);
@@ -60,7 +62,7 @@ const NavigationBar: React.FC = () => {
           style={activePillStyle}
         />
         {navItems.map((item) => (
-          <ReactRouterDOM.NavLink
+          <NavLink
             key={item.path}
             to={item.path}
             aria-label={item.label}
@@ -78,7 +80,7 @@ const NavigationBar: React.FC = () => {
               )}
             </div>
             <span className="text-xs mt-1 font-semibold">{item.label}</span>
-          </ReactRouterDOM.NavLink>
+          </NavLink>
         ))}
       </div>
     </nav>

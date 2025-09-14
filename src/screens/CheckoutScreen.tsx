@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
-// FIX: Switched to a namespace import for react-router-dom to fix module resolution errors in the build environment.
-import * as ReactRouterDOM from 'react-router-dom';
+// FIX: Split react-router-dom imports to resolve module export errors.
+// FIX: Changed react-router import to react-router-dom to resolve module export errors.
+import { useNavigate } from 'react-router-dom';
 import { useCart } from '../hooks/useCart';
 import { useAuth } from '../hooks/useAuth';
 import SubPageHeader from '../components/SubPageHeader';
@@ -15,7 +16,7 @@ const CheckoutScreen: React.FC = () => {
   const { state, deliveryFee, getCartSubtotal, getDiscountDetails, getFinalTotal, clearCart, deliveryMethod, setDeliveryMethod } = useCart();
   const { user } = useAuth();
   const { settings } = useSettings();
-  const navigate = ReactRouterDOM.useNavigate();
+  const navigate = useNavigate();
   
   const [name, setName] = useState('');
   const [phone, setPhone] = useState('');

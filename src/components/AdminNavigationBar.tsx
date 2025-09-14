@@ -1,6 +1,6 @@
 import React from 'react';
-// FIX: Switched to a namespace import for react-router-dom to fix module resolution errors in the build environment.
-import * as ReactRouterDOM from 'react-router-dom';
+// FIX: Changed react-router-dom import to fix module export error.
+import { NavLink } from 'react-router-dom';
 import { DashboardIcon, OrdersIcon, PackageIcon, MenuIcon } from '../assets/adminIcons';
 import { useAuth } from '../hooks/useAuth';
 
@@ -23,7 +23,7 @@ const AdminNavigationBar: React.FC<AdminNavigationBarProps> = ({ onMenuClick }) 
   return (
     <nav className="md:hidden fixed bottom-0 left-0 right-0 bg-white dark:bg-slate-800 border-t dark:border-slate-700 shadow-lg-up z-30 flex justify-around p-1">
       {filteredNavItems.map(item => (
-        <ReactRouterDOM.NavLink
+        <NavLink
           key={item.path}
           to={item.path}
           end={item.path === '/'}
@@ -33,7 +33,7 @@ const AdminNavigationBar: React.FC<AdminNavigationBarProps> = ({ onMenuClick }) 
         >
           <item.icon className="w-6 h-6" />
           <span className="text-xs mt-1">{item.label}</span>
-        </ReactRouterDOM.NavLink>
+        </NavLink>
       ))}
       <button onClick={onMenuClick} className="flex flex-col items-center justify-center w-full py-2 text-slate-500 dark:text-slate-400">
         <MenuIcon className="w-6 h-6" />

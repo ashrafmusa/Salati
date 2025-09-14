@@ -1,11 +1,12 @@
 import React from 'react';
-// FIX: Switched to a namespace import for react-router-dom to fix module resolution errors in the build environment.
-import * as ReactRouterDOM from "react-router-dom";
+// FIX: Split react-router-dom imports to resolve module export errors.
+// FIX: Changed react-router import to react-router-dom to resolve module export errors.
+import { useLocation, Navigate, Outlet } from "react-router-dom";
 import { useAuth } from '../hooks/useAuth';
 
 const ProtectedRoute: React.FC = () => {
   const { user, loading } = useAuth();
-  const location = ReactRouterDOM.useLocation();
+  const location = useLocation();
 
   if (loading) {
     return (
@@ -17,13 +18,13 @@ const ProtectedRoute: React.FC = () => {
 
   if (!user) {
     // Redirect to login, saving the location they were trying to access
-    return <ReactRouterDOM.Navigate to="/login" state={{ from: location }} replace />;
+    return <Navigate to="/login" state={{ from: location }} replace />;
   }
   
   // The mandatory profile completion check has been removed from here
   // to streamline the user flow, especially for checkout.
 
-  return <ReactRouterDOM.Outlet />;
+  return <Outlet />;
 };
 
 export default ProtectedRoute;

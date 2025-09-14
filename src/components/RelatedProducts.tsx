@@ -1,11 +1,11 @@
-import React, { useState, useEffect, useMemo } from "react";
-import { db } from "../firebase/config";
-import firebase from "firebase/compat/app";
-import { StoreProduct, Item } from "../types";
-import SectionHeader from "./SectionHeader";
-import StoreProductCard from "./ProductCard";
-import { calculateStoreProductPrice } from "../utils/helpers";
-import { useSettings } from "../contexts/SettingsContext";
+import React, { useState, useEffect, useMemo } from 'react';
+import { db } from '../firebase/config';
+import firebase from 'firebase/compat/app';
+import { StoreProduct, Item } from '../types';
+import SectionHeader from './SectionHeader';
+import StoreProductCard from './ProductCard';
+import { calculateStoreProductPrice } from '../utils/helpers';
+import { useSettings } from '../contexts/SettingsContext';
 
 interface RelatedProductsProps {
   category: string;
@@ -13,11 +13,7 @@ interface RelatedProductsProps {
   allItems: Item[];
 }
 
-const RelatedProducts: React.FC<RelatedProductsProps> = ({
-  category,
-  currentProductId,
-  allItems,
-}) => {
+const RelatedProducts: React.FC<RelatedProductsProps> = ({ category, currentProductId, allItems }) => {
   const [related, setRelated] = useState<StoreProduct[]>([]);
   const [loading, setLoading] = useState(true);
   const { settings } = useSettings();
@@ -26,41 +22,16 @@ const RelatedProducts: React.FC<RelatedProductsProps> = ({
     const fetchRelated = async () => {
       setLoading(true);
       try {
-        const itemsQuery = db
-          .collection("items")
-          .where("category", "==", category)
-          .where(
-            firebase.firestore.FieldPath.documentId(),
-            "!=",
-            currentProductId
-          )
-          .limit(4);
-        const bundlesQuery = db
-          .collection("bundles")
-          .where("category", "==", category)
-          .where(
-            firebase.firestore.FieldPath.documentId(),
-            "!=",
-            currentProductId
-          )
-          .limit(4);
+        const itemsQuery = db.collection('items').where('category', '==', category).where(firebase.firestore.FieldPath.documentId(), '!=', currentProductId).limit(4);
+        const bundlesQuery = db.collection('bundles').where('category', '==', category).where(firebase.firestore.FieldPath.documentId(), '!=', currentProductId).limit(4);
 
-        const [itemsSnap, bundlesSnap] = await Promise.all([
-          itemsQuery.get(),
-          bundlesQuery.get(),
-        ]);
-
-        const relatedItems = itemsSnap.docs.map(
-          (doc) => ({ id: doc.id, ...doc.data(), type: "item" } as Item)
-        );
-        const relatedBundles = bundlesSnap.docs.map(
-          (doc) => ({ id: doc.id, ...doc.data(), type: "bundle" } as any)
-        );
-
-        const allRelated = [...relatedItems, ...relatedBundles]
-          .sort(() => 0.5 - Math.random())
-          .slice(0, 4);
-
+        const [itemsSnap, bundlesSnap] = await Promise.all([itemsQuery.get(), bundlesQuery.get()]);
+        
+        const relatedItems = itemsSnap.docs.map(doc => ({ id: doc.id, ...doc.data(), type: 'item' } as Item));
+        const relatedBundles = bundlesSnap.docs.map(doc => ({ id: doc.id, ...doc.data(), type: 'bundle' } as any));
+        
+        const allRelated = [...relatedItems, ...relatedBundles].sort(() => 0.5 - Math.random()).slice(0, 4);
+        
         setRelated(allRelated);
       } catch (error) {
         console.error("Error fetching related products:", error);
@@ -74,8 +45,8 @@ const RelatedProducts: React.FC<RelatedProductsProps> = ({
   const productPrices = useMemo(() => {
     const priceMap = new Map<string, number>();
     if (!settings) return priceMap;
-    related.forEach((p) => {
-      priceMap.set(p.id, calculateStoreProductPrice(p, allItems, settings));
+    related.forEach(p => {
+        priceMap.set(p.id, calculateStoreProductPrice(p, allItems, settings));
     });
     return priceMap;
   }, [related, allItems, settings]);
@@ -88,12 +59,8 @@ const RelatedProducts: React.FC<RelatedProductsProps> = ({
     <div className="p-4 mt-8">
       <SectionHeader title="قد يعجبك أيضاً" />
       <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-        {related.map((product) => (
-          <StoreProductCard
-            key={product.id}
-            product={product}
-            price={productPrices.get(product.id) || 0}
-          />
+        {related.map(product => (
+          <StoreProductCard key={product.id} product={product} price={productPrices.get(product.id) || 0} />
         ))}
       </div>
     </div>

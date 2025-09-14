@@ -1,6 +1,6 @@
 import React from 'react';
-// FIX: Switched to a namespace import for react-router-dom to fix module resolution errors in the build environment.
-import * as ReactRouterDOM from 'react-router-dom';
+// FIX: Changed react-router-dom import to fix module export error.
+import { Link } from 'react-router-dom';
 import { DataValidationIssue } from '../utils/dataValidation';
 import { ExclamationTriangleIcon, CloseIcon } from '../assets/adminIcons';
 
@@ -27,9 +27,9 @@ const DataValidationNotice: React.FC<DataValidationNoticeProps> = ({ issues, onD
               {issues.map((issue, index) => (
                 <li key={index}>
                   <span>{issue.message}</span>
-                  <ReactRouterDOM.Link to={issue.link} className="font-bold underline hover:text-amber-800 dark:hover:text-amber-100 mr-2">
+                  <Link to={issue.link} className="font-bold underline hover:text-amber-800 dark:hover:text-amber-100 mr-2">
                     {issue.linkText} &rarr;
-                  </ReactRouterDOM.Link>
+                  </Link>
                 </li>
               ))}
             </ul>

@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useMemo, useRef } from 'react';
-// FIX: Switched to a namespace import for react-router-dom to fix module resolution errors in the build environment.
-import * as ReactRouterDOM from 'react-router-dom';
+// FIX: Split react-router-dom imports to resolve module export errors.
+// FIX: Changed react-router import to react-router-dom to resolve module export errors.
+import { useParams, useNavigate } from 'react-router-dom';
 import { db } from '../firebase/config';
 import firebase from 'firebase/compat/app';
 import { Supplier, Item, PurchaseOrder, PurchaseOrderItem, PurchaseOrderStatus } from '../types';
@@ -11,8 +12,8 @@ import { SpinnerIcon, TrashIcon } from '../assets/icons';
 import { useClickOutside } from '../hooks/useClickOutside';
 
 const AdminPurchaseOrderFormScreen: React.FC = () => {
-    const { id } = ReactRouterDOM.useParams<{ id: string }>();
-    const navigate = ReactRouterDOM.useNavigate();
+    const { id } = useParams<{ id: string }>();
+    const navigate = useNavigate();
     const { user: adminUser } = useAuth();
     const { showToast } = useToast();
 

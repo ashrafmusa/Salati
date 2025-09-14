@@ -1,13 +1,14 @@
 import React from 'react';
-// FIX: Switched to a namespace import for react-router-dom to fix module resolution errors in the build environment.
-import * as ReactRouterDOM from "react-router-dom";
+// FIX: Split react-router-dom imports to resolve module export errors.
+// FIX: Changed react-router import to react-router-dom to resolve module export errors.
+import { useLocation, Outlet } from "react-router-dom";
 import NavigationBar from './NavigationBar';
 import WhatsAppButton from './WhatsAppButton';
 import Footer from './Footer';
 import AnnouncementBanner from './AnnouncementBanner';
 
 const MainLayout: React.FC = () => {
-    const location = ReactRouterDOM.useLocation();
+    const location = useLocation();
     
     // Determine if the bottom navigation should be shown on the current page.
     const showNavBarOnPage = !location.pathname.startsWith('/checkout') && !location.pathname.startsWith('/order-success');
@@ -30,7 +31,7 @@ const MainLayout: React.FC = () => {
             <div className={`flex-grow flex flex-col ${showNavBarOnPage ? 'pb-24 md:pb-0' : ''}`}>
                 <main className="flex-grow">
                     <div key={location.pathname} className="animate-fade-in">
-                        <ReactRouterDOM.Outlet />
+                        <Outlet />
                     </div>
                 </main>
                 <Footer />

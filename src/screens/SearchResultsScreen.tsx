@@ -1,20 +1,20 @@
-import React, { useState, useMemo, useEffect } from "react";
-import { useSearchParams } from "react-router-dom";
-import { StoreProduct, Item, Bundle } from "../types";
-import { db } from "../firebase/config";
-import StoreProductCard from "../components/ProductCard";
-import EmptyState from "../components/EmptyState";
-import { calculateStoreProductPrice } from "../utils/helpers";
-import SubPageHeader from "../components/SubPageHeader";
-import MetaTagManager from "../components/MetaTagManager";
-import ProductCardSkeleton from "../components/ProductCardSkeleton";
-import { useSettings } from "../contexts/SettingsContext";
+import React, { useState, useMemo, useEffect } from 'react';
+import { useSearchParams } from 'react-router-dom';
+import { StoreProduct, Item, Bundle } from '../types';
+import { db } from '../firebase/config';
+import StoreProductCard from '../components/ProductCard';
+import EmptyState from '../components/EmptyState';
+import { calculateStoreProductPrice } from '../utils/helpers';
+import SubPageHeader from '../components/SubPageHeader';
+import MetaTagManager from '../components/MetaTagManager';
+import ProductCardSkeleton from '../components/ProductCardSkeleton';
+import { useSettings } from '../contexts/SettingsContext';
 
 const SearchResultsScreen: React.FC = () => {
   const [searchParams] = useSearchParams();
-  const query = searchParams.get("q") || "";
+  const query = searchParams.get('q') || '';
   const { settings } = useSettings();
-
+  
   const [loading, setLoading] = useState(true);
   const [allItems, setAllItems] = useState<Item[]>([]);
   const [allProducts, setAllProducts] = useState<StoreProduct[]>([]);
@@ -23,14 +23,10 @@ const SearchResultsScreen: React.FC = () => {
     const fetchAllProducts = async () => {
       setLoading(true);
       try {
-        const itemsSnapshot = await db.collection("items").get();
-        const bundlesSnapshot = await db.collection("bundles").get();
-        const items = itemsSnapshot.docs.map(
-          (doc) => ({ id: doc.id, ...doc.data(), type: "item" } as Item)
-        );
-        const bundles = bundlesSnapshot.docs.map(
-          (doc) => ({ id: doc.id, ...doc.data(), type: "bundle" } as Bundle)
-        );
+        const itemsSnapshot = await db.collection('items').get();
+        const bundlesSnapshot = await db.collection('bundles').get();
+        const items = itemsSnapshot.docs.map(doc => ({ id: doc.id, ...doc.data(), type: 'item' } as Item));
+        const bundles = bundlesSnapshot.docs.map(doc => ({ id: doc.id, ...doc.data(), type: 'bundle' } as Bundle));
         setAllItems(items);
         setAllProducts([...items, ...bundles]);
       } catch (error) {
@@ -45,18 +41,17 @@ const SearchResultsScreen: React.FC = () => {
   const filteredProducts = useMemo(() => {
     if (!query) return [];
     const lowercasedQuery = query.toLowerCase();
-    return allProducts.filter(
-      (p) =>
-        p.arabicName.toLowerCase().includes(lowercasedQuery) ||
-        p.name.toLowerCase().includes(lowercasedQuery)
+    return allProducts.filter(p =>
+      p.arabicName.toLowerCase().includes(lowercasedQuery) ||
+      p.name.toLowerCase().includes(lowercasedQuery)
     );
   }, [query, allProducts]);
 
   const productPrices = useMemo(() => {
     const priceMap = new Map<string, number>();
     if (!settings) return priceMap;
-    filteredProducts.forEach((p) => {
-      priceMap.set(p.id, calculateStoreProductPrice(p, allItems, settings));
+    filteredProducts.forEach(p => {
+        priceMap.set(p.id, calculateStoreProductPrice(p, allItems, settings));
     });
     return priceMap;
   }, [filteredProducts, allItems, settings]);
@@ -65,7 +60,7 @@ const SearchResultsScreen: React.FC = () => {
     <div>
       <MetaTagManager title={`نتائج البحث عن "${query}" - سـلـتـي`} />
       <SubPageHeader title={`نتائج البحث عن: "${query}"`} backPath="/" />
-
+      
       <div className="p-4 max-w-7xl mx-auto">
         {loading ? (
           <div className="grid grid-cols-2 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4 sm:gap-6">
@@ -78,15 +73,8 @@ const SearchResultsScreen: React.FC = () => {
         ) : (
           <div className="grid grid-cols-2 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4 sm:gap-6">
             {filteredProducts.map((product, index) => (
-              <div
-                key={product.id}
-                className="animate-stagger-in"
-                style={{ animationDelay: `${index * 50}ms` }}
-              >
-                <StoreProductCard
-                  product={product}
-                  price={productPrices.get(product.id) || 0}
-                />
+              <div key={product.id} className="animate-stagger-in" style={{ animationDelay: `${index * 50}ms` }}>
+                <StoreProductCard product={product} price={productPrices.get(product.id) || 0} />
               </div>
             ))}
           </div>

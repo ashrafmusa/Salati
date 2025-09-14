@@ -1,9 +1,10 @@
 import { useEffect } from 'react';
-// FIX: Switched to a namespace import for react-router-dom to fix module resolution errors in the build environment.
-import * as ReactRouterDOM from 'react-router-dom';
+// FIX: Split react-router-dom imports to resolve module export errors.
+// FIX: Changed react-router import to react-router-dom to resolve module export errors.
+import { useLocation } from 'react-router-dom';
 
 const ScrollToTop = () => {
-  const { pathname } = ReactRouterDOM.useLocation();
+  const { pathname } = useLocation();
 
   useEffect(() => {
     window.scrollTo(0, 0);

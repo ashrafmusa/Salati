@@ -1,6 +1,6 @@
 import React from 'react';
-// FIX: Switched to a namespace import for react-router-dom to fix module resolution errors in the build environment.
-import * as ReactRouterDOM from "react-router-dom";
+// FIX: Changed react-router-dom import to fix module export error.
+import { Link } from "react-router-dom";
 import { getOptimizedImageUrl } from '../utils/helpers';
 import { useSettings } from '../contexts/SettingsContext';
 
@@ -18,7 +18,7 @@ const Logo: React.FC<LogoProps> = ({ wrapperClassName = '', imgClassName = '', t
   const logoSrc = settings?.logoUrl || LOGO_URL_FALLBACK;
 
   return (
-    <ReactRouterDOM.Link 
+    <Link 
         to="/" 
         className={`group transition-transform duration-300 ease-in-out hover:scale-105 focus:scale-105 focus:outline-none ${wrapperClassName}`}
         aria-label="Salati Home"
@@ -37,7 +37,7 @@ const Logo: React.FC<LogoProps> = ({ wrapperClassName = '', imgClassName = '', t
             سـلـتـي
           </span>
       </div>
-    </ReactRouterDOM.Link>
+    </Link>
   );
 };
 

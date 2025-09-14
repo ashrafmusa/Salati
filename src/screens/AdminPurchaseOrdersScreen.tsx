@@ -1,6 +1,7 @@
 import React, { useState, useMemo } from 'react';
-// FIX: Switched to a namespace import for react-router-dom to fix module resolution errors in the build environment.
-import * as ReactRouterDOM from 'react-router-dom';
+// FIX: Split react-router-dom imports to resolve module export errors.
+// FIX: Changed react-router import to react-router-dom to resolve module export errors.
+import { useNavigate } from 'react-router-dom';
 import { PurchaseOrder, PurchaseOrderStatus } from '../types';
 import AdminScreenHeader from '../components/AdminScreenHeader';
 import { usePaginatedFirestore } from '../hooks/usePaginatedFirestore';
@@ -22,7 +23,7 @@ const getStatusPillClasses = (status: PurchaseOrderStatus) => {
 
 const AdminPurchaseOrdersScreen: React.FC = () => {
     const [searchTerm, setSearchTerm] = useState('');
-    const navigate = ReactRouterDOM.useNavigate();
+    const navigate = useNavigate();
 
     const initialSort = useMemo(() => ({ key: 'createdDate' as const, direction: 'descending' as const }), []);
     const { documents: purchaseOrders, loading, nextPage, prevPage, hasNextPage, hasPrevPage } = usePaginatedFirestore<PurchaseOrder>('purchaseOrders', initialSort);

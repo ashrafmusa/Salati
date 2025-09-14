@@ -1,6 +1,8 @@
 import React, { lazy, Suspense, useState, useEffect } from 'react';
-// FIX: Switched to a namespace import for react-router-dom to fix module resolution errors in the build environment.
-import * as ReactRouterDOM from 'react-router-dom';
+// FIX: Split react-router-dom imports to resolve module export errors.
+// FIX: Changed react-router import to react-router-dom to resolve module export errors.
+import { Navigate, Route, Routes } from 'react-router-dom';
+import { HashRouter } from 'react-router-dom';
 import { AuthProvider } from './contexts/AuthContext';
 import { ThemeProvider } from './contexts/ThemeContext';
 import { useAuth } from './hooks/useAuth';
@@ -49,10 +51,10 @@ const ProtectedAdminRoutes: React.FC = () => {
     if (user.role === 'driver') {
         return (
             <AdminLayout>
-                <ReactRouterDOM.Routes>
-                    <ReactRouterDOM.Route path="/" element={<DriverDashboardScreen />} />
-                    <ReactRouterDOM.Route path="*" element={<ReactRouterDOM.Navigate to="/" replace />} />
-                </ReactRouterDOM.Routes>
+                <Routes>
+                    <Route path="/" element={<DriverDashboardScreen />} />
+                    <Route path="*" element={<Navigate to="/" replace />} />
+                </Routes>
             </AdminLayout>
         );
     }
@@ -60,49 +62,49 @@ const ProtectedAdminRoutes: React.FC = () => {
     if (user.role === 'supplier') {
         return (
             <AdminLayout>
-                <ReactRouterDOM.Routes>
-                    <ReactRouterDOM.Route path="/" element={<SupplierDashboardScreen />} />
-                    <ReactRouterDOM.Route path="*" element={<ReactRouterDOM.Navigate to="/" replace />} />
-                </ReactRouterDOM.Routes>
+                <Routes>
+                    <Route path="/" element={<SupplierDashboardScreen />} />
+                    <Route path="*" element={<Navigate to="/" replace />} />
+                </Routes>
             </AdminLayout>
         );
     }
 
     return (
         <AdminLayout>
-            <ReactRouterDOM.Routes>
+            <Routes>
                 {/* Routes accessible to all admin levels */}
-                <ReactRouterDOM.Route path="/" element={<AdminDashboardScreen />} />
-                <ReactRouterDOM.Route path="/orders" element={<AdminOrdersScreen />} />
+                <Route path="/" element={<AdminDashboardScreen />} />
+                <Route path="/orders" element={<AdminOrdersScreen />} />
 
                 {/* Routes for admin and super-admin */}
                 {(user.role === 'admin' || user.role === 'super-admin') && (
                     <>
-                        <ReactRouterDOM.Route path="/products" element={<AdminProductsScreen />} />
-                        <ReactRouterDOM.Route path="/offers" element={<AdminOffersScreen />} />
-                        <ReactRouterDOM.Route path="/drivers" element={<AdminDriversScreen />} />
+                        <Route path="/products" element={<AdminProductsScreen />} />
+                        <Route path="/offers" element={<AdminOffersScreen />} />
+                        <Route path="/drivers" element={<AdminDriversScreen />} />
                         {/* SCM Routes */}
-                        <ReactRouterDOM.Route path="/suppliers" element={<AdminSuppliersScreen />} />
-                        <ReactRouterDOM.Route path="/purchase-orders" element={<AdminPurchaseOrdersScreen />} />
-                        <ReactRouterDOM.Route path="/purchase-orders/new" element={<AdminPurchaseOrderFormScreen />} />
-                        <ReactRouterDOM.Route path="/purchase-orders/:id" element={<AdminPurchaseOrderFormScreen />} />
+                        <Route path="/suppliers" element={<AdminSuppliersScreen />} />
+                        <Route path="/purchase-orders" element={<AdminPurchaseOrdersScreen />} />
+                        <Route path="/purchase-orders/new" element={<AdminPurchaseOrderFormScreen />} />
+                        <Route path="/purchase-orders/:id" element={<AdminPurchaseOrderFormScreen />} />
                     </>
                 )}
 
                 {/* Routes for super-admin only */}
                 {user.role === 'super-admin' && (
                     <>
-                        <ReactRouterDOM.Route path="/users" element={<AdminCustomersScreen />} />
-                        <ReactRouterDOM.Route path="/categories" element={<AdminCategoriesScreen />} />
-                        <ReactRouterDOM.Route path="/extras" element={<AdminExtrasScreen />} />
-                        <ReactRouterDOM.Route path="/settings" element={<AdminSettingsScreen />} />
-                        <ReactRouterDOM.Route path="/reports" element={<AdminReportsScreen />} />
-                        <ReactRouterDOM.Route path="/audit-log" element={<AdminAuditLogScreen />} />
+                        <Route path="/users" element={<AdminCustomersScreen />} />
+                        <Route path="/categories" element={<AdminCategoriesScreen />} />
+                        <Route path="/extras" element={<AdminExtrasScreen />} />
+                        <Route path="/settings" element={<AdminSettingsScreen />} />
+                        <Route path="/reports" element={<AdminReportsScreen />} />
+                        <Route path="/audit-log" element={<AdminAuditLogScreen />} />
                     </>
                 )}
 
-                <ReactRouterDOM.Route path="*" element={<ReactRouterDOM.Navigate to="/" replace />} />
-            </ReactRouterDOM.Routes>
+                <Route path="*" element={<Navigate to="/" replace />} />
+            </Routes>
         </AdminLayout>
     );
 };
@@ -130,12 +132,12 @@ const AdminApp: React.FC = () => {
             <WishlistProvider>
               <ToastProvider>
                 <ConfigurationChecker>
-                    <ReactRouterDOM.HashRouter>
+                    <HashRouter>
                     <ScrollToTop />
                     <Suspense fallback={<FullScreenLoader />}>
                         <ProtectedAdminRoutes />
                     </Suspense>
-                    </ReactRouterDOM.HashRouter>
+                    </HashRouter>
                 </ConfigurationChecker>
               </ToastProvider>
             </WishlistProvider>

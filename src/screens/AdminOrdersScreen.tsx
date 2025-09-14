@@ -1,6 +1,6 @@
 import React, { useState, useMemo, useEffect } from 'react';
-// FIX: Switched to a namespace import for react-router-dom to fix module resolution errors in the build environment.
-import * as ReactRouterDOM from "react-router-dom";
+// FIX: Split react-router-dom imports to resolve module export errors.
+import { useSearchParams } from "react-router-dom";
 import { AdminOrder, OrderStatus, Driver } from '../types';
 import OrderDetailsModal from '../components/OrderDetailsModal';
 import ConfirmationModal from '../components/ConfirmationModal';
@@ -43,7 +43,7 @@ const AdminOrdersScreen: React.FC = () => {
     const [confirmationState, setConfirmationState] = useState<ConfirmationState>({ isOpen: false, title: '', message: '', onConfirm: () => {} });
     const { showToast } = useToast();
     
-    const [searchParams] = ReactRouterDOM.useSearchParams();
+    const [searchParams] = useSearchParams();
     const statusFilterFromUrl = searchParams.get('status') as OrderStatus | null;
     const viewOrderFromUrl = searchParams.get('view');
 

@@ -1,6 +1,8 @@
 import React, { useState, useEffect } from 'react';
-// FIX: Switched to a namespace import for react-router-dom to fix module resolution errors in the build environment.
-import * as ReactRouterDOM from "react-router-dom";
+// FIX: Split react-router-dom imports to resolve module export errors.
+// FIX: Changed react-router import to react-router-dom to resolve module export errors.
+import { useLocation } from "react-router-dom";
+import { NavLink } from "react-router-dom";
 import { DashboardIcon, OrdersIcon, CustomersIcon, LogoutIcon, MenuIcon, CloseIcon, GiftIcon, TruckIcon, EyeIcon, CategoryIcon, ShieldCheckIcon, BeakerIcon, CogIcon, PackageIcon, UserCircleIcon, ChartBarIcon, ClipboardListIcon, ChevronDoubleLeftIcon, BuildingStorefrontIcon, ClipboardDocumentListIcon } from '../assets/adminIcons';
 import AdminNotifications from './AdminNotifications';
 import ThemeToggle from './ThemeToggle';
@@ -43,7 +45,7 @@ const Sidebar: React.FC<{
     setDesktopCollapsed: (isCollapsed: boolean) => void;
 }> = ({ isMobileOpen, setMobileOpen, isDesktopCollapsed, setDesktopCollapsed }) => {
   const { user, logout } = useAuth();
-  const location = ReactRouterDOM.useLocation();
+  const location = useLocation();
 
   // FIX: Add a type guard to narrow the user role and resolve a TypeScript error. Although ProtectedAdminRoutes prevents customers from reaching this component, this check is necessary for type safety within the component's scope.
   if (!user || user.role === 'customer') {
@@ -70,7 +72,7 @@ const Sidebar: React.FC<{
   }, [location.pathname]);
 
   const NavItem: React.FC<{ link: NavLinkItem }> = ({ link }) => (
-    <ReactRouterDOM.NavLink
+    <NavLink
       to={link.to}
       end={link.to === '/'}
       className={({ isActive }) =>
@@ -88,7 +90,7 @@ const Sidebar: React.FC<{
           {link.label}
         </span>
       )}
-    </ReactRouterDOM.NavLink>
+    </NavLink>
   );
   
   const SectionHeader: React.FC<{ title: string; icon: React.FC<{ className?: string }>}> = ({ title, icon: Icon }) => (
@@ -178,7 +180,7 @@ const Sidebar: React.FC<{
 };
 
 const Header: React.FC<{ onMenuClick: () => void, isDesktopCollapsed: boolean }> = ({ onMenuClick, isDesktopCollapsed }) => {
-    const location = ReactRouterDOM.useLocation();
+    const location = useLocation();
     const { user } = useAuth();
     
     // Combine all nav links for title lookup
@@ -235,7 +237,7 @@ const AdminLayout: React.FC<{ children: React.ReactNode }> = ({ children }) => {
       <div className={`flex-1 flex flex-col transition-all duration-300 ${isDesktopCollapsed ? 'md:mr-20' : 'md:mr-64'}`}>
         <Header onMenuClick={() => setMobileOpen(true)} isDesktopCollapsed={isDesktopCollapsed} />
         <main className="flex-1 flex flex-col p-4 md:p-8 overflow-hidden">
-            <div key={ReactRouterDOM.useLocation().pathname} className="animate-fade-in h-full overflow-y-auto">
+            <div key={useLocation().pathname} className="animate-fade-in h-full overflow-y-auto">
               {children}
             </div>
         </main>
