@@ -8,17 +8,21 @@ import React, {
   useCallback,
 } from "react";
 // FIX: Refactored Firebase imports to use the v8 compat library to resolve module errors.
-import firebase from 'firebase/compat/app';
-import 'firebase/compat/auth';
-import 'firebase/compat/firestore';
+import firebase from "firebase/compat/app";
+import "firebase/compat/auth";
+import "firebase/compat/firestore";
 import { auth, db } from "../firebase/config";
 import { User } from "../types";
 
-const SUPER_ADMIN_EMAILS = ["ashraf0968491090@gmail.com", "salahashrf58@gmail.com"];
+const SUPER_ADMIN_EMAILS = [
+  "ashraf0968491090@gmail.com",
+  "salahashrf58@gmail.com",
+];
 
 // FIX: Replaced v9 types with v8 compat types.
 type FirebaseUser = firebase.User;
 type ConfirmationResult = firebase.auth.ConfirmationResult;
+type RecaptchaVerifier = firebase.auth.RecaptchaVerifier;
 
 interface AuthContextType {
   user: User | null;
@@ -32,9 +36,10 @@ interface AuthContextType {
     name: string
   ) => Promise<void>;
   loginWithEmail: (email: string, password: string) => Promise<void>;
+  sendPasswordResetEmail: (email: string) => Promise<void>;
   signInWithPhone: (
     phoneNumber: string,
-    recaptchaContainerId: string
+    appVerifier: RecaptchaVerifier
   ) => Promise<void>;
   verifyOTP: (otp: string) => Promise<FirebaseUser | null>;
   logout: () => Promise<void>;
@@ -78,20 +83,27 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({
 
         if (userSnap.exists) {
           let userData = userSnap.data() as User;
-          const isSuperAdminByEmail = fbUser.email ? SUPER_ADMIN_EMAILS.map(e => e.toLowerCase()).includes(fbUser.email.toLowerCase()) : false;
-          
-          if (isSuperAdminByEmail && userData.role !== 'super-admin') {
-            userData.role = 'super-admin';
+          const isSuperAdminByEmail = fbUser.email
+            ? SUPER_ADMIN_EMAILS.map((e) => e.toLowerCase()).includes(
+                fbUser.email.toLowerCase()
+              )
+            : false;
+
+          if (isSuperAdminByEmail && userData.role !== "super-admin") {
+            userData.role = "super-admin";
             // FIX: Refactored Firestore updateDoc call to use v8 compat syntax.
-            userRef.update({ role: 'super-admin' }).catch(err => {
+            userRef.update({ role: "super-admin" }).catch((err) => {
               console.error("Failed to self-heal super-admin role:", err);
             });
           }
           setUser({ ...userData, uid: fbUser.uid });
-
         } else {
-          const isSuperAdmin = fbUser.email ? SUPER_ADMIN_EMAILS.map(e => e.toLowerCase()).includes(fbUser.email.toLowerCase()) : false;
-          
+          const isSuperAdmin = fbUser.email
+            ? SUPER_ADMIN_EMAILS.map((e) => e.toLowerCase()).includes(
+                fbUser.email.toLowerCase()
+              )
+            : false;
+
           const newUser: User = {
             uid: fbUser.uid,
             email: fbUser.email,
@@ -116,13 +128,15 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({
     async (email: string, password: string, name: string) => {
       try {
         // FIX: Refactored createUserWithEmailAndPassword to use v8 compat syntax.
-        const result = await auth.createUserWithEmailAndPassword(email, password);
+        const result = await auth.createUserWithEmailAndPassword(
+          email,
+          password
+        );
         const fbUser = result.user;
         if (!fbUser) throw new Error("User creation failed.");
 
         // FIX: Refactored updateProfile to use v8 compat syntax.
         await fbUser.updateProfile({ displayName: name });
-        
       } catch (error) {
         console.error("Registration error:", error);
         throw error;
@@ -131,28 +145,35 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({
     []
   );
 
-  const loginWithEmail = useCallback(async (email: string, password: string) => {
+  const loginWithEmail = useCallback(
+    async (email: string, password: string) => {
+      try {
+        // FIX: Refactored signInWithEmailAndPassword to use v8 compat syntax.
+        await auth.signInWithEmailAndPassword(email, password);
+      } catch (error) {
+        console.error("Login error:", error);
+        throw error;
+      }
+    },
+    []
+  );
+
+  const sendPasswordResetEmail = useCallback(async (email: string) => {
     try {
-      // FIX: Refactored signInWithEmailAndPassword to use v8 compat syntax.
-      await auth.signInWithEmailAndPassword(email, password);
+      await auth.sendPasswordResetEmail(email);
     } catch (error) {
-      console.error("Login error:", error);
+      console.error("Password reset error:", error);
       throw error;
     }
   }, []);
 
   const signInWithPhone = useCallback(
-    async (phoneNumber: string, recaptchaContainerId: string) => {
+    async (phoneNumber: string, appVerifier: RecaptchaVerifier) => {
       try {
-        if ((window as any).grecaptcha) {
-          (window as any).grecaptcha.reset();
-        }
-        // FIX: Refactored RecaptchaVerifier to use v8 compat syntax.
-        const appVerifier = new firebase.auth.RecaptchaVerifier(recaptchaContainerId, {
-            'size': 'invisible'
-        });
-        // FIX: Refactored signInWithPhoneNumber to use v8 compat syntax.
-        const confirmation = await auth.signInWithPhoneNumber(phoneNumber, appVerifier);
+        const confirmation = await auth.signInWithPhoneNumber(
+          phoneNumber,
+          appVerifier
+        );
         setConfirmationResult(confirmation);
       } catch (error) {
         console.error("Error during phone sign-in:", error);
@@ -183,7 +204,7 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({
       if (!firebaseUser) throw new Error("User not authenticated.");
       // FIX: Refactored Firestore doc call to use v8 compat syntax.
       const userRef = db.collection("users").doc(firebaseUser.uid);
-      
+
       const updateData: Partial<User> = {
         name: details.name,
         address: details.address,
@@ -215,6 +236,7 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({
       setShowWelcomeModal,
       registerWithEmail,
       loginWithEmail,
+      sendPasswordResetEmail,
       signInWithPhone,
       verifyOTP,
       updateUserDetails,
@@ -227,6 +249,7 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({
       showWelcomeModal,
       registerWithEmail,
       loginWithEmail,
+      sendPasswordResetEmail,
       signInWithPhone,
       verifyOTP,
       updateUserDetails,
