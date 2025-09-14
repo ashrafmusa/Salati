@@ -11,6 +11,7 @@ import {
   WarningIcon,
   KeyIcon,
 } from "../assets/icons";
+import { ShieldCheckIcon } from "../assets/adminIcons";
 import ThemeToggle from "../components/ThemeToggle";
 // FIX: Removed unused and erroneous getAuth import.
 import MetaTagManager from "../components/MetaTagManager";
@@ -31,6 +32,11 @@ const ProfileScreen: React.FC = () => {
   );
   const isProfileIncomplete =
     !user?.address || !user?.name || user.name === "عميل جديد" || !user?.phone;
+  const isAdmin =
+    user &&
+    ["super-admin", "admin", "sub-admin", "driver", "supplier"].includes(
+      user.role
+    );
 
   const [isEditing, setIsEditing] = useState(isProfileIncomplete);
   const [formData, setFormData] = useState({
@@ -234,6 +240,20 @@ const ProfileScreen: React.FC = () => {
 
         <div className="bg-white dark:bg-slate-800 p-4 rounded-lg shadow-sm">
           <ul className="divide-y dark:divide-slate-700">
+            {isAdmin && (
+              <li className="p-2">
+                <a
+                  href="./admin.html"
+                  className="flex justify-between items-center w-full text-right hover:text-primary"
+                >
+                  <span className="flex items-center gap-3">
+                    <ShieldCheckIcon className="w-6 h-6" />
+                    لوحة التحكم
+                  </span>
+                  <ChevronLeftIcon className="w-5 h-5" />
+                </a>
+              </li>
+            )}
             <li className="p-2">
               <Link
                 to="/orders"
