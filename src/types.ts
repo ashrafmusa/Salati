@@ -98,6 +98,8 @@ export interface Order {
   deliveryMethod: 'delivery' | 'pickup';
   lastUpdatedBy?: { id: string; name: string };
   lastUpdatedAt?: string;
+  customerHasUnreadMessages?: boolean;
+  adminHasUnreadMessages?: boolean;
 }
 
 export interface DeliveryInfo {
@@ -158,21 +160,21 @@ export interface Category {
 }
 
 export interface ThemeSettings {
-    primaryColor: string;
-    secondaryColor: string;
-    sansFont: string;
-    displayFont: string;
+  primaryColor: string;
+  secondaryColor: string;
+  sansFont: string;
+  displayFont: string;
 }
 
 export interface StoreSettings {
-    deliveryFee: number;
-    logoUrl: string;
-    storeAddress: string;
-    usdToSdgRate: number; // New field for currency conversion
-    announcementText?: string;
-    isAnnouncementActive?: boolean;
-    theme: ThemeSettings;
-    loginIllustrationSvg?: string;
+  deliveryFee: number;
+  logoUrl: string;
+  storeAddress: string;
+  usdToSdgRate: number; // New field for currency conversion
+  announcementText?: string;
+  isAnnouncementActive?: boolean;
+  theme: ThemeSettings;
+  loginIllustrationSvg?: string;
 }
 
 export interface AuditLog {
@@ -206,40 +208,40 @@ export interface PurchaseOrderItem {
 }
 
 export enum PurchaseOrderStatus {
-    Draft = "مسودة",
-    Sent = "مرسل للمورد",
-    PartiallyReceived = "تم الاستلام جزئياً",
-    FullyReceived = "تم الاستلام بالكامل",
-    Cancelled = "ملغي",
+  Draft = "مسودة",
+  Sent = "مرسل للمورد",
+  PartiallyReceived = "تم الاستلام جزئياً",
+  FullyReceived = "تم الاستلام بالكامل",
+  Cancelled = "ملغي",
 }
 
 export interface PurchaseOrder {
-    id: string;
-    supplierId: string;
-    supplierName: string; // Denormalized for display
-    createdDate: string; // ISO date string
-    expectedDate: string; // ISO date string
-    items: PurchaseOrderItem[];
-    totalCost: number;
-    status: PurchaseOrderStatus;
+  id: string;
+  supplierId: string;
+  supplierName: string; // Denormalized for display
+  createdDate: string; // ISO date string
+  expectedDate: string; // ISO date string
+  items: PurchaseOrderItem[];
+  totalCost: number;
+  status: PurchaseOrderStatus;
 }
 
 
 // Admin Panel Specific Types
 export interface Customer extends User {
-    joinDate: string; // ISO date string
-    orderHistory: string[]; // array of order IDs
+  joinDate: string; // ISO date string
+  orderHistory: string[]; // array of order IDs
 }
 
 export interface Driver {
-    id: string;
-    name: string;
-    phone: string;
-    status: 'Available' | 'On-Delivery' | 'Offline';
+  id: string;
+  name: string;
+  phone: string;
+  status: 'Available' | 'On-Delivery' | 'Offline';
 }
 
 export interface AdminOrder extends Order {
-    customer?: Omit<User, 'role'>;
+  customer?: Omit<User, 'role'>;
 }
 
 export interface AdminNotification {
