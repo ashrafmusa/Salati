@@ -274,3 +274,45 @@ export interface UserList {
   name: string;
   items: UserListItem[];
 }
+
+// --- Real Estate Types ---
+
+export type PropertyType = 'apartment' | 'house' | 'office' | 'land';
+export type ListingType = 'rent' | 'sale';
+export type PricePeriod = 'monthly' | 'annually';
+
+export enum ListingStatus {
+  Available = "متاح",
+  Rented = "مؤجر",
+  Sold = "تم البيع",
+  Unavailable = "غير متاح",
+}
+
+export interface Property {
+  id: string;
+  title: string;
+  description: string;
+  type: PropertyType;
+  location: {
+    address: string;
+    city: string;
+    latitude?: number;
+    longitude?: number;
+  };
+  imageUrls: string[];
+  amenities: string[];
+  bedrooms: number;
+  bathrooms: number;
+  area: number; // in sq meters
+  ownerId?: string;
+}
+
+export interface Listing {
+  id: string;
+  propertyId: string;
+  listingType: ListingType;
+  price: number;
+  pricePeriod?: PricePeriod;
+  status: ListingStatus;
+  listedDate: string; // ISO date string
+}

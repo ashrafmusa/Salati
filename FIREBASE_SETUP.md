@@ -101,6 +101,12 @@ Secure your database by defining who can read and write data. These rules are cr
         match /notifications/{docId} { allow read, write: if isAnyAdmin(); }
         match /categories/{docId} { allow read: if true; allow write: if isSuperAdmin(); }
         
+        // --- REAL ESTATE COLLECTIONS ---
+        // Properties and Listings are public to read for everyone.
+        // Write permissions are restricted to full admins.
+        match /properties/{propertyId} { allow read: if true; allow write: if isFullAdmin(); }
+        match /listings/{listingId} { allow read: if true; allow write: if isFullAdmin(); }
+
         // Store settings are public to read, but only super admins can change them.
         match /settings/{docId} { allow read: if true; allow write: if isSuperAdmin(); }
         
@@ -130,9 +136,27 @@ Secure your database by defining who can read and write data. These rules are cr
         // Any admin level can update orders (e.g., change status, assign driver).
         // Only full admins (admin, super-admin) can delete orders.
         match /orders/{orderId} {
-          allow create: if request.auth != null && request.auth.uid == request.resource.data.userId;
+          allow create: if request.auth != null && request.auth.uid == request.resource.data.userId
+                      // Order validation: ensure an order has items, a positive total,
+                      // and is being created with a valid initial status.
+                      && request.resource.data.items.size() > 0
+                      && request.resource.data.total > 0
+                      && (request.resource.data.status == 'قيد التجهيز' || request.resource.data.status == 'جاهز للاستلام')
+                      && request.resource.data.paymentStatus == 'unpaid';
+                      
           allow read: if request.auth.uid == resource.data.userId || isAnyAdmin();
-          allow update: if isAnyAdmin();
+          
+          // An admin can update an order, but CANNOT change fundamental data like the user, items, or total price.
+          // This allows them to change status, assign drivers, etc., while preserving data integrity.
+          allow update: if isAnyAdmin()
+                        && request.resource.data.userId == resource.data.userId
+                        && request.resource.data.date == resource.data.date
+                        && request.resource.data.items == resource.data.items
+                        && request.resource.data.total == resource.data.total
+                        && request.resource.data.subtotal == resource.data.subtotal
+                        && request.resource.data.deliveryFee == resource.data.deliveryFee
+                        && request.resource.data.deliveryMethod == resource.data.deliveryMethod;
+
           allow delete: if isFullAdmin();
           
           // --- ORDER SUBCOLLECTION: ACTIVITY LOG ---
