@@ -310,6 +310,8 @@ export interface Property {
 export interface Listing {
   id: string;
   propertyId: string;
+  propertyTitle: string; // Denormalized for easier display
+  imageUrl: string; // Denormalized main image
   listingType: ListingType;
   price: number;
   pricePeriod?: PricePeriod;
