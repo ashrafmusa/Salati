@@ -35,7 +35,10 @@ const ProfileScreen = lazy(() => import("./screens/ProfileScreen"));
 const WishlistScreen = lazy(() => import("./screens/WishlistScreen"));
 const TermsScreen = lazy(() => import("./screens/TermsScreen"));
 const PrivacyPolicyScreen = lazy(() => import("./screens/PrivacyPolicyScreen"));
-const RealEstateScreen = lazy(() => import("./screens/AdminPropertiesScreen"));
+const RealEstateScreen = lazy(() => import("./screens/RealEstateScreen"));
+const PropertyDetailScreen = lazy(
+  () => import("./screens/PropertyDetailScreen")
+);
 
 const AppContent: React.FC = () => {
   const { user, loading, showWelcomeModal, setShowWelcomeModal } = useAuth();
@@ -124,6 +127,14 @@ const AppContent: React.FC = () => {
                 element={
                   <Suspense fallback={<FullScreenLoader />}>
                     <RealEstateScreen />
+                  </Suspense>
+                }
+              />
+              <Route
+                path="/property/:id"
+                element={
+                  <Suspense fallback={<FullScreenLoader />}>
+                    <PropertyDetailScreen />
                   </Suspense>
                 }
               />
