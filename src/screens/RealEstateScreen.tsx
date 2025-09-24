@@ -13,14 +13,27 @@ import ListingCard, { FullListing } from "../components/ListingCard";
 import EmptyState from "../components/EmptyState";
 import ProductCardSkeleton from "../components/ProductCardSkeleton";
 
+// Helper function to map English PropertyType key to Arabic display value
+const getArabicPropertyType = (typeKey: keyof typeof PropertyType): string => {
+  // Assuming PropertyType enum is imported from "../types"
+  return PropertyType[typeKey] || typeKey;
+};
+
+// Helper function to map English ListingType key to Arabic display value
+const getArabicListingType = (typeKey: keyof typeof ListingType): string => {
+  // Assuming ListingType enum is imported from "../types"
+  return ListingType[typeKey] || typeKey;
+};
+
 const RealEstateScreen: React.FC = () => {
   const [listings, setListings] = useState<Listing[]>([]);
   const [properties, setProperties] = useState<Property[]>([]);
   const [loading, setLoading] = useState(true);
 
+  // Filter state uses English keys for consistent logic across all languages.
   const [filters, setFilters] = useState({
-    listingType: "all" as ListingType | "all",
-    propertyType: "all" as PropertyType | "all",
+    listingType: "all" as keyof typeof ListingType | "all",
+    propertyType: "all" as keyof typeof PropertyType | "all",
     city: "",
   });
 
@@ -30,6 +43,7 @@ const RealEstateScreen: React.FC = () => {
       try {
         const listingsQuery = db
           .collection("listings")
+          // Queries Firestore by the Arabic enum value ("متاح")
           .where("status", "==", ListingStatus.Available);
         const propertiesQuery = db.collection("properties");
 
@@ -94,7 +108,8 @@ const RealEstateScreen: React.FC = () => {
     "w-full p-2 border rounded-md bg-white dark:bg-slate-700 text-slate-900 dark:text-slate-100 border-slate-300 dark:border-slate-600 focus:ring-primary focus:border-primary";
 
   return (
-    <div className="bg-slate-50 dark:bg-slate-950 min-h-screen">
+    // RTL class applies right-to-left layout and text-right alignment globally
+    <div className="bg-slate-50 dark:bg-slate-950 min-h-screen rtl text-right">
       <MetaTagManager
         title="العقارات - سـلـتـي"
         description="تصفح أفضل العقارات والشقق للإيجار والبيع في السودان عبر منصة سـلـتـي."
@@ -104,6 +119,7 @@ const RealEstateScreen: React.FC = () => {
       {/* Filters */}
       <div className="p-4 bg-white dark:bg-slate-800/50 sticky top-[56px] z-10 border-b dark:border-slate-800 shadow-sm">
         <div className="max-w-7xl mx-auto grid grid-cols-2 md:grid-cols-3 gap-3">
+          {/* Listing Type Filter: Uses English keys but displays Arabic values */}
           <select
             name="listingType"
             value={filters.listingType}
@@ -111,9 +127,10 @@ const RealEstateScreen: React.FC = () => {
             className={inputClasses}
           >
             <option value="all">الكل (بيع/إيجار)</option>
-            <option value="sale">للبيع</option>
-            <option value="rent">للإيجار</option>
+            <option value="Sale">{getArabicListingType("Sale")}</option>
+            <option value="Rent">{getArabicListingType("Rent")}</option>
           </select>
+          {/* Property Type Filter: Uses English keys but displays Arabic values */}
           <select
             name="propertyType"
             value={filters.propertyType}
@@ -121,11 +138,14 @@ const RealEstateScreen: React.FC = () => {
             className={inputClasses}
           >
             <option value="all">كل أنواع العقارات</option>
-            <option value="apartment">شقة</option>
-            <option value="house">منزل</option>
-            <option value="office">مكتب</option>
-            <option value="land">أرض</option>
+            <option value="Apartment">
+              {getArabicPropertyType("Apartment")}
+            </option>
+            <option value="House">{getArabicPropertyType("House")}</option>
+            <option value="Office">{getArabicPropertyType("Office")}</option>
+            <option value="Land">{getArabicPropertyType("Land")}</option>
           </select>
+          {/* City Filter: Note: City names themselves will appear in the language they are stored in Firestore */}
           <select
             name="city"
             value={filters.city}
@@ -152,6 +172,7 @@ const RealEstateScreen: React.FC = () => {
         ) : filteredListings.length > 0 ? (
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
             {filteredListings.map((listing) => (
+              // ListingCard component must handle Arabic titles and RTL internally
               <ListingCard key={listing.id} listing={listing} />
             ))}
           </div>

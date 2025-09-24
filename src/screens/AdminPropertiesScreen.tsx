@@ -7,7 +7,7 @@ import AdminEmptyState from "../components/AdminEmptyState";
 import { BuildingLibraryIcon } from "../assets/adminIcons";
 import { useToast } from "../contexts/ToastContext";
 import { usePaginatedFirestore } from "../hooks/usePaginatedFirestore";
-import { Property, Listing } from "../types";
+import { Property, Listing, PropertyType } from "../types"; // Import PropertyType enum
 import TableSkeleton from "../components/TableSkeleton";
 import PropertyFormModal from "../components/PropertyFormModal";
 import ConfirmationModal from "../components/ConfirmationModal";
@@ -15,6 +15,15 @@ import { useAuth } from "../hooks/useAuth";
 import { logAdminAction } from "../utils/auditLogger";
 import Pagination from "../components/Pagination";
 import { getOptimizedImageUrl } from "../utils/helpers";
+
+// Helper function to map English PropertyType key to Arabic display value
+const getArabicPropertyType = (typeKey: keyof typeof PropertyType): string => {
+  // Assuming PropertyType enum is defined as:
+  // export enum PropertyType { Apartment = 'شقة', House = 'منزل/فيلا', Office = 'مكتب', Land = 'أرض' }
+  // We can safely use the key to get the Arabic value.
+  const arabicValue = PropertyType[typeKey];
+  return arabicValue || typeKey; // Fallback to English key if not found
+};
 
 const AdminPropertiesScreen: React.FC = () => {
   const { showToast } = useToast();
@@ -52,6 +61,9 @@ const AdminPropertiesScreen: React.FC = () => {
     try {
       const batch = db.batch();
 
+      // Assuming propertyData now includes 'arabicTitle', 'arabicDescription', etc.
+      // from the PropertyFormModal.
+
       if (editingProperty) {
         // UPDATE
         const propRef = db.collection("properties").doc(editingProperty.id);
@@ -68,6 +80,9 @@ const AdminPropertiesScreen: React.FC = () => {
           batch.update(listingRef, {
             ...listingData,
             propertyTitle: propertyData.title,
+            // 🌟 Use arabicTitle for localization, assuming the Listing interface was updated
+            propertyArabicTitle:
+              (propertyData as any).arabicTitle || propertyData.title,
             imageUrl: propertyData.imageUrls[0] || "",
           });
         } else {
@@ -77,6 +92,9 @@ const AdminPropertiesScreen: React.FC = () => {
             ...listingData,
             propertyId: editingProperty.id,
             propertyTitle: propertyData.title,
+            // 🌟 Use arabicTitle for localization, assuming the Listing interface was updated
+            propertyArabicTitle:
+              (propertyData as any).arabicTitle || propertyData.title,
             imageUrl: propertyData.imageUrls[0] || "",
           });
         }
@@ -92,6 +110,9 @@ const AdminPropertiesScreen: React.FC = () => {
           id: listingRef.id,
           propertyId: propRef.id,
           propertyTitle: newProperty.title,
+          // 🌟 Use arabicTitle for localization
+          propertyArabicTitle:
+            (newProperty as any).arabicTitle || newProperty.title,
           imageUrl: newProperty.imageUrls[0] || "",
         };
         batch.set(listingRef, newListing);
@@ -101,16 +122,17 @@ const AdminPropertiesScreen: React.FC = () => {
       await logAdminAction(
         adminUser,
         editingProperty ? "Updated Property" : "Created Property",
-        `Title: ${propertyData.title}`
+        // 🌟 Use Arabic title in log description
+        `Title: ${(propertyData as any).arabicTitle || propertyData.title}`
       );
       showToast(
-        editingProperty ? "Property updated!" : "Property created!",
+        editingProperty ? "تم تحديث العقار بنجاح!" : "تم إنشاء العقار بنجاح!", // 🌟 Translated toast messages
         "success"
       );
       setIsModalOpen(false);
     } catch (error) {
       console.error("Error saving property:", error);
-      showToast("Failed to save property.", "error");
+      showToast("فشل حفظ العقار.", "error"); // 🌟 Translated toast message
     } finally {
       setIsSaving(false);
     }
@@ -134,12 +156,15 @@ const AdminPropertiesScreen: React.FC = () => {
       await logAdminAction(
         adminUser,
         "Deleted Property",
-        `Title: ${propertyToDelete.title}`
+        // 🌟 Use Arabic title in log description
+        `Title: ${
+          (propertyToDelete as any).arabicTitle || propertyToDelete.title
+        }`
       );
-      showToast("Property deleted successfully.", "success");
+      showToast("تم حذف العقار بنجاح.", "success"); // 🌟 Translated toast message
     } catch (error) {
       console.error("Error deleting property:", error);
-      showToast("Failed to delete property.", "error");
+      showToast("فشل حذف العقار.", "error"); // 🌟 Translated toast message
     } finally {
       setIsSaving(false);
       setPropertyToDelete(null);
@@ -148,7 +173,9 @@ const AdminPropertiesScreen: React.FC = () => {
 
   return (
     <>
-      <div className="h-full flex flex-col bg-white dark:bg-slate-800 p-6 rounded-lg shadow-md">
+      {/* 🌟 Apply RTL to the main container */}
+      <div className="h-full flex flex-col bg-white dark:bg-slate-800 p-6 rounded-lg shadow-md rtl text-right">
+        {/* AdminScreenHeader translations are already in place */}
         <AdminScreenHeader
           title="إدارة العقارات"
           buttonText="إضافة عقار جديد"
@@ -159,13 +186,15 @@ const AdminPropertiesScreen: React.FC = () => {
             <TableSkeleton />
           ) : properties.length > 0 ? (
             <div className="overflow-x-auto">
+              {/* 🌟 Apply text-right for the whole table */}
               <table className="w-full text-right">
                 <thead className="border-b-2 border-slate-100 dark:border-slate-700">
                   <tr>
-                    <th className="p-3">العقار</th>
-                    <th className="p-3">النوع</th>
-                    <th className="p-3">المدينة</th>
-                    <th className="p-3">الإجراءات</th>
+                    {/* 🌟 Table Headers are already translated */}
+                    <th className="p-3 font-semibold">العقار</th>
+                    <th className="p-3 font-semibold">النوع</th>
+                    <th className="p-3 font-semibold">المدينة</th>
+                    <th className="p-3 font-semibold">الإجراءات</th>
                   </tr>
                 </thead>
                 <tbody>
@@ -175,19 +204,29 @@ const AdminPropertiesScreen: React.FC = () => {
                       className="border-b dark:border-slate-700 hover:bg-slate-50 dark:hover:bg-slate-700/50"
                     >
                       <td className="p-3">
+                        {/* 🌟 Change `flex items-center gap-3` for RTL by using 'flex-row-reverse' or adjusting the gap utility if your framework supports it globally */}
                         <div className="flex items-center gap-3">
                           <img
                             src={getOptimizedImageUrl(
                               prop.imageUrls[0] || "",
                               100
                             )}
-                            alt={prop.title}
+                            // 🌟 Use Arabic title for alt text
+                            alt={(prop as any).arabicTitle || prop.title}
                             className="w-16 h-12 rounded object-cover"
                           />
-                          <span className="font-medium">{prop.title}</span>
+                          {/* 🌟 Use Arabic Title for display */}
+                          <span className="font-medium">
+                            {(prop as any).arabicTitle || prop.title}
+                          </span>
                         </div>
                       </td>
-                      <td className="p-3 capitalize">{prop.type}</td>
+                      <td className="p-3">
+                        {/* 🌟 Map type key to Arabic value */}
+                        {getArabicPropertyType(
+                          prop.type as keyof typeof PropertyType
+                        )}
+                      </td>
                       <td className="p-3">{prop.location.city}</td>
                       <td className="p-3 space-x-4 space-x-reverse">
                         <button
@@ -209,6 +248,7 @@ const AdminPropertiesScreen: React.FC = () => {
               </table>
             </div>
           ) : (
+            // EmptyState translations are already in place
             <AdminEmptyState
               icon={BuildingLibraryIcon}
               title="لا توجد عقارات بعد"
@@ -239,9 +279,12 @@ const AdminPropertiesScreen: React.FC = () => {
         isOpen={!!propertyToDelete}
         onClose={() => setPropertyToDelete(null)}
         onConfirm={handleDeleteProperty}
-        title="تأكيد الحذف"
-        message={`هل أنت متأكد من حذف العقار "${propertyToDelete?.title}"؟ سيتم حذف القائمة المرتبطة به أيضاً.`}
-        confirmText="نعم، احذف"
+        title="تأكيد الحذف" // 🌟 Title is translated
+        // 🌟 Use Arabic title and translate the message
+        message={`هل أنت متأكد من حذف العقار "${
+          (propertyToDelete as any)?.arabicTitle || propertyToDelete?.title
+        }"؟ سيتم حذف القائمة المرتبطة به أيضاً.`}
+        confirmText="نعم، احذف" // 🌟 Button text is translated
         isDestructive
       />
     </>

@@ -1,7 +1,13 @@
 import React, { useState, useEffect } from "react";
 import { useParams, Link } from "react-router-dom";
 import { db } from "../firebase/config";
-import { Property, Listing, ListingStatus } from "../types";
+import {
+  Property,
+  Listing,
+  ListingStatus,
+  PricePeriod,
+  ListingType,
+} from "../types"; // Import necessary enums/types
 import SubPageHeader from "../components/SubPageHeader";
 import MetaTagManager from "../components/MetaTagManager";
 import {
@@ -15,11 +21,16 @@ import {
 } from "../assets/icons";
 import ProductImageGallery from "../components/ProductImageGallery";
 
+// Helper to get Arabic value for Listing Type (assuming ListingType enum exists)
+const getArabicListingType = (typeKey: keyof typeof ListingType): string => {
+  return ListingType[typeKey] || typeKey;
+};
+
 const PropertyDetailScreen: React.FC = () => {
   const { id } = useParams<{ id: string }>();
   const [property, setProperty] = useState<Property | null>(null);
   const [listing, setListing] = useState<Listing | null>(null);
-  const [loading, setLoading] = useState(true);
+  const [loading, setLoading] = useState(true); // 🌟 Use environment variable for phone number
 
   const phoneNumber = (import.meta as any).env.VITE_WHATSAPP_PHONE_NUMBER;
 
@@ -62,105 +73,154 @@ const PropertyDetailScreen: React.FC = () => {
 
   if (loading) {
     return (
-      <div className="flex items-center justify-center h-screen">
-        <SpinnerIcon className="w-12 h-12 text-primary animate-spin" />
+      // 🌟 Add RTL text alignment for spinner loading
+      <div className="flex items-center justify-center h-screen rtl text-right">
+                <SpinnerIcon className="w-12 h-12 text-primary animate-spin" /> 
+           {" "}
       </div>
     );
   }
 
   if (!property || !listing) {
     return (
-      <div>
-        <MetaTagManager title="العقار غير موجود - سـلـتـي" />
-        <SubPageHeader title="خطأ" />
+      <div className="rtl text-right">
+        {" "}
+        {/* 🌟 Add RTL to outer container */}
+                <MetaTagManager title="العقار غير موجود - سـلـتـي" />
+                <SubPageHeader title="خطأ" />       {" "}
         <div className="text-center p-8">
-          <h2 className="text-2xl font-bold mb-4">العقار غير موجود</h2>
+                   {" "}
+          <h2 className="text-2xl font-bold mb-4">العقار غير موجود</h2>         {" "}
           <Link to="/real-estate" className="text-primary hover:underline">
-            العودة إلى قائمة العقارات
+                        العودة إلى قائمة العقارات          {" "}
           </Link>
+                 {" "}
         </div>
+             {" "}
       </div>
     );
-  }
+  } // 🌟 Use Arabic property title in the WhatsApp message
 
+  const arabicTitle = (property as any).arabicTitle || property.title;
   const whatsappMessage = encodeURIComponent(
-    `مرحباً، أنا مهتم بالعقار "${property.title}" الموجود على منصة سـلـتـي. هل يمكنني الحصول على مزيد من المعلومات؟`
+    `مرحباً، أنا مهتم بالعقار "${arabicTitle}" الموجود على منصة سـلـتـي. هل يمكنني الحصول على مزيد من المعلومات؟`
   );
-  const whatsappUrl = `https://wa.me/${phoneNumber}?text=${whatsappMessage}`;
+  const whatsappUrl = `https://wa.me/${phoneNumber}?text=${whatsappMessage}`; // 🌟 Update Price Label logic to use enum keys and Arabic periods
 
   const getPriceLabel = () => {
-    let label = `${listing.price.toLocaleString()} ج.س`;
-    if (listing.listingType === "rent") {
-      label += ` / ${listing.pricePeriod === "annually" ? "سنوياً" : "شهرياً"}`;
+    let label = `${listing.price.toLocaleString()} ج.س`; // Use the 'Rent' key from the ListingType enum
+    if (listing.listingType === "Rent") {
+      const periodKey = listing.pricePeriod as keyof typeof PricePeriod; // Use the PricePeriod enum values for display
+      const periodLabel = periodKey === "Annually" ? "سنوياً" : "شهرياً";
+      label += ` / ${periodLabel}`;
     }
     return label;
-  };
+  }; // 🌟 Use Arabic property data
+
+  const arabicDescription =
+    (property as any).arabicDescription || property.description;
+  const arabicAmenities =
+    (property as any).arabicAmenities || property.amenities;
 
   return (
-    <div className="bg-slate-50 dark:bg-slate-950 min-h-screen">
-      <MetaTagManager
-        title={`${property.title} - سـلـتـي`}
-        description={property.description.substring(0, 160)}
+    // 🌟 Apply RTL to the entire screen container
+    <div className="bg-slate-50 dark:bg-slate-950 min-h-screen rtl text-right">
+           {" "}
+      <MetaTagManager // 🌟 Use Arabic property title for meta tags
+        title={`${arabicTitle} - سـلـتـي`}
+        description={arabicDescription.substring(0, 160)}
       />
-      <SubPageHeader title={property.title} backPath="/real-estate" />
-
+            {/* 🌟 Use Arabic property title in the header */}
+            <SubPageHeader title={arabicTitle} backPath="/real-estate" />     {" "}
       <div className="max-w-5xl mx-auto p-4 sm:p-6 pb-24">
+               {" "}
+        {/* 🌟 Swap grid columns for RTL: Details (Right) on the left, Image (Left) on the right */}
+               {" "}
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-          {/* Left Column (Image & Contact) */}
-          <div className="lg:col-span-2">
-            <ProductImageGallery
-              mainImage={property.imageUrls[0]}
-              otherImages={property.imageUrls.slice(1)}
-              altText={property.title}
-            />
-          </div>
-          {/* Right Column (Details) */}
-          <div className="space-y-6">
+                   {" "}
+          {/* Right Column (Details) - Now on the left in the grid, but content is right-aligned */}
+                   {" "}
+          <div className="lg:col-span-1 space-y-6 lg:order-2">
+            {" "}
+            {/* 🌟 Add lg:order-2 */}           {" "}
             <div className="p-6 bg-white dark:bg-slate-800 rounded-lg shadow-md border dark:border-slate-700">
+                           {" "}
               <span
                 className={`inline-block px-3 py-1 text-sm font-semibold rounded-full mb-2 ${
-                  listing.listingType === "rent"
+                  listing.listingType === "Rent" // 🌟 Use 'Rent' key
                     ? "bg-blue-100 text-blue-800"
                     : "bg-green-100 text-green-800"
                 }`}
               >
-                {listing.listingType === "rent" ? "للإيجار" : "للبيع"}
+                                {/* 🌟 Use Arabic Listing Type */}             
+                 {" "}
+                {getArabicListingType(
+                  listing.listingType as keyof typeof ListingType
+                )}
+                             {" "}
               </span>
+                           {" "}
               <h1 className="text-3xl font-bold text-slate-900 dark:text-slate-100">
-                {property.title}
+                                {arabicTitle} {/* 🌟 Use Arabic title */}       
+                     {" "}
               </h1>
+                           {" "}
               <p className="text-secondary text-4xl font-bold mt-4">
-                {getPriceLabel()}
+                                {getPriceLabel()}             {" "}
               </p>
+                           {" "}
+              {/* Location icon will naturally move to the right/start of the text in RTL */}
+                           {" "}
               <p className="text-slate-500 dark:text-slate-400 flex items-center gap-2 mt-2">
-                <LocationMarkerIcon className="w-5 h-5" />
-                {property.location.city}, {property.location.address}
+                                <LocationMarkerIcon className="w-5 h-5" />     
+                          {property.location.city}, {property.location.address} 
+                           {" "}
               </p>
+                         {" "}
             </div>
-
+                       {" "}
             <div className="p-6 bg-white dark:bg-slate-800 rounded-lg shadow-md border dark:border-slate-700">
-              <h2 className="text-xl font-bold mb-4">المواصفات</h2>
+                           {" "}
+              <h2 className="text-xl font-bold mb-4">المواصفات</h2>{" "}
+              {/* 🌟 Translated Header */}             {" "}
               <div className="grid grid-cols-3 gap-4 text-center">
+                               {" "}
                 <div className="p-2 bg-slate-50 dark:bg-slate-700/50 rounded">
-                  <BedIcon className="w-8 h-8 mx-auto text-primary" />
-                  <p className="mt-1 font-semibold">{property.bedrooms}</p>
-                  <p className="text-xs text-slate-500">غرف نوم</p>
+                                   {" "}
+                  <BedIcon className="w-8 h-8 mx-auto text-primary" />         
+                         {" "}
+                  <p className="mt-1 font-semibold">{property.bedrooms}</p>     
+                              <p className="text-xs text-slate-500">غرف نوم</p>{" "}
+                  {/* 🌟 Translated label */}               {" "}
                 </div>
+                               {" "}
                 <div className="p-2 bg-slate-50 dark:bg-slate-700/50 rounded">
-                  <UsersIcon className="w-8 h-8 mx-auto text-primary" />
-                  <p className="mt-1 font-semibold">{property.bathrooms}</p>
-                  <p className="text-xs text-slate-500">حمامات</p>
+                                   {" "}
+                  <UsersIcon className="w-8 h-8 mx-auto text-primary" />       
+                           {" "}
+                  <p className="mt-1 font-semibold">{property.bathrooms}</p>   
+                                <p className="text-xs text-slate-500">حمامات</p>{" "}
+                  {/* 🌟 Translated label */}               {" "}
                 </div>
+                               {" "}
                 <div className="p-2 bg-slate-50 dark:bg-slate-700/50 rounded">
-                  <Squares2x2Icon className="w-8 h-8 mx-auto text-primary" />
+                                   {" "}
+                  <Squares2x2Icon className="w-8 h-8 mx-auto text-primary" />   
+                               {" "}
                   <p className="mt-1 font-semibold">
-                    {property.area} <span className="text-xs">م²</span>
+                                        {property.area}{" "}
+                    <span className="text-xs">م²</span>{" "}
+                    {/* 🌟 Translated unit */}                 {" "}
                   </p>
-                  <p className="text-xs text-slate-500">المساحة</p>
+                                   {" "}
+                  <p className="text-xs text-slate-500">المساحة</p>{" "}
+                  {/* 🌟 Translated label */}               {" "}
                 </div>
+                             {" "}
               </div>
+                         {" "}
             </div>
-
+                       {" "}
             {phoneNumber && (
               <a
                 href={whatsappUrl}
@@ -168,36 +228,68 @@ const PropertyDetailScreen: React.FC = () => {
                 rel="noopener noreferrer"
                 className="w-full flex items-center justify-center gap-3 py-3 px-6 bg-green-500 text-white font-bold rounded-lg text-lg hover:bg-green-600 transition-transform transform active:scale-95 shadow-lg"
               >
-                <WhatsAppIcon className="w-6 h-6" />
-                تواصل للاستفسار
+                                <WhatsAppIcon className="w-6 h-6" />           
+                    تواصل للاستفسار {/* 🌟 Translated button text */}           
+                 {" "}
               </a>
             )}
+                     {" "}
           </div>
+                   {" "}
+          {/* Left Column (Image & Contact) - Now on the right in the grid */} 
+                 {" "}
+          <div className="lg:col-span-2 lg:order-1">
+            {" "}
+            {/* 🌟 Add lg:order-1 */}
+                       {" "}
+            <ProductImageGallery
+              mainImage={property.imageUrls[0]}
+              otherImages={property.imageUrls.slice(1)}
+              altText={arabicTitle} // 🌟 Use Arabic title for alt text
+            />
+                     {" "}
+          </div>
+                 {" "}
         </div>
-        {/* Description & Amenities below */}
+                {/* Description & Amenities below */}       {" "}
         <div className="mt-8 p-6 bg-white dark:bg-slate-800 rounded-lg shadow-md border dark:border-slate-700">
-          <h2 className="text-xl font-bold mb-4">الوصف</h2>
+                    <h2 className="text-xl font-bold mb-4">الوصف</h2>{" "}
+          {/* 🌟 Translated Header */}         {" "}
           <p className="text-slate-600 dark:text-slate-300 whitespace-pre-wrap leading-relaxed">
-            {property.description}
+                        {arabicDescription} {/* 🌟 Use Arabic description */}   
+                 {" "}
           </p>
+                 {" "}
         </div>
-        {property.amenities.length > 0 && (
+               {" "}
+        {arabicAmenities.length > 0 && (
           <div className="mt-8 p-6 bg-white dark:bg-slate-800 rounded-lg shadow-md border dark:border-slate-700">
-            <h2 className="text-xl font-bold mb-4">المرافق والمميزات</h2>
+                       {" "}
+            <h2 className="text-xl font-bold mb-4">المرافق والمميزات</h2>{" "}
+            {/* 🌟 Translated Header */}           {" "}
+            {/* 🌟 Add RTL to grid layout */}           {" "}
             <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-4">
-              {property.amenities.map((amenity) => (
+                           {" "}
+              {arabicAmenities.map((amenity: string) => (
                 <div
                   key={amenity}
                   className="flex items-center gap-2 p-2 bg-slate-50 dark:bg-slate-700/50 rounded"
                 >
-                  <CheckCircleIcon className="w-5 h-5 text-green-500" />
-                  <span className="font-semibold text-sm">{amenity}</span>
+                                   {" "}
+                  <CheckCircleIcon className="w-5 h-5 text-green-500" />       
+                           {" "}
+                  <span className="font-semibold text-sm">{amenity}</span>{" "}
+                  {/* Amenity should be in Arabic */}               {" "}
                 </div>
               ))}
+                         {" "}
             </div>
+                     {" "}
           </div>
         )}
+             {" "}
       </div>
+         {" "}
     </div>
   );
 };
