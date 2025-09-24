@@ -14,7 +14,8 @@ import 'firebase/compat/firestore';
 import { auth, db } from "../firebase/config";
 import { User } from "../types";
 
-const SUPER_ADMIN_EMAILS = ["ashraf0968491090@gmail.com", "salahashrf58@gmail.com"];
+// FIX: Removed hardcoded super-admin emails to make roles fully data-driven from Firestore.
+// const SUPER_ADMIN_EMAILS = ["ashraf0968491090@gmail.com", "salahashrf58@gmail.com"];
 
 // FIX: Replaced v9 types with v8 compat types.
 type FirebaseUser = firebase.User;
@@ -79,27 +80,20 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({
         const userSnap = await userRef.get();
 
         if (userSnap.exists) {
-          let userData = userSnap.data() as User;
-          const isSuperAdminByEmail = fbUser.email ? SUPER_ADMIN_EMAILS.map(e => e.toLowerCase()).includes(fbUser.email.toLowerCase()) : false;
-          
-          if (isSuperAdminByEmail && userData.role !== 'super-admin') {
-            userData.role = 'super-admin';
-            // FIX: Refactored Firestore updateDoc call to use v8 compat syntax.
-            userRef.update({ role: 'super-admin' }).catch(err => {
-              console.error("Failed to self-heal super-admin role:", err);
-            });
-          }
+          const userData = userSnap.data() as User;
+          // The self-healing logic for hardcoded super-admins has been removed.
+          // Roles are now sourced exclusively from the Firestore document.
           setUser({ ...userData, uid: fbUser.uid });
 
         } else {
-          const isSuperAdmin = fbUser.email ? SUPER_ADMIN_EMAILS.map(e => e.toLowerCase()).includes(fbUser.email.toLowerCase()) : false;
-          
+          // New users are always created with the 'customer' role.
+          // Promotion must be done manually via the admin panel.
           const newUser: User = {
             uid: fbUser.uid,
             email: fbUser.email,
             name: fbUser.displayName || "عميل جديد",
             phone: fbUser.phoneNumber,
-            role: isSuperAdmin ? "super-admin" : "customer",
+            role: "customer",
           };
           // FIX: Refactored Firestore setDoc call to use v8 compat syntax.
           await userRef.set(newUser);

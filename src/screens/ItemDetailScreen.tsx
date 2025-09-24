@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
-// FIX: Corrected react-router-dom import to resolve module export errors.
-import { useParams, Link } from 'react-router-dom';
+// FIX: Corrected react-router-dom import to fix module resolution issue by using a namespace import and destructuring. This can resolve issues where named exports are not correctly recognized by the build tool.
+import * as ReactRouterDOM from 'react-router-dom';
+const { useParams, Link } = ReactRouterDOM;
 import { db } from '../firebase/config';
 import { useCart } from '../hooks/useCart';
 import { useWishlist } from '../hooks/useWishlist';

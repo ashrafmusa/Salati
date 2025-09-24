@@ -1,6 +1,7 @@
 import React, { useState, useMemo } from 'react';
-// FIX: Corrected react-router-dom import to resolve module export error.
-import { useNavigate } from 'react-router-dom';
+// FIX: Corrected react-router-dom import to fix module resolution issue by using a namespace import and destructuring. This can resolve issues where named exports are not correctly recognized by the build tool.
+import * as ReactRouterDOM from 'react-router-dom';
+const { useNavigate } = ReactRouterDOM;
 import { PurchaseOrder, PurchaseOrderStatus } from '../types';
 import AdminScreenHeader from '../components/AdminScreenHeader';
 import { usePaginatedFirestore } from '../hooks/usePaginatedFirestore';

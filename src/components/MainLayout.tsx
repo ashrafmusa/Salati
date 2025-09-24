@@ -1,6 +1,7 @@
 import React from 'react';
-// FIX: Corrected react-router-dom import to resolve module export errors.
-import { useLocation, Outlet } from "react-router-dom";
+// FIX: Corrected react-router-dom import to fix module resolution issue by using a namespace import and destructuring. This can resolve issues where named exports are not correctly recognized by the build tool.
+import * as ReactRouterDOM from "react-router-dom";
+const { useLocation, Outlet } = ReactRouterDOM;
 import NavigationBar from './NavigationBar';
 import WhatsAppButton from './WhatsAppButton';
 import Footer from './Footer';

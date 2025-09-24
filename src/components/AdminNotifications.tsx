@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useRef } from 'react';
-// FIX: Corrected react-router-dom import to resolve module export error.
-import { useNavigate } from "react-router-dom";
+// FIX: Corrected react-router-dom import to fix module resolution issue by using a namespace import and destructuring. This can resolve issues where named exports are not correctly recognized by the build tool.
+import * as ReactRouterDOM from "react-router-dom";
+const { useNavigate } = ReactRouterDOM;
 import { BellIcon } from '../assets/adminIcons';
 import { db } from '../firebase/config';
 // FIX: Refactored Firebase imports to use the v8 compat library to resolve module errors.

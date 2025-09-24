@@ -28,9 +28,9 @@ export const addOrderLog = async (
       type,
       visibility,
     };
-
+    
     const orderRef = db.collection('orders').doc(orderId);
-
+    
     // Use a batch to perform both writes atomically
     const batch = db.batch();
 
@@ -38,25 +38,25 @@ export const addOrderLog = async (
     batch.set(logRef, logEntry);
 
     const orderUpdateData: { [key: string]: any } = {
-      lastUpdatedBy: { id: author.uid, name: author.name },
-      lastUpdatedAt: new Date().toISOString(),
+        lastUpdatedBy: { id: author.uid, name: author.name },
+        lastUpdatedAt: new Date().toISOString(),
     };
 
     if (type === 'customer_message') {
-      orderUpdateData.adminHasUnreadMessages = true;
+        orderUpdateData.adminHasUnreadMessages = true;
     } else if (type === 'admin_message' && visibility === 'public') {
-      orderUpdateData.customerHasUnreadMessages = true;
+        orderUpdateData.customerHasUnreadMessages = true;
     }
-
+    
     batch.update(orderRef, orderUpdateData);
-
+    
     if (notification) {
-      const notifRef = db.collection('notifications').doc();
-      batch.set(notifRef, {
-        ...notification,
-        timestamp: new Date().toISOString(),
-        read: false,
-      });
+        const notifRef = db.collection('notifications').doc();
+        batch.set(notifRef, {
+            ...notification,
+            timestamp: new Date().toISOString(),
+            read: false,
+        });
     }
 
     await batch.commit();

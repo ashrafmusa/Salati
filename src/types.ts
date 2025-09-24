@@ -5,7 +5,6 @@ export interface User {
   name: string;
   phone?: string | null;
   address?: string;
-  // Keep the role keys in English for internal logic, but define their user-facing Arabic translations elsewhere.
   role: 'super-admin' | 'admin' | 'sub-admin' | 'driver' | 'customer' | 'supplier';
   customDeliveryFee?: number;
   supplierId?: string;
@@ -15,7 +14,7 @@ export interface Item {
   id: string;
   type: 'item';
   name: string;
-  arabicName: string; // Already included, which is perfect for localization
+  arabicName: string;
   imageUrl: string;
   imageUrls?: string[]; // For product gallery
   category: string;
@@ -38,7 +37,7 @@ export interface Bundle {
   id: string;
   type: 'bundle';
   name: string;
-  arabicName: string; // Already included, perfect
+  arabicName: string;
   imageUrl: string;
   imageUrls?: string[]; // For product gallery
   category: string;
@@ -55,7 +54,6 @@ export type StoreProduct = Item | Bundle;
 export interface ExtraItem {
   id: string;
   name: string;
-  arabicName: string; // New: Add Arabic name for display
   price: number;
   imageUrl: string;
 }
@@ -83,18 +81,6 @@ export enum OrderStatus {
   Cancelled = "ملغي",
 }
 
-// Translate payment status
-export enum PaymentStatus {
-  Unpaid = 'غير مدفوع', // Unpaid
-  Paid = 'مدفوع', // Paid
-}
-
-// Translate delivery method
-export enum DeliveryMethod {
-  Delivery = 'توصيل', // Delivery
-  Pickup = 'استلام من المتجر', // Pickup
-}
-
 export interface Order {
   id: string;
   userId: string;
@@ -106,12 +92,10 @@ export interface Order {
   discountAmount?: number;
   appliedOfferIds?: string[];
   status: OrderStatus;
-  // Use the new PaymentStatus enum for localized value, but the underlying type is still a string literal for easy comparison
-  paymentStatus: keyof typeof PaymentStatus extends infer K ? K extends string ? Lowercase<K> : never : never; // 'unpaid' | 'paid'
+  paymentStatus: 'unpaid' | 'paid';
   deliveryInfo: DeliveryInfo;
   driverId?: string | null;
-  // Use the new DeliveryMethod enum for localized value, but the underlying type is still a string literal
-  deliveryMethod: keyof typeof DeliveryMethod extends infer K ? K extends string ? Lowercase<K> : never : never; // 'delivery' | 'pickup'
+  deliveryMethod: 'delivery' | 'pickup';
   lastUpdatedBy?: { id: string; name: string };
   lastUpdatedAt?: string;
   customerHasUnreadMessages?: boolean;
@@ -127,7 +111,6 @@ export interface DeliveryInfo {
 export interface PercentageDiscount {
   type: 'percentage';
   value: number; // e.g., 15 for 15%
-  // Keep internal logic keys as English
   appliesTo: 'all' | 'category' | 'product';
   target?: string;
 }
@@ -143,7 +126,7 @@ export interface BuyXGetYDiscount {
   type: 'buyXgetY';
   buyQuantity: number; // e.g., 10
   getQuantity: number; // e.g., 1 or 2
-  appliesTo: 'product';
+  appliesTo: 'product'; // This offer type is product-specific
   target: string; // The ID of the product
 }
 
@@ -154,11 +137,9 @@ export interface Offer {
   id: string;
   imageUrl: string;
   title: string;
-  arabicTitle: string; // New: Add Arabic title
   expiryDate: string; // ISO date string
   link?: string;
   callToAction?: string;
-  arabicCallToAction?: string; // New: Add Arabic Call to Action
   discount?: Discount;
 }
 
@@ -174,28 +155,26 @@ export interface Review {
 export interface Category {
   id: string;
   name: string;
-  arabicName: string; // New: Add Arabic name
   image: string;
   sortOrder: number;
 }
 
 export interface ThemeSettings {
-  primaryColor: string;
-  secondaryColor: string;
-  sansFont: string;
-  displayFont: string;
+    primaryColor: string;
+    secondaryColor: string;
+    sansFont: string;
+    displayFont: string;
 }
 
 export interface StoreSettings {
-  deliveryFee: number;
-  logoUrl: string;
-  storeAddress: string;
-  usdToSdgRate: number; // New field for currency conversion
-  announcementText?: string;
-  arabicAnnouncementText?: string; // New: Add Arabic announcement text
-  isAnnouncementActive?: boolean;
-  theme: ThemeSettings;
-  loginIllustrationSvg?: string;
+    deliveryFee: number;
+    logoUrl: string;
+    storeAddress: string;
+    usdToSdgRate: number; // New field for currency conversion
+    announcementText?: string;
+    isAnnouncementActive?: boolean;
+    theme: ThemeSettings;
+    loginIllustrationSvg?: string;
 }
 
 export interface AuditLog {
@@ -203,7 +182,6 @@ export interface AuditLog {
   timestamp: string; // ISO date string
   adminId: string;
   adminName: string;
-  // The action itself will likely be translated in the UI via an i18n key map
   action: string;
   details?: string;
 }
@@ -230,48 +208,40 @@ export interface PurchaseOrderItem {
 }
 
 export enum PurchaseOrderStatus {
-  Draft = "مسودة",
-  Sent = "مرسل للمورد",
-  PartiallyReceived = "تم الاستلام جزئياً",
-  FullyReceived = "تم الاستلام بالكامل",
-  Cancelled = "ملغي",
+    Draft = "مسودة",
+    Sent = "مرسل للمورد",
+    PartiallyReceived = "تم الاستلام جزئياً",
+    FullyReceived = "تم الاستلام بالكامل",
+    Cancelled = "ملغي",
 }
 
 export interface PurchaseOrder {
-  id: string;
-  supplierId: string;
-  supplierName: string; // Denormalized for display
-  createdDate: string; // ISO date string
-  expectedDate: string; // ISO date string
-  items: PurchaseOrderItem[];
-  totalCost: number;
-  status: PurchaseOrderStatus;
+    id: string;
+    supplierId: string;
+    supplierName: string; // Denormalized for display
+    createdDate: string; // ISO date string
+    expectedDate: string; // ISO date string
+    items: PurchaseOrderItem[];
+    totalCost: number;
+    status: PurchaseOrderStatus;
 }
 
 
 // Admin Panel Specific Types
 export interface Customer extends User {
-  joinDate: string; // ISO date string
-  orderHistory: string[]; // array of order IDs
-}
-
-// Translate Driver Status
-export enum DriverStatus {
-  Available = 'متاح', // Available
-  OnDelivery = 'قيد التوصيل', // On-Delivery
-  Offline = 'غير متصل', // Offline
+    joinDate: string; // ISO date string
+    orderHistory: string[]; // array of order IDs
 }
 
 export interface Driver {
-  id: string;
-  name: string;
-  phone: string;
-  // Use DriverStatus for localized values
-  status: keyof typeof DriverStatus; // 'Available' | 'OnDelivery' | 'Offline'
+    id: string;
+    name: string;
+    phone: string;
+    status: 'Available' | 'On-Delivery' | 'Offline';
 }
 
 export interface AdminOrder extends Order {
-  customer?: Omit<User, 'role'>;
+    customer?: Omit<User, 'role'>;
 }
 
 export interface AdminNotification {
@@ -283,30 +253,14 @@ export interface AdminNotification {
 }
 
 // Collaboration Feature Types
-export enum ActivityLogType {
-  StatusChange = 'تغيير حالة',
-  CustomerMessage = 'رسالة عميل',
-  DriverNote = 'ملاحظة سائق',
-  AdminMessage = 'رسالة إداري',
-  InternalNote = 'ملاحظة داخلية',
-  Issue = 'مشكلة',
-  SystemLog = 'سجل نظام',
-}
-
-export enum VisibilityType {
-  Public = 'عام',
-  Internal = 'داخلي',
-}
-
 export interface ActivityLogEntry {
   id: string;
   timestamp: string; // ISO date string
   authorId: string;
   authorName: string;
   message: string;
-  // Use enums for localized values
-  type: keyof typeof ActivityLogType extends infer K ? K extends string ? K : never : never; // 'StatusChange' | 'CustomerMessage' | 'DriverNote' | 'AdminMessage' | 'InternalNote' | 'Issue' | 'SystemLog'
-  visibility: keyof typeof VisibilityType; // 'Public' | 'Internal'
+  type: 'status_change' | 'customer_message' | 'driver_note' | 'admin_message' | 'internal_note' | 'issue' | 'system_log';
+  visibility: 'public' | 'internal';
 }
 
 // User-created Lists (Daily Baskets)
@@ -323,21 +277,9 @@ export interface UserList {
 
 // --- Real Estate Types ---
 
-// Enums for Real Estate types to provide Arabic translations
-export enum PropertyType {
-  Apartment = 'شقة',
-  House = 'منزل/فيلا',
-  Office = 'مكتب',
-  Land = 'أرض',
-}
-export enum ListingType {
-  Rent = 'إيجار',
-  Sale = 'بيع',
-}
-export enum PricePeriod {
-  Monthly = 'شهري',
-  Annually = 'سنوي',
-}
+export type PropertyType = 'apartment' | 'house' | 'office' | 'land';
+export type ListingType = 'rent' | 'sale';
+export type PricePeriod = 'monthly' | 'annually';
 
 export enum ListingStatus {
   Available = "متاح",
@@ -349,11 +291,8 @@ export enum ListingStatus {
 export interface Property {
   id: string;
   title: string;
-  arabicTitle: string; // New: Add Arabic title
   description: string;
-  arabicDescription: string; // New: Add Arabic description
-  // Use the enum key for the internal type, and the value for display
-  type: keyof typeof PropertyType extends infer K ? K extends string ? K : never : never; // 'Apartment' | 'House' | 'Office' | 'Land'
+  type: PropertyType;
   location: {
     address: string;
     city: string;
@@ -362,24 +301,20 @@ export interface Property {
   };
   imageUrls: string[];
   amenities: string[];
-  arabicAmenities: string[]; // New: Add Arabic amenities
   bedrooms: number;
   bathrooms: number;
   area: number; // in sq meters
-  ownerId?: string;
+  ownerId?: string; 
 }
 
 export interface Listing {
   id: string;
   propertyId: string;
   propertyTitle: string; // Denormalized for easier display
-  propertyArabicTitle: string; // New: Denormalized Arabic title
   imageUrl: string; // Denormalized main image
-  // Use the enum key for the internal type
-  listingType: keyof typeof ListingType; // 'Rent' | 'Sale'
+  listingType: ListingType;
   price: number;
-  // Use the enum key for the internal period
-  pricePeriod?: keyof typeof PricePeriod; // 'Monthly' | 'Annually'
+  pricePeriod?: PricePeriod;
   status: ListingStatus;
   listedDate: string; // ISO date string
 }

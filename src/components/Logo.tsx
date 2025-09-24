@@ -1,6 +1,7 @@
 import React from 'react';
-// FIX: Corrected react-router-dom import to fix module export error.
-import { Link } from "react-router-dom";
+// FIX: Corrected react-router-dom import to fix module resolution issue by using a namespace import and destructuring. This can resolve issues where named exports are not correctly recognized by the build tool.
+import * as ReactRouterDOM from 'react-router-dom';
+const { Link } = ReactRouterDOM;
 import { getOptimizedImageUrl } from '../utils/helpers';
 import { useSettings } from '../contexts/SettingsContext';
 

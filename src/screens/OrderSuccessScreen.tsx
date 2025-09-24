@@ -1,5 +1,4 @@
 import React, { useState, useEffect } from 'react';
-// FIX: Corrected react-router-dom import to resolve module export errors.
 import { useParams, Link } from 'react-router-dom';
 import { WhatsAppIcon, CheckCircleIcon, SpinnerIcon } from '../assets/icons';
 import { useAuth } from '../hooks/useAuth';

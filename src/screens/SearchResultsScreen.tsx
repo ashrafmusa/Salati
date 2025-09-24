@@ -1,5 +1,4 @@
 import React, { useState, useMemo, useEffect } from 'react';
-// FIX: Corrected react-router-dom import to resolve module export error.
 import { useSearchParams } from 'react-router-dom';
 import { StoreProduct, Item, Bundle } from '../types';
 import { db } from '../firebase/config';
@@ -31,7 +30,7 @@ const SearchResultsScreen: React.FC = () => {
         setAllItems(items);
         setAllProducts([...items, ...bundles]);
       } catch (error) {
-        console.error("Error fetching products for search:", error);
+        console.error("Error fetching all products for search:", error);
       } finally {
         setLoading(false);
       }
@@ -39,44 +38,39 @@ const SearchResultsScreen: React.FC = () => {
     fetchAllProducts();
   }, []);
 
-  const filteredProducts = useMemo(() => {
+  const searchResults = useMemo(() => {
     if (!query) return [];
     const lowercasedQuery = query.toLowerCase();
-    return allProducts.filter(p =>
-      p.arabicName.toLowerCase().includes(lowercasedQuery) ||
-      p.name.toLowerCase().includes(lowercasedQuery)
+    return allProducts.filter(p => 
+        p.arabicName.toLowerCase().includes(lowercasedQuery) || 
+        p.name.toLowerCase().includes(lowercasedQuery)
     );
   }, [query, allProducts]);
-
+  
   const productPrices = useMemo(() => {
     const priceMap = new Map<string, number>();
     if (!settings) return priceMap;
-    filteredProducts.forEach(p => {
+    searchResults.forEach(p => {
         priceMap.set(p.id, calculateStoreProductPrice(p, allItems, settings));
     });
     return priceMap;
-  }, [filteredProducts, allItems, settings]);
+  }, [searchResults, allItems, settings]);
 
   return (
     <div>
       <MetaTagManager title={`نتائج البحث عن "${query}" - سـلـتـي`} />
-      <SubPageHeader title={`نتائج البحث عن: "${query}"`} backPath="/" />
-      
-      <div className="p-4 max-w-7xl mx-auto">
+      <SubPageHeader title={`نتائج البحث عن "${query}"`} backPath="/" itemCount={searchResults.length} />
+      <div className="p-4 max-w-4xl mx-auto">
         {loading ? (
-          <div className="grid grid-cols-2 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4 sm:gap-6">
-            {Array.from({ length: 8 }).map((_, index) => (
-              <ProductCardSkeleton key={index} />
-            ))}
-          </div>
-        ) : filteredProducts.length === 0 ? (
-          <EmptyState message={`لا توجد نتائج بحث تطابق "${query}"`} />
+           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
+             {Array.from({ length: 6 }).map((_, index) => <ProductCardSkeleton key={index} />)}
+           </div>
+        ) : searchResults.length === 0 ? (
+          <EmptyState message="لم يتم العثور على منتجات تطابق بحثك." />
         ) : (
-          <div className="grid grid-cols-2 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4 sm:gap-6">
-            {filteredProducts.map((product, index) => (
-              <div key={product.id} className="animate-stagger-in" style={{ animationDelay: `${index * 50}ms` }}>
-                <StoreProductCard product={product} price={productPrices.get(product.id) || 0} />
-              </div>
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
+            {searchResults.map(product => (
+              <StoreProductCard key={product.id} product={product} price={productPrices.get(product.id) || 0} />
             ))}
           </div>
         )}

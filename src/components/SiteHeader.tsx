@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useRef, useMemo } from 'react';
-// FIX: Combined react-router-dom imports to resolve module export errors.
-import { useNavigate, useSearchParams, NavLink, Link } from 'react-router-dom';
+// FIX: Corrected react-router-dom import to fix module resolution issue by using a namespace import and destructuring. This can resolve issues where named exports are not correctly recognized by the build tool.
+import * as ReactRouterDOM from 'react-router-dom';
+const { useNavigate, useSearchParams, NavLink, Link } = ReactRouterDOM;
 import Logo from './Logo';
 import { SearchIcon, FilterIcon, HomeIcon, HeartIcon, CartIcon, UserIcon } from '../assets/icons';
 import { useCart } from '../hooks/useCart';

@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useMemo } from 'react';
-// FIX: Split react-router-dom imports to resolve module export errors.
-import { useNavigate } from "react-router";
+// FIX: Corrected react-router-dom import to fix module resolution issue by using a namespace import and destructuring. This can resolve issues where named exports are not correctly recognized by the build tool.
+import * as ReactRouterDOM from "react-router-dom";
+const { useNavigate } = ReactRouterDOM;
 import StatCard from '../components/StatCard';
 import { OrdersIcon, PackageIcon, CustomersIcon, CurrencyDollarIcon } from '../assets/adminIcons';
 import { AdminOrder, OrderStatus, Item, Bundle, StoreSettings } from '../types';
