@@ -6,12 +6,15 @@ import { Listing, Property, ListingStatus, PropertyType, ListingType } from '../
 import ListingCard, { FullListing } from '../components/ListingCard';
 import EmptyState from '../components/EmptyState';
 import ProductCardSkeleton from '../components/ProductCardSkeleton';
+import { MapIcon, ListBulletIcon } from '../assets/icons';
+import MapView from '../components/MapView';
 
 
 const RealEstateScreen: React.FC = () => {
     const [listings, setListings] = useState<Listing[]>([]);
     const [properties, setProperties] = useState<Property[]>([]);
     const [loading, setLoading] = useState(true);
+    const [viewMode, setViewMode] = useState<'list' | 'map'>('list');
     
     const [filters, setFilters] = useState({
         listingType: 'all' as ListingType | 'all',
@@ -76,25 +79,35 @@ const RealEstateScreen: React.FC = () => {
             <MetaTagManager title="العقارات - سـلـتـي" description="تصفح أفضل العقارات والشقق للإيجار والبيع في السودان عبر منصة سـلـتـي." />
             <SubPageHeader title="العقارات" backPath="/" />
 
-            {/* Filters */}
+            {/* Filters & View Toggle */}
             <div className="p-4 bg-white dark:bg-slate-800/50 sticky top-[56px] z-10 border-b dark:border-slate-800 shadow-sm">
-                <div className="max-w-7xl mx-auto grid grid-cols-2 md:grid-cols-3 gap-3">
-                    <select name="listingType" value={filters.listingType} onChange={handleFilterChange} className={inputClasses}>
-                        <option value="all">الكل (بيع/إيجار)</option>
-                        <option value="sale">للبيع</option>
-                        <option value="rent">للإيجار</option>
-                    </select>
-                    <select name="propertyType" value={filters.propertyType} onChange={handleFilterChange} className={inputClasses}>
-                        <option value="all">كل أنواع العقارات</option>
-                        <option value="apartment">شقة</option>
-                        <option value="house">منزل</option>
-                        <option value="office">مكتب</option>
-                        <option value="land">أرض</option>
-                    </select>
-                    <select name="city" value={filters.city} onChange={handleFilterChange} className={`${inputClasses} col-span-2 md:col-span-1`}>
-                        <option value="">كل المدن</option>
-                        {cities.map(city => <option key={city} value={city}>{city}</option>)}
-                    </select>
+                <div className="max-w-7xl mx-auto flex flex-col md:flex-row gap-3">
+                    <div className="flex-grow grid grid-cols-2 md:grid-cols-3 gap-3">
+                        <select name="listingType" value={filters.listingType} onChange={handleFilterChange} className={inputClasses}>
+                            <option value="all">الكل (بيع/إيجار)</option>
+                            <option value="sale">للبيع</option>
+                            <option value="rent">للإيجار</option>
+                        </select>
+                        <select name="propertyType" value={filters.propertyType} onChange={handleFilterChange} className={inputClasses}>
+                            <option value="all">كل أنواع العقارات</option>
+                            <option value="apartment">شقة</option>
+                            <option value="house">منزل</option>
+                            <option value="office">مكتب</option>
+                            <option value="land">أرض</option>
+                        </select>
+                        <select name="city" value={filters.city} onChange={handleFilterChange} className={`${inputClasses} col-span-2 md:col-span-1`}>
+                            <option value="">كل المدن</option>
+                            {cities.map(city => <option key={city} value={city}>{city}</option>)}
+                        </select>
+                    </div>
+                     <div className="flex-shrink-0 flex items-center bg-slate-100 dark:bg-slate-700/50 p-1 rounded-lg">
+                        <button onClick={() => setViewMode('list')} className={`w-1/2 md:w-auto px-4 py-1.5 text-sm font-semibold rounded-md transition-colors flex items-center justify-center gap-2 ${viewMode === 'list' ? 'bg-white dark:bg-slate-800 text-primary shadow-sm' : 'text-slate-500 hover:text-slate-700'}`}>
+                            <ListBulletIcon className="w-5 h-5" /> قائمة
+                        </button>
+                        <button onClick={() => setViewMode('map')} className={`w-1/2 md:w-auto px-4 py-1.5 text-sm font-semibold rounded-md transition-colors flex items-center justify-center gap-2 ${viewMode === 'map' ? 'bg-white dark:bg-slate-800 text-primary shadow-sm' : 'text-slate-500 hover:text-slate-700'}`}>
+                            <MapIcon className="w-5 h-5" /> خريطة
+                        </button>
+                    </div>
                 </div>
             </div>
 
@@ -103,14 +116,18 @@ const RealEstateScreen: React.FC = () => {
                     <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
                         {Array.from({ length: 6 }).map((_, i) => <ProductCardSkeleton key={i} />)}
                     </div>
-                ) : filteredListings.length > 0 ? (
-                    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
-                        {filteredListings.map(listing => (
-                            <ListingCard key={listing.id} listing={listing} />
-                        ))}
-                    </div>
+                ) : viewMode === 'list' ? (
+                    filteredListings.length > 0 ? (
+                        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
+                            {filteredListings.map(listing => (
+                                <ListingCard key={listing.id} listing={listing} />
+                            ))}
+                        </div>
+                    ) : (
+                        <EmptyState message="لا توجد عقارات تطابق بحثك." />
+                    )
                 ) : (
-                    <EmptyState message="لا توجد عقارات تطابق بحثك." />
+                    <MapView listings={filteredListings} />
                 )}
             </div>
         </div>
