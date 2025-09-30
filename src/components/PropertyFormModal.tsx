@@ -48,8 +48,9 @@ const PropertyFormModal: React.FC<PropertyFormModalProps> = ({ property, onClose
     
     const handlePropChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) => {
         const { name, value } = e.target;
-        if (name === 'city' || name === 'address') {
-            setPropData(p => ({ ...p, location: { ...p.location, [name]: value } as any }));
+        if (name === 'city' || name === 'address' || name === 'latitude' || name === 'longitude') {
+            const isCoord = name === 'latitude' || name === 'longitude';
+            setPropData(p => ({ ...p, location: { ...p.location, [name]: isCoord ? (value === '' ? undefined : Number(value)) : value } as any }));
         } else if (['bedrooms', 'bathrooms', 'area'].includes(name)) {
             setPropData(p => ({ ...p, [name]: Number(value) }));
         } else {
@@ -119,6 +120,10 @@ const PropertyFormModal: React.FC<PropertyFormModalProps> = ({ property, onClose
                         </select>
                         <input name="city" value={propData.location?.city || ''} onChange={handlePropChange} placeholder="المدينة" className={inputClasses} />
                         <input name="address" value={propData.location?.address || ''} onChange={handlePropChange} placeholder="العنوان" className={inputClasses} />
+                    </div>
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        <input name="latitude" type="number" step="any" value={propData.location?.latitude ?? ''} onChange={handlePropChange} placeholder="Latitude (e.g., 15.5007)" className={inputClasses} />
+                        <input name="longitude" type="number" step="any" value={propData.location?.longitude ?? ''} onChange={handlePropChange} placeholder="Longitude (e.g., 32.5599)" className={inputClasses} />
                     </div>
                     <div className="grid grid-cols-3 gap-4">
                         <input name="bedrooms" type="number" value={propData.bedrooms} onChange={handlePropChange} placeholder="غرف نوم" className={inputClasses} />
