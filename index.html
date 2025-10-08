@@ -1,49 +1,70 @@
-<!DOCTYPE html>
-<html lang="ar" dir="rtl">
+<!doctype html>
+<html lang="en">
   <head>
     <meta charset="UTF-8" />
-    <link rel="icon" type="image/svg+xml" href="/logo.svg" />
+    <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    
-    <!-- SEO & PWA Tags -->
-    <title>Salati - Integrated Platform</title>
-    <meta name="description" content="Salati is a leading e-commerce platform offering fresh groceries, baked goods, and more for convenient home delivery." />
-    <meta name="theme-color" content="#a9ae8b" />
-    <link rel="apple-touch-icon" href="/apple-touch-icon.png" />
-    <link rel="manifest" href="/site.webmanifest" />
-    
-    <!-- Performance: Preconnect to essential origins -->
-    <link rel="preconnect" href="https://fonts.googleapis.com">
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link rel="preconnect" href="https://res.cloudinary.com">
 
-    <!-- Performance: Asynchronously load fonts for the theme editor -->
-    <link rel="preload" href="https://fonts.googleapis.com/css2?family=Almarai:wght@400;700&family=Cairo:wght@400;700&family=IBM+Plex+Sans+Arabic:wght@400;700&family=Lemonada:wght@400;700&family=Montserrat:wght@700;800&family=Noto+Kufi+Arabic:wght@400;700&family=Tajawal:wght@400;700&display=swap" as="style" onload="this.onload=null;this.rel='stylesheet'">
-    <noscript><link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Almarai:wght@400;700&family=Cairo:wght@400;700&family=IBM+Plex+Sans+Arabic:wght@400;700&family=Lemonada:wght@400;700&family=Montserrat:wght@700;800&family=Noto+Kufi+Arabic:wght@400;700&family=Tajawal:wght@400;700&display=swap"></noscript>
-    
-    <!-- Performance: Preload the LCP image -->
-    <link rel="preload" as="image" href="https://res.cloudinary.com/dolmzcken/image/upload/w_800,q_auto:good,f_auto/v1757023041/cuoebfbklinshszz6vfz.png" fetchpriority="high">
+    <!-- Add a theme color for mobile browsers -->
+    <meta name="theme-color" content="#FFFFFF"> <!-- Replace with your brand color -->
 
-    <link rel="stylesheet" href="/index.css">
-<script type="importmap">
-{
-  "imports": {
-    "react": "https://aistudiocdn.com/react@^19.1.1",
-    "react-dom/": "https://aistudiocdn.com/react-dom@^19.1.1/",
-    "react/": "https://aistudiocdn.com/react@^19.1.1/",
-    "react-router-dom": "https://aistudiocdn.com/react-router-dom@^7.8.2",
-    "firebase/": "https://aistudiocdn.com/firebase@^12.2.1/",
-    "vite": "https://aistudiocdn.com/vite@^7.1.4",
-    "@vitejs/plugin-react": "https://aistudiocdn.com/@vitejs/plugin-react@^5.0.2",
-    "@google/genai": "https://aistudiocdn.com/@google/genai@^1.17.0",
-    "react-router": "https://aistudiocdn.com/react-router@^7.9.1"
-  }
-}
-</script>
-</head>
-  <body class="antialiased">
-    <div id="root"></div>
+    <!-- Add a canonical link -->
+    <link rel="canonical" href="https://www.your-domain.com" />
+
+    <!-- SEO Improvements Start -->
+
+    <!-- Improved Title -->
+    <title>Salati | Fresh Groceries & Baked Goods Delivered</title>
+
+    <!-- Improved Description -->
+    <meta name="description" content="Shop online at Salati for fresh groceries, baked goods, local produce, and more. Get convenient and fast home delivery. Order now!" />
+
+    <!-- Keywords (Less impact, but good to have) -->
+    <meta name="keywords" content="groceries, online grocery, food delivery, fresh produce, baked goods, Salati" />
+
+    <!-- Author -->
+    <meta name="author" content="Salati" />
+
+    <!-- Robots -->
+    <meta name="robots" content="index, follow" />
+
+    <!-- Open Graph / Facebook -->
+    <meta property="og:type" content="website" />
+    <meta property="og:title" content="Salati | Fresh Groceries & Baked Goods Delivered" />
+    <meta property="og:description" content="Shop online at Salati for fresh groceries, baked goods, and more. Get convenient and fast home delivery." />
+    <meta property="og:image" content="https://www.your-domain.com/web-app-manifest-512x512.png" />
+    <meta property="og:url" content="https://www.your-domain.com" />
+    <meta property="og:site_name" content="Salati" />
+
+    <!-- Twitter Card -->
+    <meta name="twitter:card" content="summary_large_image" />
+    <meta name="twitter:title" content="Salati | Fresh Groceries & Baked Goods Delivered" />
+    <meta name="twitter:description" content="Shop online at Salati for fresh groceries, baked goods, and more. Get convenient and fast home delivery." />
+    <meta name="twitter:image" content="https://www.your-domain.com/web-app-manifest-512x512.png" />
+
+    <!-- Add Structured Data (JSON-LD) -->
+    <script type="application/ld+json">
+    {
+      "@context": "https://schema.org",
+      "@type": "Organization",
+      "name": "Salati",
+      "url": "https://salati-e.org/",
+      "logo": "https://salati-e.org/web-app-manifest-512x512.png",
+      "description": "Shop online at Salati for fresh groceries, baked goods, local produce, and more. Get convenient and fast home delivery.",
+      "contactPoint": {
+        "@type": "ContactPoint",
+        "telephone": "+1-401-555-0123", // Your contact phone number
+        "contactType": "customer service"
+      }
+    }
+    </script>
+
+    <!-- SEO Improvements End -->
+
+    <link rel="manifest" href="/site.webmanifest">
     <script type="module" src="/src/index.tsx"></script>
-  <script type="module" src="/index.tsx"></script>
-</body>
+  </head>
+  <body>
+    <div id="root"></div>
+  </body>
 </html>
